@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { useTexture, Text } from "@react-three/drei";
 import YugiohCard from "./YugiohCard";
 import PlayerEmblem from "./PlayerEmblem";
-import type { Card, Tile, Player, TilePiece } from "@/types";
+import type { Card, Tile, Player, TilePiece, TurnState, StagingState } from "@/types";
 import { isCard, isPlayer } from "@/types";
 
 const BOARD_SIZE = 11;
@@ -17,19 +17,21 @@ interface GameBoardProps {
   onTilePieceUpdate: (tilePiece: TilePiece) => void;
   onTileHover: (tile: Tile | null) => void;
   onTileClick: (tile: Tile | null) => void;
+  onTilesReady: (tiles: Tile[]) => void;
   showTilePositions: boolean;
+  turnState: TurnState;
+  stagingState: StagingState | null;
 }
 
-export default function GameBoard({ cards, players, selectedTilePiece, onTilePieceSelect, onTilePieceUpdate, onTileHover, onTileClick, showTilePositions }: GameBoardProps) {
+export default function GameBoard({ cards, players, selectedTilePiece, onTilePieceSelect, onTilePieceUpdate, onTileHover, onTileClick, onTilesReady, showTilePositions, turnState, stagingState }: GameBoardProps) {
   // Load grass texture
   const grassTexture = useTexture('/textures/grass.png');
   const darkTexture = useTexture('/textures/dark.png');
   const labyrinthTexture = useTexture('/textures/labyrinth.png');
   const normalTexture = useTexture('/textures/normal.png');
   const waterTexture = useTexture('/textures/water.png');
-  
 
-  const tilesAssets : Tile[] = [
+  const tilesAssets: Tile[] = [
     {
       type: 'grass',
       name: 'Grass',
@@ -60,9 +62,10 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
       texture: waterTexture,
       position: new Vector3(0, 0, 0),
     },
-  ]
+  ];
 
-  const squares: Tile[] = useMemo(() => {
+  // Generate tiles
+  const tiles: Tile[] = useMemo(() => {
     const squares: Tile[] = [];
     for (let i = 0; i < BOARD_SIZE; i++) {
       for (let j = 0; j < BOARD_SIZE; j++) {
@@ -80,12 +83,38 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
       }
     }
     return squares;
-  }, []);
+  }, [grassTexture, darkTexture, labyrinthTexture, normalTexture, waterTexture]);
+
+  // Notify parent when tiles are ready
+  useEffect(() => {
+    onTilesReady(tiles);
+  }, [tiles, onTilesReady]);
+
+
 
   // Handle WASD movement for any selected TilePiece
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!selectedTilePiece) return;
+      if (!selectedTilePiece || !stagingState) return;
+
+      // Check if it's an opponent piece
+      if (isPlayer(selectedTilePiece)) {
+        if (selectedTilePiece.type === 'opponent') {
+          return;
+        }
+      }
+      if (isCard(selectedTilePiece)) {
+        if (selectedTilePiece.owner === 'opponent') {
+          return;
+        }
+      }
+
+      // Prevent movement if actually changed to a different defense mode
+      if (isCard(selectedTilePiece) && 
+          stagingState.originalIsDefenseMode !== undefined &&
+          selectedTilePiece.isDefenseMode !== stagingState.originalIsDefenseMode) {
+        return;
+      }
 
       const newPosition = selectedTilePiece.position.clone();
       let moved = false;
@@ -110,22 +139,39 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
       }
 
       if (moved) {
-        if (isCard(selectedTilePiece)) {
-          onTilePieceUpdate({ ...selectedTilePiece, position: newPosition, isDefenseMode: false } as Card);
-        } else {
-          onTilePieceUpdate({ ...selectedTilePiece, position: newPosition });
+        // Check if new position is within 1 square of ORIGINAL position
+        const originalPos = stagingState.originalPosition;
+        const deltaX = Math.abs(newPosition.x - originalPos.x);
+        const deltaY = Math.abs(newPosition.y - originalPos.y);
+        
+        // Only allow if within 1 square in both directions (8 surrounding squares)
+        if (deltaX <= 1 && deltaY <= 1) {
+          if (isCard(selectedTilePiece)) {
+            onTilePieceUpdate({ ...selectedTilePiece, position: newPosition, isDefenseMode: false } as Card);
+          } else {
+            onTilePieceUpdate({ ...selectedTilePiece, position: newPosition });
+          }
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedTilePiece, onTilePieceUpdate]);
+  }, [selectedTilePiece, onTilePieceUpdate, stagingState]);
 
-  // Calculate valid move positions for the selected TilePiece
-  const validMovePositions = useMemo(() => {
+  // Calculate guide line positions (horizontal and vertical lines)
+  const guideLinePositions = useMemo(() => {
     if (!selectedTilePiece) return [];
-
+    if (isPlayer(selectedTilePiece)) {
+      if (selectedTilePiece.type === 'opponent') {
+        return [];
+      }
+    }
+    if (isCard(selectedTilePiece)) {
+      if (selectedTilePiece.owner === 'opponent') {
+        return [];
+      }
+    }
     const positions: [number, number, number][] = [];
     const pieceX = selectedTilePiece.position.x;
     const pieceY = selectedTilePiece.position.y;
@@ -147,9 +193,53 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
     return positions;
   }, [selectedTilePiece]);
 
+  // Calculate valid move positions (8 surrounding squares)
+  const validMovePositions = useMemo(() => {
+    if (!selectedTilePiece || !stagingState) return [];
+    if (isPlayer(selectedTilePiece)) {
+      if (selectedTilePiece.type === 'opponent') {
+        return [];
+      }
+    }
+    if (isCard(selectedTilePiece)) {
+      if (selectedTilePiece.owner === 'opponent') {
+        return [];
+      }
+    }
+
+    const positions: [number, number, number][] = [];
+    // Use ORIGINAL position, not current position
+    const pieceX = stagingState.originalPosition.x;
+    const pieceY = stagingState.originalPosition.y;
+
+    // 8 surrounding positions (N, S, E, W, NE, NW, SE, SW)
+    const offsets = [
+      [0, 1],   // N
+      [0, -1],  // S
+      [1, 0],   // E
+      [-1, 0],  // W
+      [1, 1],   // NE
+      [-1, 1],  // NW
+      [1, -1],  // SE
+      [-1, -1], // SW
+    ];
+
+    for (const [dx, dy] of offsets) {
+      const newX = pieceX + dx;
+      const newY = pieceY + dy;
+      
+      // Check bounds
+      if (newX >= -5 && newX <= 5 && newY >= -5 && newY <= 5) {
+        positions.push([newX, newY, 0.06]);
+      }
+    }
+
+    return positions;
+  }, [selectedTilePiece, stagingState]);
+
   return (
     <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
-      {squares.map((square, index) => {
+      {tiles.map((square: Tile, index: number) => {
         // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
         return(
           <group key={index}>
@@ -193,16 +283,19 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
           </group>
         )})}
       
-      {/* Movement indicators */}
+      {/* Render movement guide lines */}
+      {guideLinePositions.map((pos, index) => (
+        <mesh key={`guide-${index}`} position={pos} rotation={[0, 0, 0]}>
+          <planeGeometry args={[SQUARE_SIZE, SQUARE_SIZE]} />
+          <meshBasicMaterial color="#d2d2d2ff" transparent opacity={0.4} side={DoubleSide} />
+        </mesh>
+      ))}
+
+      {/* Render valid move positions (surrounding squares) */}
       {validMovePositions.map((pos, index) => (
-        <mesh key={`indicator-${index}`} position={pos}>
-          <planeGeometry args={[SQUARE_SIZE * 0.9, SQUARE_SIZE * 0.9]} />
-          <meshStandardMaterial
-            color="white"
-            transparent
-            opacity={0.3}
-            side={DoubleSide}
-          />
+        <mesh key={`valid-${index}`} position={pos} rotation={[0, 0, 0]}>
+          <planeGeometry args={[SQUARE_SIZE, SQUARE_SIZE]} />
+          <meshBasicMaterial color="#0099ff" transparent opacity={0.4} side={DoubleSide} />
         </mesh>
       ))}
       

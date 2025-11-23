@@ -10,7 +10,7 @@ import CardPreview from "@/components/CardPreview";
 import TilePreview from "@/components/TilePreview";
 import PlayerEmblem from "@/components/PlayerEmblem";
 import FPSCounter from "@/components/FPSCounter";
-import type { Card, Tile, Player, TilePiece } from "@/types";
+import type { Card, Tile, Player, TilePiece, TurnState, StagingState } from "@/types";
 import { isCard, isPlayer } from "@/types";
 import { useState, useEffect, useRef } from 'react';
 
@@ -24,11 +24,25 @@ function App() {
 
   const [selectedTilePiece, setSelectedTilePiece] = useState<TilePiece | null>(null);
 
+  // Turn system state
+  const [turnState, setTurnState] = useState<TurnState>({
+    currentTurn: 'player',
+    actedPieceIds: []
+  });
+  const [stagingState, setStagingState] = useState<StagingState | null>(null);
+
+  // Helper to create composite key for tracking acted pieces
+  const getPieceKey = (piece: TilePiece): string => {
+    const type = isCard(piece) ? 'card' : 'player';
+    return `${type}-${piece.id}`;
+  };
+
   const controlsRef = useRef<any>(null);
 
   const [hoveredTile, setHoveredTile] = useState<Tile | null>(null);
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
-
+  const [tiles, setTiles] = useState<Tile[]>([]);
+  
   const [cards, setCards] = useState<Card[]>([
     {
       id: 1,
@@ -170,7 +184,7 @@ function App() {
       position: new Vector3(0, -5, 0.2),
       allCards: cards.filter(c => c.id === 1 || c.id === 3 || c.id === 5),
       cardsInPlay: [1, 3],
-      isHuman: true,
+      type: "player",
     },
     {
       id: 2,
@@ -180,7 +194,7 @@ function App() {
       position: new Vector3(0, 5, 0.2),
       allCards: cards.filter(c => c.id === 2 || c.id === 4 || c.id === 6),
       cardsInPlay: [2, 4],
-      isHuman: false,
+      type: "opponent",
     },
   ]);
 
@@ -198,17 +212,192 @@ function App() {
     // Update selectedTilePiece if it's the one being updated
     if (selectedTilePiece && selectedTilePiece.id === updatedTilePiece.id) {
       setSelectedTilePiece(updatedTilePiece);
+      
+      // Update selectedTile to the tile at the piece's new position
+      const tileX = Math.round(updatedTilePiece.position.x);
+      const tileY = Math.round(updatedTilePiece.position.y);
+      const tileAtPosition = tiles.find(tile => 
+        Math.round(tile.position.x) === tileX && 
+        Math.round(tile.position.y) === tileY
+      );      if (tileAtPosition) {
+        setSelectedTile(tileAtPosition);
+      }
+    }
+
+    // Track if piece moved during staging
+    if (stagingState && updatedTilePiece.id === stagingState.pieceId) {
+      const moved = !updatedTilePiece.position.equals(stagingState.originalPosition);
+      if (moved && !stagingState.hasMoved) {
+        setStagingState({ ...stagingState, hasMoved: true });
+      }
     }
   };
 
   const handleFlip = (selectedCard: Card) => {
+    // During staging, allow toggling between face-up and face-down freely
+    // The "can't flip face-down once face-up" rule only applies after committing
+    
+    // Flipping is allowed even after moving - no position check needed
+    
     const updated = { ...selectedCard, isFaceDown: !selectedCard.isFaceDown };
     handleTilePieceUpdate(updated);
+    
+    // Mark as flipped in staging
+    if (stagingState && selectedCard.id === stagingState.pieceId) {
+      setStagingState({ ...stagingState, hasFlipped: true });
+    }
   };
   
   const handlePosition = (selectedCard: Card) => {
+    // Can't change position if actually moved to a different position
+    if (stagingState && !selectedCard.position.equals(stagingState.originalPosition)) return;
+    
     const updated = { ...selectedCard, isDefenseMode: !selectedCard.isDefenseMode };
     handleTilePieceUpdate(updated);
+    
+    // Mark as changed position in staging
+    if (stagingState && selectedCard.id === stagingState.pieceId) {
+      setStagingState({ ...stagingState, hasChangedPosition: true });
+    }
+  };
+
+  const handleCommitAction = () => {
+    if (!selectedTilePiece || !stagingState) return;
+    
+    // Check if any action was taken (moved, flipped, or changed position)
+    const actuallyMoved = !selectedTilePiece.position.equals(stagingState.originalPosition);
+    if (!actuallyMoved && !stagingState.hasFlipped && !stagingState.hasChangedPosition) {
+      // No action taken, just deselect
+      setSelectedTilePiece(null);
+      setStagingState(null);
+      return;
+    }
+    
+    // Mark piece as having acted
+    setTurnState(prev => ({
+      ...prev,
+      actedPieceIds: [...prev.actedPieceIds, getPieceKey(selectedTilePiece)]
+    }));
+    
+    // Clear staging and selection
+    setStagingState(null);
+    setSelectedTilePiece(null);
+  };
+
+  const handleCancelAction = () => {
+    if (!stagingState || !selectedTilePiece) return;
+    
+    // Revert to original state (position, flip, defense mode)
+    let reverted = { ...selectedTilePiece, position: stagingState.originalPosition };
+    
+    // Revert card-specific states if it's a card
+    if (isCard(reverted) && stagingState.originalIsFaceDown !== undefined) {
+      reverted.isFaceDown = stagingState.originalIsFaceDown;
+    }
+    if (isCard(reverted) && stagingState.originalIsDefenseMode !== undefined) {
+      reverted.isDefenseMode = stagingState.originalIsDefenseMode;
+    }
+    
+    handleTilePieceUpdate(reverted);
+    
+    // Clear staging and selection
+    setStagingState(null);
+    setSelectedTilePiece(null);
+  };
+
+
+  const handleTilePieceSelect = (tilePiece: TilePiece | null) => {
+    if (!tilePiece) {
+      // Deselecting - cancel any staging
+      handleCancelAction();
+      return;
+    }
+    
+    // If there's an active staging session for a different piece, cancel it first
+    if (stagingState && selectedTilePiece) {
+      // Check if it's truly a different piece (not just same ID but different type)
+      const isDifferentPiece = 
+        selectedTilePiece.id !== tilePiece.id || 
+        (isCard(selectedTilePiece) !== isCard(tilePiece));
+      
+      if (isDifferentPiece) {
+        // Revert the previous piece to its original position
+        const reverted = { ...selectedTilePiece, position: stagingState.originalPosition };
+        handleTilePieceUpdate(reverted);
+      }
+    }
+    
+    // Check if piece has already acted this turn
+    if (turnState.actedPieceIds.includes(getPieceKey(tilePiece))) {
+      // Allow selection for viewing only, don't enter staging mode
+      setSelectedTilePiece(tilePiece);
+      setStagingState(null);
+      
+      // Update selectedTile to show tile at piece's position
+      const tileX = Math.round(tilePiece.position.x);
+      const tileY = Math.round(tilePiece.position.y);
+      const tileAtPosition = tiles.find(tile => 
+        Math.round(tile.position.x) === tileX && 
+        Math.round(tile.position.y) === tileY
+      );
+      if (tileAtPosition) {
+        setSelectedTile(tileAtPosition);
+      }
+      return;
+    }
+    
+    // Check if it's the correct player's turn
+    const isPlayerPiece = (isCard(tilePiece) && tilePiece.owner === 'player') || 
+                         (isPlayer(tilePiece) && tilePiece.type === 'player');
+    
+    if ((turnState.currentTurn === 'player' && !isPlayerPiece) ||
+        (turnState.currentTurn === 'opponent' && isPlayerPiece)) {
+      // Allow selection for viewing only, don't enter staging mode
+      setSelectedTilePiece(tilePiece);
+      setStagingState(null);
+      
+      // Update selectedTile to show tile at piece's position
+      const tileX = Math.round(tilePiece.position.x);
+      const tileY = Math.round(tilePiece.position.y);
+      const tileAtPosition = tiles.find(tile => 
+        Math.round(tile.position.x) === tileX && 
+        Math.round(tile.position.y) === tileY
+      );
+      if (tileAtPosition) {
+        setSelectedTile(tileAtPosition);
+      }
+      return;
+    }
+    
+    // Initialize staging state for pieces that can act
+    const newStagingState: StagingState = {
+      pieceId: tilePiece.id,
+      originalPosition: tilePiece.position.clone(),
+      hasMoved: false,
+      hasFlipped: false,
+      hasChangedPosition: false
+    };
+    
+    // Save original card states if it's a card
+    if (isCard(tilePiece)) {
+      newStagingState.originalIsFaceDown = tilePiece.isFaceDown;
+      newStagingState.originalIsDefenseMode = tilePiece.isDefenseMode;
+    }
+    
+    setStagingState(newStagingState);
+    
+    setSelectedTilePiece(tilePiece);
+    
+    // Update selectedTile to show tile at piece's position
+    const tileX = Math.round(tilePiece.position.x);
+    const tileY = Math.round(tilePiece.position.y);
+    const tileAtPosition = tiles.find(tile => 
+      Math.round(tile.position.x) === tileX && 
+      Math.round(tile.position.y) === tileY
+    );
+    if (tileAtPosition) {
+      setSelectedTile(tileAtPosition);
+    }
   };
 
   const handleResetCamera = () => {
@@ -220,14 +409,16 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setSelectedTilePiece(null);
+        handleCancelAction();
         setShowDetails(false);
+      } else if (e.key === "Enter") {
+        handleCommitAction();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [handleCancelAction, handleCommitAction]);
 
   return (
     <div className="w-screen h-screen">
@@ -238,11 +429,14 @@ function App() {
           cards={cards}
           players={players}
           selectedTilePiece={selectedTilePiece}
-          onTilePieceSelect={setSelectedTilePiece}
+          onTilePieceSelect={handleTilePieceSelect}
           onTilePieceUpdate={handleTilePieceUpdate}
           onTileHover={setHoveredTile}
           onTileClick={setSelectedTile}
+          onTilesReady={setTiles}
           showTilePositions={showTilePositions}
+          turnState={turnState}
+          stagingState={stagingState}
         />
         <OrbitControls
           ref={controlsRef}
@@ -252,6 +446,8 @@ function App() {
           makeDefault
           minPolarAngle={50 * Math.PI / 180}
           maxPolarAngle={50 * Math.PI / 180}
+          minAzimuthAngle={0}
+          maxAzimuthAngle={0}
           minDistance={14}
           maxDistance={14}
         />
@@ -272,19 +468,28 @@ function App() {
         onResetCamera={handleResetCamera}
         controlsRef={controlsRef}
         showTilePositions={showTilePositions}
-        setShowTilePositions={setShowTilePositions}
+      setShowTilePositions={setShowTilePositions}
         showFPS={showFPS}
         setShowFPS={setShowFPS}
       />
       
-      {selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.owner === 'player' && !showDetails && (
-        <ActionMenu
-          onMove={() => console.log("Move clicked")}
-          onAttack={() => console.log("Attack clicked")}
-          onChangePosition={ () => handlePosition(selectedTilePiece)}
+      {selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.owner === 'player' && !showDetails && !turnState.actedPieceIds.includes(getPieceKey(selectedTilePiece)) && (
+        <ActionMenu 
+          onMove={() => {}} 
+          onAttack={() => {}}
+          onChangePosition={() => handlePosition(selectedTilePiece)}
           onFlip={() => handleFlip(selectedTilePiece)}
           onDetails={() => setShowDetails(true)}
+          onCommit={handleCommitAction}
+          onCancel={handleCancelAction}
           isDefenseMode={selectedTilePiece.isDefenseMode}
+          isFaceDown={selectedTilePiece.isFaceDown}
+          hasMoved={
+            stagingState 
+              ? !selectedTilePiece.position.equals(stagingState.originalPosition)
+              : false
+          }
+          hasChangedMode={stagingState?.hasChangedPosition || false}
         />
       )}
       
@@ -296,7 +501,10 @@ function App() {
       )}
 
       {selectedTilePiece && isCard(selectedTilePiece) && (
-        <CardPreview card={selectedTilePiece} />
+        <CardPreview 
+          card={selectedTilePiece} 
+          onViewDetails={() => setShowDetails(true)}
+        />
       )}
 
       {(hoveredTile || selectedTile) && (

@@ -39,7 +39,7 @@ export interface Player extends TilePiece {
   textureUrl: string; // Red_rose_emblem.png or White_rose_emblem.png
   allCards: Card[]; // All cards the player owns
   cardsInPlay: number[]; // IDs of cards currently in play
-  isHuman: boolean; // true for player, false for opponent
+  type: 'player' | 'opponent';
 }
 
 // Type guards
@@ -49,4 +49,19 @@ export function isCard(tilePiece: TilePiece): tilePiece is Card {
 
 export function isPlayer(tilePiece: TilePiece): tilePiece is Player {
   return 'clan' in tilePiece && 'allCards' in tilePiece;
+}
+
+export interface TurnState {
+  currentTurn: 'player' | 'opponent';
+  actedPieceIds: string[]; // Composite keys like "card-1" or "player-1" to avoid ID collision
+}
+
+export interface StagingState {
+  pieceId: number;
+  originalPosition: Vector3;
+  originalIsFaceDown?: boolean; // for cards
+  originalIsDefenseMode?: boolean; // for cards
+  hasMoved: boolean;
+  hasFlipped: boolean; // flipped face up/down
+  hasChangedPosition: boolean; // changed attack/defense mode
 }
