@@ -65,3 +65,9 @@ export interface StagingState {
   hasFlipped: boolean; // flipped face up/down
   hasChangedPosition: boolean; // changed attack/defense mode
 }
+
+export interface CursorState {
+  x: number;
+  y: number;
+  visible: boolean;
+}

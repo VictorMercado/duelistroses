@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 import { useTexture, Text } from "@react-three/drei";
 import YugiohCard from "./YugiohCard";
 import PlayerEmblem from "./PlayerEmblem";
+import BoardCursor from "./BoardCursor";
 import type { Card, Tile, Player, TilePiece, TurnState, StagingState } from "@/types";
 import { isCard, isPlayer } from "@/types";
 
@@ -18,12 +19,13 @@ interface GameBoardProps {
   onTileHover: (tile: Tile | null) => void;
   onTileClick: (tile: Tile | null) => void;
   onTilesReady: (tiles: Tile[]) => void;
+  cursorPosition: { x: number; y: number };
   showTilePositions: boolean;
   turnState: TurnState;
   stagingState: StagingState | null;
 }
 
-export default function GameBoard({ cards, players, selectedTilePiece, onTilePieceSelect, onTilePieceUpdate, onTileHover, onTileClick, onTilesReady, showTilePositions, turnState, stagingState }: GameBoardProps) {
+export default function GameBoard({ cards, players, selectedTilePiece, onTilePieceSelect, onTilePieceUpdate, onTileHover, onTileClick, onTilesReady, cursorPosition, showTilePositions, turnState, stagingState }: GameBoardProps) {
   // Load grass texture
   const grassTexture = useTexture('/textures/grass.png');
   const darkTexture = useTexture('/textures/dark.png');
@@ -239,6 +241,9 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
 
   return (
     <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Render board cursor */}
+      <BoardCursor position={cursorPosition} visible={true} />
+      
       {tiles.map((square: Tile, index: number) => {
         // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
         return(

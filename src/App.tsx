@@ -8,10 +8,12 @@ import ActionMenu from "@/components/ActionMenu";
 import CardDetailView from "@/components/CardDetailView";
 import CardPreview from "@/components/CardPreview";
 import TilePreview from "@/components/TilePreview";
-import PlayerEmblem from "@/components/PlayerEmblem";
+import SettingsModal from "@/components/SettingsModal";
 import FPSCounter from "@/components/FPSCounter";
 import type { Card, Tile, Player, TilePiece, TurnState, StagingState } from "@/types";
 import { isCard, isPlayer } from "@/types";
+import type { KeyBindings } from "@/types/KeyBindings";
+import { DEFAULT_KEYBINDINGS } from "@/types/KeyBindings";
 import { useState, useEffect, useRef } from 'react';
 
 function App() {
@@ -42,6 +44,19 @@ function App() {
   const [hoveredTile, setHoveredTile] = useState<Tile | null>(null);
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [tiles, setTiles] = useState<Tile[]>([]);
+  
+  // Cursor and keyboard navigation
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: -5 });
+  const [keyBindings, setKeyBindings] = useState<KeyBindings>(() => {
+    const saved = localStorage.getItem('keyBindings');
+    return saved ? JSON.parse(saved) : DEFAULT_KEYBINDINGS;
+  });
+  const [showSettings, setShowSettings] = useState(false);
+  
+  const handleUpdateKeyBindings = (bindings: KeyBindings) => {
+    setKeyBindings(bindings);
+    localStorage.setItem('keyBindings', JSON.stringify(bindings));
+  };
   
   const [cards, setCards] = useState<Card[]>([
     {
@@ -406,19 +421,138 @@ function App() {
     }
   };
 
+  // Calculate valid move positions for cursor constraint
+  const getValidMovePositions = (): Set<string> => {
+    if (!selectedTilePiece || !stagingState) return new Set();
+    
+    const validPositions = new Set<string>();
+    const originalPos = stagingState.originalPosition;
+    
+    // Add the 8 surrounding squares
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue; // Skip center
+        const x = Math.round(originalPos.x) + dx;
+        const y = Math.round(originalPos.y) + dy;
+        if (x >= -5 && x <= 5 && y >= -5 && y <= 5) {
+          validPositions.add(`${x},${y}`);
+        }
+      }
+    }
+    
+    // Also add the original position
+    validPositions.add(`${Math.round(originalPos.x)},${Math.round(originalPos.y)}`);
+    
+    return validPositions;
+  };
+
+  // Keyboard handler for cursor movement and actions
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      const validPositions = getValidMovePositions();
+      const isInStagingMode = selectedTilePiece && stagingState;
+      
+      // Cursor movement
+      if (e.key.toLowerCase() === keyBindings.cursorUp.toLowerCase()) {
+        const newY = Math.min(5, cursorPosition.y + 1);
+        const newPosKey = `${cursorPosition.x},${newY}`;
+        if (!isInStagingMode || validPositions.has(newPosKey)) {
+          setCursorPosition(prev => ({ ...prev, y: newY }));
+        }
+        return;
+      }
+      if (e.key.toLowerCase() === keyBindings.cursorDown.toLowerCase()) {
+        const newY = Math.max(-5, cursorPosition.y - 1);
+        const newPosKey = `${cursorPosition.x},${newY}`;
+        if (!isInStagingMode || validPositions.has(newPosKey)) {
+          setCursorPosition(prev => ({ ...prev, y: newY }));
+        }
+        return;
+      }
+      if (e.key.toLowerCase() === keyBindings.cursorLeft.toLowerCase()) {
+        const newX = Math.max(-5, cursorPosition.x - 1);
+        const newPosKey = `${newX},${cursorPosition.y}`;
+        if (!isInStagingMode || validPositions.has(newPosKey)) {
+          setCursorPosition(prev => ({ ...prev, x: newX }));
+        }
+        return;
+      }
+      if (e.key.toLowerCase() === keyBindings.cursorRight.toLowerCase()) {
+        const newX = Math.min(5, cursorPosition.x + 1);
+        const newPosKey = `${newX},${cursorPosition.y}`;
+        if (!isInStagingMode || validPositions.has(newPosKey)) {
+          setCursorPosition(prev => ({ ...prev, x: newX }));
+        }
+        return;
+      }
+      
+      // Action keys
+      if (e.key === "Enter") {
+        handleCommitAction();
+        return;
+      }
+      
+      // Cancel keys
+      if (keyBindings.cancel.includes(e.key)) {
         handleCancelAction();
         setShowDetails(false);
-      } else if (e.key === "Enter") {
-        handleCommitAction();
+        return;
+      }
+      
+      // Select key
+      if (e.key.toLowerCase() === keyBindings.select.toLowerCase()) {
+        // If already in staging mode, commit the action
+        if (selectedTilePiece && stagingState) {
+          handleCommitAction();
+          return;
+        }
+        
+        // Otherwise, find and select piece at cursor position
+        const pieceAtCursor = [...cards, ...players].find(piece => 
+          Math.round(piece.position.x) === cursorPosition.x &&
+          Math.round(piece.position.y) === cursorPosition.y
+        );
+        
+        if (pieceAtCursor) {
+          handleTilePieceSelect(pieceAtCursor);
+        }
+        return;
+      }
+      
+      // View details key
+      if (e.key.toLowerCase() === keyBindings.viewDetails.toLowerCase()) {
+        if (selectedTilePiece && isCard(selectedTilePiece)) {
+          setShowDetails(true);
+        }
+        return;
+      }
+      
+      // Flip card key
+      if (e.key.toLowerCase() === keyBindings.flipCard.toLowerCase()) {
+        if (selectedTilePiece && isCard(selectedTilePiece)) {
+          handleFlip(selectedTilePiece);
+        }
+        return;
+      }
+      
+      // Change position key
+      if (e.key.toLowerCase() === keyBindings.changePosition.toLowerCase()) {
+        if (selectedTilePiece && isCard(selectedTilePiece)) {
+          handlePosition(selectedTilePiece);
+        }
+        return;
+      }
+      
+      // Play card key (placeholder)
+      if (e.key.toLowerCase() === keyBindings.playCard.toLowerCase()) {
+        console.log('Play card action - not yet implemented');
+        return;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleCancelAction, handleCommitAction]);
+  }, [keyBindings, cursorPosition, cards, players, selectedTilePiece, stagingState, handleCancelAction, handleCommitAction]);
 
   return (
     <div className="w-screen h-screen">
@@ -434,6 +568,7 @@ function App() {
           onTileHover={setHoveredTile}
           onTileClick={setSelectedTile}
           onTilesReady={setTiles}
+          cursorPosition={cursorPosition}
           showTilePositions={showTilePositions}
           turnState={turnState}
           stagingState={stagingState}
@@ -458,6 +593,16 @@ function App() {
         <p>Use W, A, S, D keys to move the card</p>
         <p>Red: X-axis, Green: Y-axis, Blue: Z-axis</p>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        keyBindings={keyBindings}
+        onUpdateKeyBindings={handleUpdateKeyBindings}
+      />
+
+      {/* Control Panel */}
       <ControlPanel
         enableZoom={enableZoom}
         setEnableZoom={setEnableZoom}
@@ -466,6 +611,7 @@ function App() {
         enablePan={enablePan}
         setEnablePan={setEnablePan}
         onResetCamera={handleResetCamera}
+        onOpenSettings={() => setShowSettings(true)}
         controlsRef={controlsRef}
         showTilePositions={showTilePositions}
       setShowTilePositions={setShowTilePositions}
