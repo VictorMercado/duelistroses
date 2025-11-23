@@ -4,27 +4,23 @@ import { useTexture, Text } from "@react-three/drei";
 import YugiohCard from "./YugiohCard";
 import PlayerEmblem from "./PlayerEmblem";
 import type { Card, Tile, Player, TilePiece } from "@/types";
+import { isCard, isPlayer } from "@/types";
 
 const BOARD_SIZE = 11;
 const SQUARE_SIZE = 1;
 
 interface GameBoardProps {
   cards: Card[];
-  onCardUpdate: (card: Card) => void;
-  selectedCardId: number | null;
-  onCardSelect: (card: Card | null) => void;
-  onTileHover: (tile: Tile | null) => void;
-  onTileClick: (tile: Tile | null) => void;
   players: Player[];
-  showTilePositions: boolean;
-  selectedPlayer: Player | null;
-  onPlayerSelect: (player: Player | null) => void;
-  onPlayerUpdate: (player: Player) => void;
   selectedTilePiece: TilePiece | null;
   onTilePieceSelect: (tilePiece: TilePiece | null) => void;
+  onTilePieceUpdate: (tilePiece: TilePiece) => void;
+  onTileHover: (tile: Tile | null) => void;
+  onTileClick: (tile: Tile | null) => void;
+  showTilePositions: boolean;
 }
 
-export default function GameBoard({ cards, onCardUpdate, selectedCardId, onCardSelect, onTileHover, onTileClick, players, showTilePositions, selectedPlayer, onPlayerSelect, onPlayerUpdate, selectedTilePiece, onTilePieceSelect }: GameBoardProps) {
+export default function GameBoard({ cards, players, selectedTilePiece, onTilePieceSelect, onTilePieceUpdate, onTileHover, onTileClick, showTilePositions }: GameBoardProps) {
   // Load grass texture
   const grassTexture = useTexture('/textures/grass.png');
   const darkTexture = useTexture('/textures/dark.png');
@@ -86,123 +82,70 @@ export default function GameBoard({ cards, onCardUpdate, selectedCardId, onCardS
     return squares;
   }, []);
 
-  const handleCardSelect = (card: Card) => {
-    onCardSelect(card.id === selectedCardId ? null : card);
-  };
-
+  // Handle WASD movement for any selected TilePiece
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Handle card movement
-      if (selectedCardId !== null) {
-        const card = cards.find((c) => c.id === selectedCardId);
-        if (card && card.owner === 'player') {
-            const newPosition = card.position.clone();
-            let moved = false;
-            switch (event.key) {
-              case "w":
-                newPosition.y = Math.min(newPosition.y + 1, 5);
-                moved = true;
-                break;
-              case "s":
-                newPosition.y = Math.max(newPosition.y - 1, -5);
-                moved = true;
-                break;
-              case "a":
-                newPosition.x = Math.max(newPosition.x - 1, -5);
-                moved = true;
-                break;
-              case "d":
-                newPosition.x = Math.min(newPosition.x + 1, 5);
-                moved = true;
-                break;
-            }
-            if (moved) {
-              onCardUpdate({ ...card, position: newPosition, isDefenseMode: false });
-            }
-        }
+      if (!selectedTilePiece) return;
+
+      const newPosition = selectedTilePiece.position.clone();
+      let moved = false;
+
+      switch (event.key) {
+        case "w":
+          newPosition.y = Math.min(newPosition.y + 1, 5);
+          moved = true;
+          break;
+        case "s":
+          newPosition.y = Math.max(newPosition.y - 1, -5);
+          moved = true;
+          break;
+        case "a":
+          newPosition.x = Math.max(newPosition.x - 1, -5);
+          moved = true;
+          break;
+        case "d":
+          newPosition.x = Math.min(newPosition.x + 1, 5);
+          moved = true;
+          break;
       }
-      
-      // Handle player movement
-      if (selectedPlayer !== null) {
-        const newPosition = selectedPlayer.position.clone();
-        let moved = false;
-        switch (event.key) {
-          case "w":
-            newPosition.y = Math.min(newPosition.y + 1, 5);
-            moved = true;
-            break;
-          case "s":
-            newPosition.y = Math.max(newPosition.y - 1, -5);
-            moved = true;
-            break;
-          case "a":
-            newPosition.x = Math.max(newPosition.x - 1, -5);
-            moved = true;
-            break;
-          case "d":
-            newPosition.x = Math.min(newPosition.x + 1, 5);
-            moved = true;
-            break;
-        }
-        if (moved) {
-          onPlayerUpdate({ ...selectedPlayer, position: newPosition });
+
+      if (moved) {
+        if (isCard(selectedTilePiece)) {
+          onTilePieceUpdate({ ...selectedTilePiece, position: newPosition, isDefenseMode: false } as Card);
+        } else {
+          onTilePieceUpdate({ ...selectedTilePiece, position: newPosition });
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cards, selectedCardId, onCardUpdate, selectedPlayer, onPlayerUpdate]);
+  }, [selectedTilePiece, onTilePieceUpdate]);
 
-
-  // Calculate valid move positions for the selected card
+  // Calculate valid move positions for the selected TilePiece
   const validMovePositions = useMemo(() => {
-    if (!selectedCardId && !selectedPlayer) return [];
-    
-    if (selectedPlayer) {
-      const positions: [number, number, number][] = [];
-      const playerX = selectedPlayer.position.x;
-      const playerY = selectedPlayer.position.y;
-      
-      // Horizontal positions (same Y, different X)
-      for (let x = -5; x <= 5; x++) {
-        if (x !== playerX) {
-          positions.push([x, playerY, 0.05]);
-        }
-      }
-      
-      // Vertical positions (same X, different Y)
-      for (let y = -5; y <= 5; y++) {
-        if (y !== playerY) {
-          positions.push([playerX, y, 0.05]);
-        }
-      }
-      return positions;
-    }
+    if (!selectedTilePiece) return [];
 
-    const selectedCard = cards.find(c => c.id === selectedCardId);
-    if (!selectedCard || selectedCard.owner !== 'player') return [];
-    
     const positions: [number, number, number][] = [];
-    const cardX = selectedCard.position.x;
-    const cardY = selectedCard.position.y;
-    
+    const pieceX = selectedTilePiece.position.x;
+    const pieceY = selectedTilePiece.position.y;
+
     // Horizontal positions (same Y, different X)
     for (let x = -5; x <= 5; x++) {
-      if (x !== cardX) {
-        positions.push([x, cardY, 0.05]);
+      if (x !== pieceX) {
+        positions.push([x, pieceY, 0.05]);
       }
     }
-    
+
     // Vertical positions (same X, different Y)
     for (let y = -5; y <= 5; y++) {
-      if (y !== cardY) {
-        positions.push([cardX, y, 0.05]);
+      if (y !== pieceY) {
+        positions.push([pieceX, y, 0.05]);
       }
     }
-    
+
     return positions;
-  }, [selectedCardId, cards, selectedPlayer]);
+  }, [selectedTilePiece]);
 
   return (
     <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -230,8 +173,7 @@ export default function GameBoard({ cards, onCardUpdate, selectedCardId, onCardS
             <mesh
               position={square.position}
               onClick={() => {
-                onCardSelect(null); // Deselect card when clicking a tile
-                onPlayerSelect(null);
+                onTilePieceSelect(null); // Deselect when clicking empty tile
                 onTileClick({
                   type: square.type,
                   name: square.name,
@@ -239,17 +181,6 @@ export default function GameBoard({ cards, onCardUpdate, selectedCardId, onCardS
                   texture: square.texture,
                 });
               }}
-              // onPointerOver={() => {
-              //   onTileHover({
-              //     type: square.type,
-              //     name: square.name,
-              //     position: square.position,
-              //     texture: square.texture,
-              //   });
-              // }}
-              // onPointerOut={() => {
-              //   onTileHover(null);
-              // }}
             >
               <planeGeometry args={[SQUARE_SIZE, SQUARE_SIZE]} />
               <meshStandardMaterial
@@ -275,29 +206,31 @@ export default function GameBoard({ cards, onCardUpdate, selectedCardId, onCardS
         </mesh>
       ))}
       
+      {/* Render cards */}
       {cards.map((card) => {
+        const isSelected = selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.id === card.id;
         return (
           <YugiohCard
             key={card.id}
             card={card}
-            isSelected={card.id === selectedCardId}
-            onSelect={() => handleCardSelect(card)}
+            isSelected={!!isSelected}
+            onSelect={() => onTilePieceSelect(card)}
           />
         );
       })}
       
       {/* Render player emblems */}
-      {players.map((player) => (
-        <PlayerEmblem 
-          key={player.id} 
-          player={player}
-          isSelected={player.id === selectedPlayer?.id}
-          onSelect={() => {
-            onCardSelect(null); // Deselect any card when selecting player
-            onPlayerSelect(player);
-          }}
-        />
-      ))}
+      {players.map((player) => {
+        const isSelected = selectedTilePiece && isPlayer(selectedTilePiece) && selectedTilePiece.id === player.id;
+        return (
+          <PlayerEmblem 
+            key={player.id} 
+            player={player}
+            isSelected={!!isSelected}
+            onSelect={() => onTilePieceSelect(player)}
+          />
+        );
+      })}
     </group>
   );
 }

@@ -11,6 +11,7 @@ import TilePreview from "@/components/TilePreview";
 import PlayerEmblem from "@/components/PlayerEmblem";
 import FPSCounter from "@/components/FPSCounter";
 import type { Card, Tile, Player, TilePiece } from "@/types";
+import { isCard, isPlayer } from "@/types";
 import { useState, useEffect, useRef } from 'react';
 
 function App() {
@@ -21,8 +22,6 @@ function App() {
   const [showFPS, setShowFPS] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
 
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedTilePiece, setSelectedTilePiece] = useState<TilePiece | null>(null);
 
   const controlsRef = useRef<any>(null);
@@ -185,30 +184,31 @@ function App() {
     },
   ]);
 
-  const handleCardUpdate = (updatedCard: Card) => {
-    setCards((prevCards) =>
-      prevCards.map((card) => (card.id === updatedCard.id ? updatedCard : card))
-    );
-    if (selectedCard?.id === updatedCard.id) {
-      setSelectedCard(updatedCard);
+  const handleTilePieceUpdate = (updatedTilePiece: TilePiece) => {
+    if (isCard(updatedTilePiece)) {
+      setCards((prevCards) =>
+        prevCards.map((card) => (card.id === updatedTilePiece.id ? updatedTilePiece : card))
+      );
+    } else if (isPlayer(updatedTilePiece)) {
+      setPlayers((prevPlayers) =>
+        prevPlayers.map((player) => (player.id === updatedTilePiece.id ? updatedTilePiece : player))
+      );
+    }
+    
+    // Update selectedTilePiece if it's the one being updated
+    if (selectedTilePiece && selectedTilePiece.id === updatedTilePiece.id) {
+      setSelectedTilePiece(updatedTilePiece);
     }
   };
 
-  const handlePlayerUpdate = (updatedPlayer: Player) => {
-    setPlayers((prevPlayers) =>
-      prevPlayers.map((player) => (player.id === updatedPlayer.id ? updatedPlayer : player))
-    );
-  };
-
   const handleFlip = (selectedCard: Card) => {
-    // if (selectedCard.isFaceDown) {
-      const updated = { ...selectedCard, isFaceDown: !selectedCard.isFaceDown };
-      handleCardUpdate(updated);
-    // }
+    const updated = { ...selectedCard, isFaceDown: !selectedCard.isFaceDown };
+    handleTilePieceUpdate(updated);
   };
+  
   const handlePosition = (selectedCard: Card) => {
     const updated = { ...selectedCard, isDefenseMode: !selectedCard.isDefenseMode };
-    handleCardUpdate(updated);
+    handleTilePieceUpdate(updated);
   };
 
   const handleResetCamera = () => {
@@ -220,8 +220,7 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setSelectedCard(null);
-        setSelectedPlayer(null);
+        setSelectedTilePiece(null);
         setShowDetails(false);
       }
     };
@@ -237,18 +236,13 @@ function App() {
         {/* <pointLight position={[10, 10, 10]} /> */}
         <GameBoard 
           cards={cards}
-          onCardUpdate={handleCardUpdate}
-          selectedCardId={selectedCard?.id ?? null} 
-          onCardSelect={setSelectedCard}
-          onTileHover={setHoveredTile}
-          onTileClick={setSelectedTile}
           players={players}
-          showTilePositions={showTilePositions}
-          selectedPlayer={selectedPlayer}
-          onPlayerSelect={setSelectedPlayer}
-          onPlayerUpdate={handlePlayerUpdate}
           selectedTilePiece={selectedTilePiece}
           onTilePieceSelect={setSelectedTilePiece}
+          onTilePieceUpdate={handleTilePieceUpdate}
+          onTileHover={setHoveredTile}
+          onTileClick={setSelectedTile}
+          showTilePositions={showTilePositions}
         />
         <OrbitControls
           ref={controlsRef}
@@ -283,26 +277,26 @@ function App() {
         setShowFPS={setShowFPS}
       />
       
-      {selectedCard && selectedCard.owner === 'player' && !showDetails && (
+      {selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.owner === 'player' && !showDetails && (
         <ActionMenu
           onMove={() => console.log("Move clicked")}
           onAttack={() => console.log("Attack clicked")}
-          onChangePosition={ () => handlePosition(selectedCard)}
-          onFlip={() => handleFlip(selectedCard)}
+          onChangePosition={ () => handlePosition(selectedTilePiece)}
+          onFlip={() => handleFlip(selectedTilePiece)}
           onDetails={() => setShowDetails(true)}
-          isDefenseMode={selectedCard.isDefenseMode}
+          isDefenseMode={selectedTilePiece.isDefenseMode}
+        />
+      )}
+      
+      {selectedTilePiece && isCard(selectedTilePiece) && showDetails && (
+        <CardDetailView 
+          card={selectedTilePiece} 
+          onClose={() => setShowDetails(false)} 
         />
       )}
 
-      {showDetails && selectedCard && (
-        <CardDetailView
-          card={selectedCard}
-          onClose={() => setShowDetails(false)}
-        />
-      )}
-
-      {selectedCard && !showDetails && selectedCard.owner === 'player' && (
-        <CardPreview card={selectedCard} />
+      {selectedTilePiece && isCard(selectedTilePiece) && (
+        <CardPreview card={selectedTilePiece} />
       )}
 
       {(hoveredTile || selectedTile) && (

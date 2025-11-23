@@ -10,6 +10,7 @@ export interface Tile {
 }
 
 export type TilePiece = {
+  id: number;
   position: Vector3;
 };
 
@@ -39,4 +40,13 @@ export interface Player extends TilePiece {
   allCards: Card[]; // All cards the player owns
   cardsInPlay: number[]; // IDs of cards currently in play
   isHuman: boolean; // true for player, false for opponent
+}
+
+// Type guards
+export function isCard(tilePiece: TilePiece): tilePiece is Card {
+  return 'attack' in tilePiece && 'defense' in tilePiece;
+}
+
+export function isPlayer(tilePiece: TilePiece): tilePiece is Player {
+  return 'clan' in tilePiece && 'allCards' in tilePiece;
 }
