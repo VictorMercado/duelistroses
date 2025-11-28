@@ -26,6 +26,7 @@ export default function CardPreview({ card, onViewDetails }: CardPreviewProps) {
             card={previewCard} 
             isSelected={false} 
             onSelect={() => {}} 
+            isPreview={true}
         />
       </Canvas>
       

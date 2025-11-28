@@ -115,7 +115,7 @@ function App() {
       description: "A ferocious dragon with a deadly attack.",
       owner: "opponent",
       position: new Vector3(2, 5, 0.14),
-      isFaceDown: true,
+      isFaceDown: false,
       isDefenseMode: false,
       level: 7,
       attribute: "Dark",
@@ -249,6 +249,13 @@ function App() {
   };
 
   const handleFlip = (selectedCard: Card) => {
+    // If the card is not face-down, do nothing
+    if (turnState.actedPieceIds.includes(selectedCard.id.toString())) {
+      return;
+    }
+    // if (!selectedCard.isFaceDown) {
+    //   return;
+    // }
     // During staging, allow toggling between face-up and face-down freely
     // The "can't flip face-down once face-up" rule only applies after committing
     
@@ -322,6 +329,10 @@ function App() {
 
 
   const handleTilePieceSelect = (tilePiece: TilePiece | null) => {
+    if (tilePiece === selectedTilePiece) {
+      // setSelectedTilePiece(null);
+      return;
+    }
     if (!tilePiece) {
       // Deselecting - cancel any staging
       handleCancelAction();
@@ -358,6 +369,9 @@ function App() {
       if (tileAtPosition) {
         setSelectedTile(tileAtPosition);
       }
+      
+      // Move cursor to piece position
+      setCursorPosition({ x: tileX, y: tileY });
       return;
     }
     
@@ -381,6 +395,9 @@ function App() {
       if (tileAtPosition) {
         setSelectedTile(tileAtPosition);
       }
+      
+      // Move cursor to piece position
+      setCursorPosition({ x: tileX, y: tileY });
       return;
     }
     
@@ -413,6 +430,9 @@ function App() {
     if (tileAtPosition) {
       setSelectedTile(tileAtPosition);
     }
+    
+    // Move cursor to piece position
+    setCursorPosition({ x: tileX, y: tileY });
   };
 
   const handleResetCamera = () => {

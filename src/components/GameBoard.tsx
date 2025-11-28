@@ -312,6 +312,7 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
             key={card.id}
             card={card}
             isSelected={!!isSelected}
+            isPreview={false}
             onSelect={() => onTilePieceSelect(card)}
           />
         );

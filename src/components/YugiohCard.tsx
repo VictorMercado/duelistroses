@@ -7,10 +7,11 @@ import type { Card } from "@/types";
 type CardPropType = {
   card: Card;
   isSelected: boolean;
+  isPreview: boolean;
   onSelect: () => void;
 };
 
-export default function YugiohCard({ card, isSelected, onSelect }: CardPropType) {
+export default function YugiohCard({ card, isSelected, isPreview, onSelect }: CardPropType) {
   const outerGroup = useRef<Group>(null);
   const innerGroup = useRef<Group>(null);
   
@@ -19,22 +20,28 @@ export default function YugiohCard({ card, isSelected, onSelect }: CardPropType)
   const yugiohCardTexture = useTexture(card.textureTemplateUrl);
   const levelStarTexture = useTexture("/textures/levelStar.png");
   const opponentCardTexture = useTexture("/cards/opponentCard.png");
-
+  const defaultCardRotation = card.owner === 'opponent' 
+  ? (isPreview ? 0 : Math.PI) : 0; 
   // Initialize rotation to match card state (prevents flash on load)
   useEffect(() => {
     if (innerGroup.current) {
       innerGroup.current.rotation.y = card.isFaceDown ? Math.PI : 0;
     }
     if (outerGroup.current) {
-      outerGroup.current.rotation.z = card.isDefenseMode ? Math.PI / 2 : 0;
+      if (card.owner === 'opponent') {
+        outerGroup.current.rotation.z = card.isDefenseMode ? Math.PI / 2 : defaultCardRotation;
+      } else {
+        outerGroup.current.rotation.z = card.isDefenseMode ? Math.PI / 2 : defaultCardRotation;
+      }
     }
   }, []); // Empty deps - only run once on mount
 
   useFrame(() => {
+    if (isPreview) return;
     if (outerGroup.current && innerGroup.current) {
       // Position Interpolation (Outer Group)
       // If selected, raise Z to 0.3 to ensure it's on top of other cards
-      const targetZ = isSelected ? 0.3 : card.position.z;
+      const targetZ = isSelected ? 0.25 : card.position.z;
       
       outerGroup.current.position.lerp(
         new Vector3(card.position.x, card.position.y, targetZ),
@@ -45,8 +52,9 @@ export default function YugiohCard({ card, isSelected, onSelect }: CardPropType)
       // Outer Group: Handles "Spin" (Attack/Defense) - Rotation around Z axis
       // Inner Group: Handles "Flip" (Face Up/Down) - Rotation around Y axis
       
-      const targetRotationZ = card.isDefenseMode ? Math.PI / 2 : 0;
+      const targetRotationZ = card.isDefenseMode ? Math.PI / 2 : defaultCardRotation;
       const targetRotationY = card.isFaceDown ? Math.PI : 0; // Flip animation
+      // const targetRotationOpponentZ = card.owner === 'opponent' ? Math.PI / 2 : 0;
 
       // Smoothly interpolate rotations
       outerGroup.current.rotation.z += (targetRotationZ - outerGroup.current.rotation.z) * 0.1;
@@ -82,7 +90,7 @@ export default function YugiohCard({ card, isSelected, onSelect }: CardPropType)
         </group>
         
         {/* Front Face - Simple for opponent, detailed for player */}
-        {card.owner === 'opponent' ? (
+        {card.owner === 'opponent' && card.isFaceDown ? (
           // Simple opponent card - just the image
           <group rotation={[0, 0, 0]}>
             <mesh position={[0, 0, 0.001]}>
@@ -158,13 +166,6 @@ export default function YugiohCard({ card, isSelected, onSelect }: CardPropType)
           </group>
         )}
       </group>
-      {/* Selection Highlight Overlay */}
-      {isSelected && (
-        <mesh position={[0, 0.003, 0.0001]}>
-          <planeGeometry args={[0.8, 1.05]} />
-          <meshBasicMaterial color="#00caff" transparent opacity={0.3} side={2} />
-        </mesh>
-      )}
     </group>
   );
 }

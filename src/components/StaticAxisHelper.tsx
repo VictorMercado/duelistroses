@@ -17,7 +17,7 @@ export default function StaticAxisHelper() {
 
         {/* Z-axis (blue) */}
         <line x1="10" y1="90" x2="50" y2="50" stroke="blue" strokeWidth="2" />
-        <text x="55" y="45" fill="blue" fontSize="15">
+        <text x="55" y="45" fill="#5a5affff" fontSize="15">
           Z
         </text>
       </svg>

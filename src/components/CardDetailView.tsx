@@ -37,6 +37,7 @@ export default function CardDetailView({ card, onClose }: CardDetailViewProps) {
                     card={previewCard} 
                     isSelected={false} 
                     onSelect={() => {}} 
+                    isPreview={true}
                 />
             </Canvas>
         </div>
