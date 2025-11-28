@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { resolve } from "path";
 
@@ -14,8 +14,9 @@ export default defineConfig({
       "@/hooks": resolve(__dirname, "src", "hooks"),
       "@/lib": resolve(__dirname, "src", "lib"),
       "@/routes": resolve(__dirname, "src", "routes"),
+      "@/stores": resolve(__dirname, "src", "stores"),
       "@/types": resolve(__dirname, "src", "types"),
       "@lib/utils": resolve(__dirname, "src", "lib", "utils"),
     },
   },
-})
+});

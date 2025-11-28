@@ -4,29 +4,30 @@ import { useTexture, Text } from "@react-three/drei";
 import YugiohCard from "./YugiohCard";
 import PlayerEmblem from "./PlayerEmblem";
 import BoardCursor from "./BoardCursor";
-import type { Card, Tile, Player, TilePiece, TurnState, StagingState } from "@/types";
+import { useGameStore } from "@/stores/gameStore";
+import { useUIStore } from "@/stores/uiStore";
+import { useInputStore } from "@/stores/inputStore";
 import { isCard, isPlayer } from "@/types";
+import type { Tile } from "@/types";
 
 const BOARD_SIZE = 11;
 const SQUARE_SIZE = 1;
 
-interface GameBoardProps {
-  cards: Card[];
-  players: Player[];
-  selectedTilePiece: TilePiece | null;
-  onTilePieceSelect: (tilePiece: TilePiece | null) => void;
-  onTilePieceUpdate: (tilePiece: TilePiece) => void;
-  onTileHover: (tile: Tile | null) => void;
-  onTileClick: (tile: Tile | null) => void;
-  onTilesReady: (tiles: Tile[]) => void;
-  cursorPosition: { x: number; y: number };
-  showTilePositions: boolean;
-  turnState: TurnState;
-  stagingState: StagingState | null;
-}
-
-export default function GameBoard({ cards, players, selectedTilePiece, onTilePieceSelect, onTilePieceUpdate, onTileHover, onTileClick, onTilesReady, cursorPosition, showTilePositions, turnState, stagingState }: GameBoardProps) {
-  // Load grass texture
+export default function GameBoard() {
+  // Use stores instead of props
+  const cards = useGameStore((state) => state.cards);
+  const players = useGameStore((state) => state.players);
+  const setTiles = useGameStore((state) => state.setTiles);
+  const stagingState = useGameStore((state) => state.stagingState);
+  
+  const showTilePositions = useUIStore((state) => state.showTilePositions);
+  const setSelectedTile = useUIStore((state) => state.setSelectedTile);
+  
+  const cursorPosition = useInputStore((state) => state.cursorPosition);
+  const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
+  const selectTilePiece = useInputStore((state) => state.selectTilePiece);
+  
+  // Load textures
   const grassTexture = useTexture('/textures/grass.png');
   const darkTexture = useTexture('/textures/dark.png');
   const labyrinthTexture = useTexture('/textures/labyrinth.png');
@@ -87,79 +88,10 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
     return squares;
   }, [grassTexture, darkTexture, labyrinthTexture, normalTexture, waterTexture]);
 
-  // Notify parent when tiles are ready
+  // Notify store when tiles are ready
   useEffect(() => {
-    onTilesReady(tiles);
-  }, [tiles, onTilesReady]);
-
-
-
-  // Handle WASD movement for any selected TilePiece
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!selectedTilePiece || !stagingState) return;
-
-      // Check if it's an opponent piece
-      if (isPlayer(selectedTilePiece)) {
-        if (selectedTilePiece.type === 'opponent') {
-          return;
-        }
-      }
-      if (isCard(selectedTilePiece)) {
-        if (selectedTilePiece.owner === 'opponent') {
-          return;
-        }
-      }
-
-      // Prevent movement if actually changed to a different defense mode
-      if (isCard(selectedTilePiece) && 
-          stagingState.originalIsDefenseMode !== undefined &&
-          selectedTilePiece.isDefenseMode !== stagingState.originalIsDefenseMode) {
-        return;
-      }
-
-      const newPosition = selectedTilePiece.position.clone();
-      let moved = false;
-
-      switch (event.key) {
-        case "w":
-          newPosition.y = Math.min(newPosition.y + 1, 5);
-          moved = true;
-          break;
-        case "s":
-          newPosition.y = Math.max(newPosition.y - 1, -5);
-          moved = true;
-          break;
-        case "a":
-          newPosition.x = Math.max(newPosition.x - 1, -5);
-          moved = true;
-          break;
-        case "d":
-          newPosition.x = Math.min(newPosition.x + 1, 5);
-          moved = true;
-          break;
-      }
-
-      if (moved) {
-        // Check if new position is within 1 square of ORIGINAL position
-        const originalPos = stagingState.originalPosition;
-        const deltaX = Math.abs(newPosition.x - originalPos.x);
-        const deltaY = Math.abs(newPosition.y - originalPos.y);
-        
-        // Only allow if within 1 square in both directions (8 surrounding squares)
-        if (deltaX <= 1 && deltaY <= 1) {
-          if (isCard(selectedTilePiece)) {
-            onTilePieceUpdate({ ...selectedTilePiece, position: newPosition, isDefenseMode: false } as Card);
-          } else {
-            onTilePieceUpdate({ ...selectedTilePiece, position: newPosition });
-          }
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedTilePiece, onTilePieceUpdate, stagingState]);
+    setTiles(tiles);
+  }, [tiles, setTiles]);
 
   // Calculate guide line positions (horizontal and vertical lines)
   const guideLinePositions = useMemo(() => {
@@ -268,8 +200,8 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
             <mesh
               position={square.position}
               onClick={() => {
-                onTilePieceSelect(null); // Deselect when clicking empty tile
-                onTileClick({
+                selectTilePiece(null); // Deselect when clicking empty tile
+                setSelectedTile({
                   type: square.type,
                   name: square.name,
                   position: square.position,
@@ -313,7 +245,7 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
             card={card}
             isSelected={!!isSelected}
             isPreview={false}
-            onSelect={() => onTilePieceSelect(card)}
+            onSelect={() => selectTilePiece(card)}
           />
         );
       })}
@@ -326,7 +258,7 @@ export default function GameBoard({ cards, players, selectedTilePiece, onTilePie
             key={player.id} 
             player={player}
             isSelected={!!isSelected}
-            onSelect={() => onTilePieceSelect(player)}
+            onSelect={() => selectTilePiece(player)}
           />
         );
       })}
