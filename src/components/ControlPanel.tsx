@@ -1,35 +1,14 @@
+import { useUIStore } from '@/stores/uiStore';
 import { useEffect, useState } from 'react';
 
 interface ControlPanelProps {
-  enableZoom: boolean;
-  setEnableZoom: (value: boolean) => void;
-  enableRotate: boolean;
-  setEnableRotate: (value: boolean) => void;
-  enablePan: boolean;
-  setEnablePan: (value: boolean) => void;
   onResetCamera: () => void;
-  onOpenSettings: () => void;
   controlsRef: React.RefObject<any>;
-  showTilePositions: boolean;
-  setShowTilePositions: (value: boolean) => void;
-  showFPS: boolean;
-  setShowFPS: (value: boolean) => void;
 }
 
 export default function ControlPanel({
-  enableZoom,
-  setEnableZoom,
-  enableRotate,
-  setEnableRotate,
-  enablePan,
-  setEnablePan,
   onResetCamera,
-  onOpenSettings,
   controlsRef,
-  showTilePositions,
-  setShowTilePositions,
-  showFPS,
-  setShowFPS,
 }: ControlPanelProps) {
   const [cameraStats, setCameraStats] = useState({
     distance: 0,
@@ -37,6 +16,7 @@ export default function ControlPanel({
     azimuthAngle: 0,
     panOffset: { x: 0, y: 0, z: 0 },
   });
+  const uiStore = useUIStore((state) => state);
 
   useEffect(() => {
     const updateStats = () => {
@@ -68,6 +48,7 @@ export default function ControlPanel({
 
   return (
     <div className="absolute top-20 right-4 bg-black/80 text-white p-4 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 w-64">
+      {/* Settings Modal */}
       <h3 className="text-lg font-bold mb-4 border-b border-white/20 pb-2">
         Camera Controls
       </h3>
@@ -91,8 +72,8 @@ export default function ControlPanel({
           <input
             id="zoom-toggle"
             type="checkbox"
-            checked={enableZoom}
-            onChange={(e) => setEnableZoom(e.target.checked)}
+            checked={uiStore.enableZoom}
+            onChange={(e) => uiStore.setEnableZoom(e.target.checked)}
             className="w-4 h-4 accent-blue-500 cursor-pointer"
           />
         </div>
@@ -103,8 +84,8 @@ export default function ControlPanel({
           <input
             id="rotate-toggle"
             type="checkbox"
-            checked={enableRotate}
-            onChange={(e) => setEnableRotate(e.target.checked)}
+            checked={uiStore.enableRotate}
+            onChange={(e) => uiStore.setEnableRotate(e.target.checked)}
             className="w-4 h-4 accent-blue-500 cursor-pointer"
           />
         </div>
@@ -115,8 +96,8 @@ export default function ControlPanel({
           <input
             id="pan-toggle"
             type="checkbox"
-            checked={enablePan}
-            onChange={(e) => setEnablePan(e.target.checked)}
+            checked={uiStore.enablePan}
+            onChange={(e) => uiStore.setEnablePan(e.target.checked)}
             className="w-4 h-4 accent-blue-500 cursor-pointer"
           />
         </div>
@@ -127,8 +108,8 @@ export default function ControlPanel({
           <input
             id="tile-positions-toggle"
             type="checkbox"
-            checked={showTilePositions}
-            onChange={(e) => setShowTilePositions(e.target.checked)}
+            checked={uiStore.showTilePositions}
+            onChange={(e) => uiStore.setShowTilePositions(e.target.checked)}
             className="w-4 h-4 accent-blue-500 cursor-pointer"
           />
         </div>
@@ -139,8 +120,44 @@ export default function ControlPanel({
           <input
             id="fps-toggle"
             type="checkbox"
-            checked={showFPS}
-            onChange={(e) => setShowFPS(e.target.checked)}
+            checked={uiStore.showFPS}
+            onChange={(e) => uiStore.setShowFPS(e.target.checked)}
+            className="w-4 h-4 accent-blue-500 cursor-pointer"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="cards-toggle" className="cursor-pointer select-none">
+            Show Cards
+          </label>
+          <input
+            id="cards-toggle"
+            type="checkbox"
+            checked={uiStore.showCards}
+            onChange={(e) => uiStore.setShowCards(e.target.checked)}
+            className="w-4 h-4 accent-blue-500 cursor-pointer"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="players-toggle" className="cursor-pointer select-none">
+            Show Players
+          </label>
+          <input
+            id="players-toggle"
+            type="checkbox"
+            checked={uiStore.showPlayers}
+            onChange={(e) => uiStore.setShowPlayers(e.target.checked)}
+            className="w-4 h-4 accent-blue-500 cursor-pointer"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="key-bindings-toggle" className="cursor-pointer select-none">
+            Show Key Bindings
+          </label>
+          <input
+            id="key-bindings-toggle"
+            type="checkbox"
+            checked={uiStore.showKeyBindings}
+            onChange={(e) => uiStore.setShowKeyBindings(e.target.checked)}
             className="w-4 h-4 accent-blue-500 cursor-pointer"
           />
         </div>
@@ -148,7 +165,7 @@ export default function ControlPanel({
        {/* Action Buttons */}
       <div className="space-y-2 mt-4">
         <button
-          onClick={onOpenSettings}
+          onClick={() => uiStore.setShowSettings(true)}
           className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

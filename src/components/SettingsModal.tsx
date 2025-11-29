@@ -1,23 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { KeyBindings } from "@/types/KeyBindings";
 import { DEFAULT_KEYBINDINGS } from "@/types/KeyBindings";
+import { useInputStore } from "@/stores/inputStore";
+import { useUIStore } from "@/stores/uiStore";
 
 interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  keyBindings: KeyBindings;
-  onUpdateKeyBindings: (bindings: KeyBindings) => void;
 }
 
-export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKeyBindings }: SettingsModalProps) {
+export function SettingsModal({ }: SettingsModalProps) {
+  const uiStore = useUIStore();
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const keyBindings = useInputStore((state) => state.keyBindings);
+  const updateKeyBindings = useInputStore((state) => state.updateKeyBindings);
   const [tempBindings, setTempBindings] = useState<KeyBindings>(keyBindings);
 
-  if (!isOpen) return null;
-
   const handleKeyPress = (e: React.KeyboardEvent, bindingKey: keyof KeyBindings) => {
-    e.preventDefault();
-    
+    // e.preventDefault();
     if (bindingKey === 'cancel') {
       // For cancel, allow multiple keys
       const currentCancel = tempBindings.cancel;
@@ -38,17 +36,32 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
   };
 
   const handleSave = () => {
-    onUpdateKeyBindings(tempBindings);
-    onClose();
+    updateKeyBindings(tempBindings);
+    uiStore.setShowSettings(false);
   };
 
   const handleReset = () => {
     setTempBindings(DEFAULT_KEYBINDINGS);
-    onUpdateKeyBindings(DEFAULT_KEYBINDINGS);
+    updateKeyBindings(DEFAULT_KEYBINDINGS);
   };
 
+  const handleClose = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      setEditingKey(null);
+      uiStore.setShowSettings(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleClose);
+    return () => {
+      document.removeEventListener('keydown', handleClose);
+    };
+  }, []);
+  
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="absolute top-0 left-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-xl p-6 w-96 border-2 border-yellow-600 shadow-2xl">
         <h2 className="text-2xl font-bold text-yellow-400 mb-4">Settings</h2>
         
@@ -59,7 +72,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
           <div className="flex justify-between items-center">
             <span className="text-gray-300">Select Piece:</span>
             <button
-              onClick={() => setEditingKey('select')}
+              onClick={(e) => {
+                e.currentTarget.focus();
+                setEditingKey('select')
+              }}
               onKeyDown={(e) => editingKey === 'select' && handleKeyPress(e, 'select')}
               className="px-3 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600 min-w-[60px]"
             >
@@ -87,7 +103,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
                 </div>
               ))}
               <button
-                onClick={() => setEditingKey('cancel')}
+                onClick={(e) => {
+                  e.currentTarget.focus();
+                  setEditingKey('cancel')
+                }}
                 onKeyDown={(e) => editingKey === 'cancel' && handleKeyPress(e, 'cancel')}
                 className="px-2 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 text-xs hover:bg-gray-600"
               >
@@ -100,7 +119,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
           <div className="flex justify-between items-center">
             <span className="text-gray-300">View Details:</span>
             <button
-              onClick={() => setEditingKey('viewDetails')}
+              onClick={(e) => {
+                e.currentTarget.focus();
+                setEditingKey('viewDetails')
+              }}
               onKeyDown={(e) => editingKey === 'viewDetails' && handleKeyPress(e, 'viewDetails')}
               className="px-3 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600 min-w-[60px]"
             >
@@ -112,7 +134,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
           <div className="flex justify-between items-center">
             <span className="text-gray-300">Play Card:</span>
             <button
-              onClick={() => setEditingKey('playCard')}
+              onClick={(e) => {
+                e.currentTarget.focus();
+                setEditingKey('playCard')
+              }}
               onKeyDown={(e) => editingKey === 'playCard' && handleKeyPress(e, 'playCard')}
               className="px-3 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600 min-w-[60px]"
             >
@@ -124,7 +149,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
           <div className="flex justify-between items-center">
             <span className="text-gray-300">Flip Card:</span>
             <button
-              onClick={() => setEditingKey('flipCard')}
+              onClick={(e) => {
+                e.currentTarget.focus();
+                setEditingKey('flipCard')
+              }}
               onKeyDown={(e) => editingKey === 'flipCard' && handleKeyPress(e, 'flipCard')}
               className="px-3 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600 min-w-[60px]"
             >
@@ -136,7 +164,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
           <div className="flex justify-between items-center">
             <span className="text-gray-300">Change Position:</span>
             <button
-              onClick={() => setEditingKey('changePosition')}
+              onClick={(e) => {
+                e.currentTarget.focus();
+                setEditingKey('changePosition')
+              }}
               onKeyDown={(e) => editingKey === 'changePosition' && handleKeyPress(e, 'changePosition')}
               className="px-3 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600 min-w-[60px]"
             >
@@ -150,7 +181,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
             <div className="grid grid-cols-2 gap-2 text-sm">
               <span className="text-gray-300">Up:</span>
               <button
-                onClick={() => setEditingKey('cursorUp')}
+                onClick={(e) => {
+                  e.currentTarget.focus();
+                  setEditingKey('cursorUp')
+                }}
                 onKeyDown={(e) => editingKey === 'cursorUp' && handleKeyPress(e, 'cursorUp')}
                 className="px-2 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600"
               >
@@ -159,7 +193,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
 
               <span className="text-gray-300">Down:</span>
               <button
-                onClick={() => setEditingKey('cursorDown')}
+                onClick={(e) => {
+                  e.currentTarget.focus();
+                  setEditingKey('cursorDown')
+                }}
                 onKeyDown={(e) => editingKey === 'cursorDown' && handleKeyPress(e, 'cursorDown')}
                 className="px-2 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600"
               >
@@ -168,7 +205,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
 
               <span className="text-gray-300">Left:</span>
               <button
-                onClick={() => setEditingKey('cursorLeft')}
+                onClick={(e) => {
+                  e.currentTarget.focus();
+                  setEditingKey('cursorLeft')
+                }}
                 onKeyDown={(e) => editingKey === 'cursorLeft' && handleKeyPress(e, 'cursorLeft')}
                 className="px-2 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600"
               >
@@ -177,7 +217,10 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
 
               <span className="text-gray-300">Right:</span>
               <button
-                onClick={() => setEditingKey('cursorRight')}
+                onClick={(e) => {
+                  e.currentTarget.focus();
+                  setEditingKey('cursorRight')
+                }}
                 onKeyDown={(e) => editingKey === 'cursorRight' && handleKeyPress(e, 'cursorRight')}
                 className="px-2 py-1 bg-gray-700 border border-yellow-500 rounded text-yellow-200 hover:bg-gray-600"
               >
@@ -201,7 +244,7 @@ export default function SettingsModal({ isOpen, onClose, keyBindings, onUpdateKe
             Save
           </button>
           <button
-            onClick={onClose}
+            onClick={() => uiStore.setShowSettings(false)}
             className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded font-semibold"
           >
             Close

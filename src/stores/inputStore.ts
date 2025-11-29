@@ -15,6 +15,7 @@ interface InputState {
   moveCursor: (direction: 'up' | 'down' | 'left' | 'right') => void;
   updateKeyBindings: (bindings: KeyBindings) => void;
   selectTilePiece: (piece: TilePiece | null) => void;
+  updateSelectedPiece: (piece: TilePiece) => void;
 }
 
 export const useInputStore = create<InputState>((set, get) => ({
@@ -68,7 +69,6 @@ export const useInputStore = create<InputState>((set, get) => ({
   selectTilePiece: (piece) => {
     const state = get();
     const gameStore = useGameStore.getState();
-
     // If clicking the same piece, do nothing
     if (piece === state.selectedTilePiece) return;
 
@@ -96,7 +96,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       // Don't initialize staging for pieces that already acted
       return;
     }
-
+    
     // Check if it's the correct player's turn
     const isPlayerPiece = (isCard(piece) && piece.owner === 'player') ||
       (isPlayer(piece) && piece.type === 'player');
@@ -116,5 +116,8 @@ export const useInputStore = create<InputState>((set, get) => ({
     const tileX = Math.round(piece.position.x);
     const tileY = Math.round(piece.position.y);
     set({ cursorPosition: { x: tileX, y: tileY } });
+    alert(JSON.stringify(piece));
   },
+
+  updateSelectedPiece: (piece) => set({ selectedTilePiece: piece }),
 }));

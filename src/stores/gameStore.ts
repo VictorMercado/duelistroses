@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { Vector3 } from 'three';
 import type { Card, Player, Tile, TilePiece, TurnState, StagingState } from '@/types';
 import { isCard, isPlayer } from '@/types';
+import { cards, players } from '@/data';
 
 interface GameState {
   cards: Card[];
@@ -9,6 +9,10 @@ interface GameState {
   tiles: Tile[];
   turnState: TurnState;
   stagingState: StagingState | null;
+
+  // Hand state
+  handCards: Card[];
+  showHand: boolean;
 
   // Actions
   updateCard: (card: Card) => void;
@@ -22,6 +26,10 @@ interface GameState {
   commitAction: () => void;
   cancelAction: () => void;
 
+  // Hand management
+  openHand: () => void;
+  closeHand: () => void;
+
   // Helpers
   getPieceKey: (piece: TilePiece) => string;
   getValidMovePositions: () => Set<string>;
@@ -29,159 +37,9 @@ interface GameState {
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
-  cards: [
-    {
-      id: 1,
-      name: "Dark Magician",
-      attack: 2500,
-      defense: 2100,
-      description: "The ultimate wizard in terms of attack and defense.",
-      owner: "player",
-      position: new Vector3(1, -5, 0.11),
-      isFaceDown: true,
-      isDefenseMode: false,
-      level: 8,
-      attribute: "Dark",
-      attributeUrl: "/attributes/darkAttr.svg",
-      textureUrl: "/cards/Dark_Magician.png",
-      textureTemplateUrl: "/textures/normalTemplate.png",
-    },
-    {
-      id: 2,
-      name: "Blue-Eyes White Dragon",
-      attack: 3000,
-      defense: 2500,
-      description: "This legendary dragon is a powerful engine of destruction.",
-      owner: "opponent",
-      position: new Vector3(0, 4, 0.12),
-      isFaceDown: true,
-      isDefenseMode: false,
-      level: 8,
-      attribute: "Light",
-      attributeUrl: "/attributes/lightAttr.svg",
-      textureUrl: "/cards/Blue_Eyes_White_Dragon.png",
-      textureTemplateUrl: "/textures/normalTemplate.png",
-    },
-    {
-      id: 3,
-      name: "Dark Magician Girl",
-      attack: 2000,
-      defense: 1600,
-      description: "The Dark Magician's younger sister. She wields the power of the Dark Magician.",
-      owner: "player",
-      position: new Vector3(-2, -5, 0.13),
-      isFaceDown: true,
-      isDefenseMode: false,
-      level: 6,
-      attribute: "Dark",
-      attributeUrl: "/attributes/darkAttr.svg",
-      textureUrl: "/cards/Dark_Magician_Girl.png",
-      textureTemplateUrl: "/textures/effectTemplate.png",
-    },
-    {
-      id: 4,
-      name: "Red-Eyes Black Dragon",
-      attack: 2400,
-      defense: 2000,
-      description: "A ferocious dragon with a deadly attack.",
-      owner: "opponent",
-      position: new Vector3(2, 5, 0.14),
-      isFaceDown: false,
-      isDefenseMode: false,
-      level: 7,
-      attribute: "Dark",
-      attributeUrl: "/attributes/darkAttr.svg",
-      textureUrl: "/cards/Red_Eyes_Black_Dragon.png",
-      textureTemplateUrl: "/textures/normalTemplate.png",
-    },
-    {
-      id: 5,
-      name: "Blue-Eyes White Dragon",
-      attack: 3000,
-      defense: 2500,
-      description: "This legendary dragon is a powerful engine of destruction.",
-      owner: "player",
-      position: new Vector3(0, -2, 0.12),
-      isFaceDown: true,
-      isDefenseMode: false,
-      level: 8,
-      attribute: "Light",
-      attributeUrl: "/attributes/lightAttr.svg",
-      textureUrl: "/cards/Blue_Eyes_White_Dragon.png",
-      textureTemplateUrl: "/textures/normalTemplate.png",
-    },
-    {
-      id: 6,
-      name: "Blue-Eyes Ultimate Dragon",
-      attack: 4500,
-      defense: 3800,
-      description: "This legendary dragon is a powerful engine of destruction.",
-      owner: "player",
-      position: new Vector3(1, -2, 0.12),
-      isFaceDown: true,
-      isDefenseMode: false,
-      level: 12,
-      attribute: "Light",
-      attributeUrl: "/attributes/lightAttr.svg",
-      textureUrl: "/cards/Blue_Eyes_Ultimate_Dragon.png",
-      textureTemplateUrl: "/textures/fusionTemplate.png",
-    },
-    {
-      id: 7,
-      name: "Black Luster Soldier",
-      attack: 3000,
-      defense: 2500,
-      description: "This monster can only be Ritual Summoned with the Ritual Spell Card, Black Luster Ritual.",
-      owner: "player",
-      position: new Vector3(-1, -5, 0.13),
-      isFaceDown: false,
-      isDefenseMode: false,
-      level: 8,
-      attribute: "Earth",
-      attributeUrl: "/attributes/earthAttr.svg",
-      textureUrl: "/cards/Black_Luster_Soldier.png",
-      textureTemplateUrl: "/textures/ritualTemplate.png",
-    },
-    {
-      id: 8,
-      name: "Change of Heart",
-      attack: -1,
-      defense: -1,
-      description: "Target 1 monster your opponent controls; change its ATK and DEF to 0.",
-      owner: "player",
-      position: new Vector3(0, -3, 0.11),
-      isFaceDown: true,
-      isDefenseMode: false,
-      level: 0,
-      attribute: "Spell",
-      attributeUrl: "/attributes/spellAttr.png",
-      textureUrl: "/cards/Change_of_Heart.png",
-      textureTemplateUrl: "/textures/magicTemplate.png",
-    }
-  ],
+  cards: cards,
 
-  players: [
-    {
-      id: 1,
-      name: "Player 1",
-      clan: "Yorkists",
-      textureUrl: "/textures/Red_rose_emblem.png",
-      position: new Vector3(0, -5, 0.2),
-      allCards: [],
-      cardsInPlay: [1, 3],
-      type: "player",
-    },
-    {
-      id: 2,
-      name: "Opponent",
-      clan: "Lancastrians",
-      textureUrl: "/textures/White_rose_emblem.png",
-      position: new Vector3(0, 5, 0.2),
-      allCards: [],
-      cardsInPlay: [2, 4],
-      type: "opponent",
-    },
-  ],
+  players: players,
 
   tiles: [],
 
@@ -191,6 +49,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   stagingState: null,
+
+  // Hand state - initially get first 5 cards from player's deck
+  handCards: cards.filter(c => c.owner === 'player').slice(0, 5),
+  showHand: false,
 
   // Actions
   updateCard: (card) => set((state) => ({
@@ -278,7 +140,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Find and revert the piece
     const piece = [...state.cards, ...state.players].find(p => p.id === stagingState.pieceId);
     if (!piece) return;
-
     let reverted = { ...piece, position: stagingState.originalPosition };
 
     if (isCard(reverted) && stagingState.originalIsFaceDown !== undefined) {
@@ -325,6 +186,11 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   hasActedThisTurn: (piece) => {
     const state = get();
-    return state.turnState.actedPieceIds.includes(state.getPieceKey(piece));
-  }
+    const key = state.getPieceKey(piece);
+    return state.turnState.actedPieceIds.includes(key);
+  },
+
+  // Hand management
+  openHand: () => set(() => ({ showHand: true })),
+  closeHand: () => set(() => ({ showHand: false })),
 }));

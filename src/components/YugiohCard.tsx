@@ -25,7 +25,7 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
   // Initialize rotation to match card state (prevents flash on load)
   useEffect(() => {
     if (innerGroup.current) {
-      innerGroup.current.rotation.y = card.isFaceDown ? Math.PI : 0;
+      innerGroup.current.rotation.y = (card.isFaceDown && !isPreview) ? Math.PI : 0;
     }
     if (outerGroup.current) {
       if (card.owner === 'opponent') {
@@ -143,7 +143,7 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
                     color="black"
                     anchorX="center"
                     anchorY="middle"
-                    font="/fonts/UtopiaStd-Subh.otf"
+                    // font="/fonts/UtopiaStd-Subh.otf"
                   >
                     {card.attack}
                   </Text>
@@ -155,7 +155,7 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
                     color="black"
                     anchorX="center"
                     anchorY="middle"
-                    font="/fonts/UtopiaStd-Subh.otf"
+                    // font="/fonts/UtopiaStd-Subh.otf"
                   >
                     {card.defense}
                   </Text>

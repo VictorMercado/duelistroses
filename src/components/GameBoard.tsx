@@ -15,17 +15,9 @@ const SQUARE_SIZE = 1;
 
 export default function GameBoard() {
   // Use stores instead of props
-  const cards = useGameStore((state) => state.cards);
-  const players = useGameStore((state) => state.players);
-  const setTiles = useGameStore((state) => state.setTiles);
-  const stagingState = useGameStore((state) => state.stagingState);
-  
-  const showTilePositions = useUIStore((state) => state.showTilePositions);
-  const setSelectedTile = useUIStore((state) => state.setSelectedTile);
-  
-  const cursorPosition = useInputStore((state) => state.cursorPosition);
-  const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
-  const selectTilePiece = useInputStore((state) => state.selectTilePiece);
+  const gameStore = useGameStore();
+  const uiStore = useUIStore();
+  const inputStore = useInputStore();
   
   // Load textures
   const grassTexture = useTexture('/textures/grass.png');
@@ -90,25 +82,25 @@ export default function GameBoard() {
 
   // Notify store when tiles are ready
   useEffect(() => {
-    setTiles(tiles);
-  }, [tiles, setTiles]);
+    gameStore.setTiles(tiles);
+  }, [tiles, gameStore.setTiles]);
 
   // Calculate guide line positions (horizontal and vertical lines)
   const guideLinePositions = useMemo(() => {
-    if (!selectedTilePiece) return [];
-    if (isPlayer(selectedTilePiece)) {
-      if (selectedTilePiece.type === 'opponent') {
+    if (!inputStore.selectedTilePiece) return [];
+    if (isPlayer(inputStore.selectedTilePiece)) {
+      if (inputStore.selectedTilePiece.type === 'opponent') {
         return [];
       }
     }
-    if (isCard(selectedTilePiece)) {
-      if (selectedTilePiece.owner === 'opponent') {
+    if (isCard(inputStore.selectedTilePiece)) {
+      if (inputStore.selectedTilePiece.owner === 'opponent') {
         return [];
       }
     }
     const positions: [number, number, number][] = [];
-    const pieceX = selectedTilePiece.position.x;
-    const pieceY = selectedTilePiece.position.y;
+    const pieceX = inputStore.selectedTilePiece.position.x;
+    const pieceY = inputStore.selectedTilePiece.position.y;
 
     // Horizontal positions (same Y, different X)
     for (let x = -5; x <= 5; x++) {
@@ -125,26 +117,26 @@ export default function GameBoard() {
     }
 
     return positions;
-  }, [selectedTilePiece]);
+  }, [inputStore.selectedTilePiece]);
 
   // Calculate valid move positions (8 surrounding squares)
   const validMovePositions = useMemo(() => {
-    if (!selectedTilePiece || !stagingState) return [];
-    if (isPlayer(selectedTilePiece)) {
-      if (selectedTilePiece.type === 'opponent') {
+    if (!inputStore.selectedTilePiece || !gameStore.stagingState) return [];
+    if (isPlayer(inputStore.selectedTilePiece)) {
+      if (inputStore.selectedTilePiece.type === 'opponent') {
         return [];
       }
     }
-    if (isCard(selectedTilePiece)) {
-      if (selectedTilePiece.owner === 'opponent') {
+    if (isCard(inputStore.selectedTilePiece)) {
+      if (inputStore.selectedTilePiece.owner === 'opponent') {
         return [];
       }
     }
 
     const positions: [number, number, number][] = [];
     // Use ORIGINAL position, not current position
-    const pieceX = stagingState.originalPosition.x;
-    const pieceY = stagingState.originalPosition.y;
+    const pieceX = gameStore.stagingState.originalPosition.x;
+    const pieceY = gameStore.stagingState.originalPosition.y;
 
     // 8 surrounding positions (N, S, E, W, NE, NW, SE, SW)
     const offsets = [
@@ -169,19 +161,19 @@ export default function GameBoard() {
     }
 
     return positions;
-  }, [selectedTilePiece, stagingState]);
+  }, [inputStore.selectedTilePiece, gameStore.stagingState]);
 
   return (
     <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* Render board cursor */}
-      <BoardCursor position={cursorPosition} visible={true} />
+      <BoardCursor position={inputStore.cursorPosition} visible={true} />
       
       {tiles.map((square: Tile, index: number) => {
         // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
         return(
           <group key={index}>
             {
-              showTilePositions && (        
+              uiStore.showTilePositions && (        
                 <Text
                   key={`pos-${index}`}
                   position={[square.position.x, square.position.y, square.position.z + 0.1]}
@@ -200,8 +192,8 @@ export default function GameBoard() {
             <mesh
               position={square.position}
               onClick={() => {
-                selectTilePiece(null); // Deselect when clicking empty tile
-                setSelectedTile({
+                inputStore.selectTilePiece(null); // Deselect when clicking empty tile
+                uiStore.setSelectedTile({
                   type: square.type,
                   name: square.name,
                   position: square.position,
@@ -237,28 +229,28 @@ export default function GameBoard() {
       ))}
       
       {/* Render cards */}
-      {cards.map((card) => {
-        const isSelected = selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.id === card.id;
+      {uiStore.showCards && gameStore.cards.map((card) => {
+        const isSelected = inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece) && inputStore.selectedTilePiece.id === card.id;
         return (
           <YugiohCard
             key={card.id}
             card={card}
             isSelected={!!isSelected}
             isPreview={false}
-            onSelect={() => selectTilePiece(card)}
+            onSelect={() => inputStore.selectTilePiece(card)}
           />
         );
       })}
       
       {/* Render player emblems */}
-      {players.map((player) => {
-        const isSelected = selectedTilePiece && isPlayer(selectedTilePiece) && selectedTilePiece.id === player.id;
+      {uiStore.showPlayers && gameStore.players.map((player) => {
+        const isSelected = inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece) && inputStore.selectedTilePiece.id === player.id;
         return (
           <PlayerEmblem 
             key={player.id} 
             player={player}
             isSelected={!!isSelected}
-            onSelect={() => selectTilePiece(player)}
+            onSelect={() => inputStore.selectTilePiece(player)}
           />
         );
       })}

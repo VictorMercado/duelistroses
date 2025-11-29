@@ -31,7 +31,8 @@
       "@/hooks/*": ["src/hooks/*"],
       "@/lib/*": ["src/lib/*"],
       "@/routes/*": ["src/routes/*"],
-      "@/types/*": ["src/types/*"]
+      "@/types/*": ["src/types/*"],
+      "@data/*": ["src/data/*"],
     }
   },
   "include": ["src"],

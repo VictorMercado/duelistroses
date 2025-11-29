@@ -12,9 +12,10 @@ interface UIState {
   showFPS: boolean;
   showDetails: boolean;
   showSettings: boolean;
-
+  showKeyBindings: boolean;
+  showCards: boolean;
+  showPlayers: boolean;
   // Tile selection/hover
-  hoveredTile: Tile | null;
   selectedTile: Tile | null;
 
   // Actions
@@ -25,7 +26,9 @@ interface UIState {
   setShowFPS: (show: boolean) => void;
   setShowDetails: (show: boolean) => void;
   setShowSettings: (show: boolean) => void;
-  setHoveredTile: (tile: Tile | null) => void;
+  setShowKeyBindings: (show: boolean) => void;
+  setShowCards: (show: boolean) => void;
+  setShowPlayers: (show: boolean) => void;
   setSelectedTile: (tile: Tile | null) => void;
 }
 
@@ -40,6 +43,9 @@ export const useUIStore = create<UIState>((set) => ({
   showSettings: false,
   hoveredTile: null,
   selectedTile: null,
+  showKeyBindings: true,
+  showCards: true,
+  showPlayers: true,
 
   // Actions
   setEnableZoom: (enable) => set({ enableZoom: enable }),
@@ -49,6 +55,8 @@ export const useUIStore = create<UIState>((set) => ({
   setShowFPS: (show) => set({ showFPS: show }),
   setShowDetails: (show) => set({ showDetails: show }),
   setShowSettings: (show) => set({ showSettings: show }),
-  setHoveredTile: (tile) => set({ hoveredTile: tile }),
   setSelectedTile: (tile) => set({ selectedTile: tile }),
+  setShowKeyBindings: (show) => set({ showKeyBindings: show }),
+  setShowCards: (show) => set({ showCards: show }),
+  setShowPlayers: (show) => set({ showPlayers: show }),
 }));

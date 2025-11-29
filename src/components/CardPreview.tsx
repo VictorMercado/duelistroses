@@ -1,19 +1,26 @@
-import type { Card } from "@/types";
+import { isCard, type Card } from "@/types";
 import { Canvas } from "@react-three/fiber";
 import { Vector3 } from "three";
 import YugiohCard from "./YugiohCard";
+import { useInputStore } from "@/stores/inputStore";
+import { useUIStore } from "@/stores/uiStore";
 
 interface CardPreviewProps {
-  card: Card;
-  onViewDetails: () => void;
 }
 
-export default function CardPreview({ card, onViewDetails }: CardPreviewProps) {
+export default function CardPreview({ }: CardPreviewProps) {
   // Create a preview version of the card that is always face up and centered
+  const setShowDetails = useUIStore((state) => state.setShowDetails);
+  const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
+  if (!(selectedTilePiece && isCard(selectedTilePiece))) return null;
+  const card = selectedTilePiece;
+  // If it's an opponent's face-down card, keep it "face down" (masked) but don't rotate (handled by YugiohCard isPreview logic)
+  const isOpponentFaceDown = card.owner === 'opponent' && card.isFaceDown;
+  
   const previewCard: Card = {
     ...card,
     position: new Vector3(0, 0, 0),
-    isFaceDown: false, // Correct orientation for preview (Face Up)
+    isFaceDown: isOpponentFaceDown, 
     isDefenseMode: false,
   };
 
@@ -34,7 +41,7 @@ export default function CardPreview({ card, onViewDetails }: CardPreviewProps) {
         card.owner === 'player' ? (
           //  View Details Button
           <button
-            onClick={onViewDetails}
+            onClick={() => setShowDetails(true)}
             className="absolute bottom-2 left-1/2 transform -translate-x-1/2 px-4 bg-yellow-700 hover:bg-yellow-600 text-white font-bold rounded-lg border-2 border-yellow-500 transition-colors shadow-lg"
           >
             View Details

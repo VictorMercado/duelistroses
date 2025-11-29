@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import StaticAxisHelper from "@/components/StaticAxisHelper";
 import GameBoard from "@/components/GameBoard";
 import ControlPanel from "@/components/ControlPanel";
@@ -8,44 +8,36 @@ import ActionMenu from "@/components/ActionMenu";
 import CardDetailView from "@/components/CardDetailView";
 import CardPreview from "@/components/CardPreview";
 import TilePreview from "@/components/TilePreview";
-import SettingsModal from "@/components/SettingsModal";
 import FPSCounter from "@/components/FPSCounter";
+import HandView from "@/components/HandView";
 import { useGameStore } from "@/stores/gameStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
 import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { isCard } from "@/types";
+import { SettingsModal } from "@/components/SettingsModal";
 
 function App() {
   const controlsRef = useRef<any>(null);
   
   // Use stores instead of local state
   const turnState = useGameStore((state) => state.turnState);
-  const stagingState = useGameStore((state) => state.stagingState);
-  const commitAction = useGameStore((state) => state.commitAction);
-  const cancelAction = useGameStore((state) => state.cancelAction);
+  const stagingState = useGameStore((state) => state.stagingState);  
   const getPieceKey = useGameStore((state) => state.getPieceKey);
-  
-  const enableZoom = useUIStore((state) => state.enableZoom);
-  const setEnableZoom = useUIStore((state) => state.setEnableZoom);
-  const enableRotate = useUIStore((state) => state.enableRotate);
-  const setEnableRotate = useUIStore((state) => state.setEnableRotate);
-  const enablePan = useUIStore((state) => state.enablePan);
-  const setEnablePan = useUIStore((state) => state.setEnablePan);
-  const showTilePositions = useUIStore((state) => state.showTilePositions);
-  const setShowTilePositions = useUIStore((state) => state.setShowTilePositions);
-  const showFPS = useUIStore((state) => state.showFPS);
-  const setShowFPS = useUIStore((state) => state.setShowFPS);
-  const showDetails = useUIStore((state) => state.showDetails);
-  const setShowDetails = useUIStore((state) => state.setShowDetails);
-  const showSettings = useUIStore((state) => state.showSettings);
-  const setShowSettings = useUIStore((state) => state.setShowSettings);
-  const hoveredTile = useUIStore((state) => state.hoveredTile);
-  const selectedTile = useUIStore((state) => state.selectedTile);
+  const tiles = useGameStore((state) => state.tiles);
+  const uiStore = useUIStore();
   
   const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
-  const keyBindings = useInputStore((state) => state.keyBindings);
-  const updateKeyBindings = useInputStore((state) => state.updateKeyBindings);
+  const cursorPosition = useInputStore((state) => state.cursorPosition);
+
+  // Update hovered tile based on cursor position
+  useEffect(() => {
+    const tileAtCursor = tiles.find(t => 
+      Math.round(t.position.x) === cursorPosition.x && 
+      Math.round(t.position.y) === cursorPosition.y
+    );
+    uiStore.setSelectedTile(tileAtCursor || null);
+  }, [cursorPosition, tiles, uiStore.setSelectedTile]);
   
   // Consolidated keyboard handler
   useKeyboardHandler();
@@ -60,14 +52,31 @@ function App() {
   const handleFlip = () => {
     if (!selectedTilePiece || !isCard(selectedTilePiece)) return;
     
-    const updated = { ...selectedTilePiece, isFaceDown: !selectedTilePiece.isFaceDown };
+    // Get fresh piece data
+    const freshCards = useGameStore.getState().cards;
+    const currentPiece = freshCards.find(p => p.id === selectedTilePiece.id);
+    
+    if (!currentPiece) return;
+
+    // Yu-Gi-Oh rule: Can't flip a card back down if it was originally face-up
+    if (stagingState && stagingState.originalIsFaceDown === false) {
+      return;
+    }
+    
+    const updated = { ...currentPiece, isFaceDown: !currentPiece.isFaceDown };
     useGameStore.getState().updateTilePiece(updated);
+    
+    // Update selected piece in input store to keep it fresh
+    useInputStore.getState().updateSelectedPiece(updated);
     
     // Mark as flipped in staging
     if (stagingState) {
+      const isDifferentFromOriginal = stagingState.originalIsFaceDown !== undefined &&
+        updated.isFaceDown !== stagingState.originalIsFaceDown;
+
       useGameStore.setState((state) => ({
         stagingState: state.stagingState 
-          ? { ...state.stagingState, hasFlipped: true }
+          ? { ...state.stagingState, hasFlipped: isDifferentFromOriginal }
           : null
       }));
     }
@@ -77,30 +86,44 @@ function App() {
   const handlePosition = () => {
     if (!selectedTilePiece || !isCard(selectedTilePiece) || !stagingState) return;
     
-    // Can't change position if actually moved to a different position
-    if (!selectedTilePiece.position.equals(stagingState.originalPosition)) return;
+    // Get fresh piece data
+    const freshCards = useGameStore.getState().cards;
+    const currentPiece = freshCards.find(p => p.id === selectedTilePiece.id);
     
-    const updated = { ...selectedTilePiece, isDefenseMode: !selectedTilePiece.isDefenseMode };
+    if (!currentPiece) return;
+
+    // Can't change position if actually moved to a different position
+    if (!currentPiece.position.equals(stagingState.originalPosition)) return;
+    
+    const updated = { ...currentPiece, isDefenseMode: !currentPiece.isDefenseMode };
     useGameStore.getState().updateTilePiece(updated);
     
-    // Mark as changed position in staging
+    // Update selected piece in input store to keep it fresh
+    useInputStore.getState().updateSelectedPiece(updated);
+    
+    // Check if the new mode is different from original
+    const isDifferentFromOriginal = stagingState.originalIsDefenseMode !== undefined &&
+      updated.isDefenseMode !== stagingState.originalIsDefenseMode;
+    
+    // Mark as changed position in staging only if different from original
     useGameStore.setState((state) => ({
       stagingState: state.stagingState 
-        ? { ...state.stagingState, hasChangedPosition: true }
+        ? { ...state.stagingState, hasChangedPosition: isDifferentFromOriginal }
         : null
     }));
   };
-
   return (
     <div className="w-screen h-screen">
       <Canvas camera={{ position: [0, 15, 10], fov: 30 }}>
+        <color attach="background" args={['black']} /> 
         <ambientLight intensity={5} />
         <GameBoard />
+        <HandView />
         <OrbitControls
           ref={controlsRef}
-          enableZoom={enableZoom}
-          enableRotate={enableRotate}
-          enablePan={enablePan}
+          enableZoom={uiStore.enableZoom}
+          enableRotate={uiStore.enableRotate}
+          enablePan={uiStore.enablePan}
           makeDefault
           minPolarAngle={50 * Math.PI / 180}
           maxPolarAngle={50 * Math.PI / 180}
@@ -110,75 +133,28 @@ function App() {
           maxDistance={14}
         />
       </Canvas>
-      {showFPS && <FPSCounter />}
+      {uiStore.showFPS && <FPSCounter />}
       <StaticAxisHelper />
       <div className="absolute top-0 right-0 text-white p-4 bg-black bg-opacity-50">
         <p>Use W, A, S, D keys to move the card</p>
-        <p>Red: X-axis, Green: Y-axis, Blue: Z-axis</p>
       </div>
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        keyBindings={keyBindings}
-        onUpdateKeyBindings={updateKeyBindings}
-      />
 
       {/* Control Panel */}
       <ControlPanel
-        enableZoom={enableZoom}
-        setEnableZoom={setEnableZoom}
-        enableRotate={enableRotate}
-        setEnableRotate={setEnableRotate}
-        enablePan={enablePan}
-        setEnablePan={setEnablePan}
         onResetCamera={handleResetCamera}
-        onOpenSettings={() => setShowSettings(true)}
         controlsRef={controlsRef}
-        showTilePositions={showTilePositions}
-        setShowTilePositions={setShowTilePositions}
-        showFPS={showFPS}
-        setShowFPS={setShowFPS}
       />
-      
-      {selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.owner === 'player' && !showDetails && !turnState.actedPieceIds.includes(getPieceKey(selectedTilePiece)) && (
+      {uiStore.showSettings && <SettingsModal />}
+      {selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.owner === 'player' && !uiStore.showDetails && !turnState.actedPieceIds.includes(getPieceKey(selectedTilePiece)) && (
         <ActionMenu 
-          onMove={() => {}} 
-          onAttack={() => {}}
           onChangePosition={handlePosition}
           onFlip={handleFlip}
-          onDetails={() => setShowDetails(true)}
-          onCommit={commitAction}
-          onCancel={cancelAction}
-          isDefenseMode={selectedTilePiece.isDefenseMode}
-          isFaceDown={selectedTilePiece.isFaceDown}
-          hasMoved={
-            stagingState 
-              ? !selectedTilePiece.position.equals(stagingState.originalPosition)
-              : false
-          }
-          hasChangedMode={stagingState?.hasChangedPosition || false}
         />
       )}
       
-      {selectedTilePiece && isCard(selectedTilePiece) && showDetails && (
-        <CardDetailView 
-          card={selectedTilePiece} 
-          onClose={() => setShowDetails(false)} 
-        />
-      )}
-
-      {selectedTilePiece && isCard(selectedTilePiece) && (
-        <CardPreview 
-          card={selectedTilePiece} 
-          onViewDetails={() => setShowDetails(true)}
-        />
-      )}
-
-      {(hoveredTile || selectedTile) && (
-        <TilePreview tile={hoveredTile || selectedTile!} />
-      )}
+      <CardDetailView />
+      <CardPreview />
+      <TilePreview />
     </div>
   );
 }
