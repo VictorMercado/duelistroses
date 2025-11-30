@@ -99,7 +99,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     
     // Check if it's the correct player's turn
     const isPlayerPiece = (isCard(piece) && piece.owner === 'player') ||
-      (isPlayer(piece) && piece.type === 'player');
+      (isPlayer(piece) && piece.owner === 'player');
 
     if ((gameStore.turnState.currentTurn === 'player' && !isPlayerPiece) ||
       (gameStore.turnState.currentTurn === 'opponent' && isPlayerPiece)) {
@@ -110,14 +110,12 @@ export const useInputStore = create<InputState>((set, get) => ({
 
     // Initialize staging state for valid pieces
     gameStore.initializeStagingState(piece);
-    set({ selectedTilePiece: piece });
+    // set({ selectedTilePiece: piece });
 
     // Move cursor to piece position
     const tileX = Math.round(piece.position.x);
     const tileY = Math.round(piece.position.y);
-    set({ cursorPosition: { x: tileX, y: tileY } });
-    alert(JSON.stringify(piece));
+    set({ cursorPosition: { x: tileX, y: tileY }, selectedTilePiece: piece });
   },
-
   updateSelectedPiece: (piece) => set({ selectedTilePiece: piece }),
 }));

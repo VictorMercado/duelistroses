@@ -141,7 +141,7 @@ export const players: Player[] = [
     position: new Vector3(0, -5, 0.2),
     allCards: [],
     cardsInPlay: [1, 3],
-    type: "player",
+    owner: "player",
   },
   {
     id: 200,
@@ -151,7 +151,7 @@ export const players: Player[] = [
     position: new Vector3(0, 5, 0.2),
     allCards: [],
     cardsInPlay: [2, 4],
-    type: "opponent",
+    owner: "opponent",
   },
 ];
     

@@ -4,22 +4,19 @@ import { Vector3 } from "three";
 import { useInputStore } from "@/stores/inputStore";
 
 export default function HandView() {
-  const handCards = useGameStore((state) => state.handCards);
-  const showHand = useGameStore((state) => state.showHand);
+  const gameStore = useGameStore();
   const selectTilePiece = useInputStore((state) => state.selectTilePiece);
-
-  if (!showHand) return null;
-
+  if (!gameStore.showHand) return null;
   // Position cards in a horizontal arc
   const cardSpacing = .8;
-  const totalWidth = (handCards.length - 1) * cardSpacing;
+  const totalWidth = (gameStore.handCards.length - 1) * cardSpacing;
   const startX = -(totalWidth / 2);
   const baseY = .5;  // Below the board
   const baseZ = 2;   // Raised toward camera
 
   return (
     <group rotation={[-.5, 0, 0]} scale={2}>
-      {handCards.map((card, index) => {
+      {gameStore.handCards.map((card, index) => {
         const xPosition = startX + (index * cardSpacing);
         
         // Create a hand version of the card with custom position

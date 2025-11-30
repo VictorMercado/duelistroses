@@ -12,36 +12,22 @@ import { isCard, isPlayer } from '@/types';
  * - Cancel keys (Escape, custom bindings)
  */
 export function useKeyboardHandler() {
-  const keyBindings = useInputStore((state) => state.keyBindings);
-  const cursorPosition = useInputStore((state) => state.cursorPosition);
-  const moveCursor = useInputStore((state) => state.moveCursor);
-  const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
-  const selectTilePiece = useInputStore((state) => state.selectTilePiece);
-
-  const cards = useGameStore((state) => state.cards);
-  const players = useGameStore((state) => state.players);
-  const stagingState = useGameStore((state) => state.stagingState);
-  const updateTilePiece = useGameStore((state) => state.updateTilePiece);
-  const commitAction = useGameStore((state) => state.commitAction);
-  const cancelAction = useGameStore((state) => state.cancelAction);
-
-  const setShowDetails = useUIStore((state) => state.setShowDetails);
+  const inputStore = useInputStore();
+  const gameStore = useGameStore();
+  const uiStore = useUIStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // PIECE MOVEMENT (WASD) - Check this FIRST when in staging mode
       // This takes priority over cursor movement so selected pieces move instead of cursor
-      if (selectedTilePiece && stagingState) {
+      if (inputStore.selectedTilePiece && gameStore.stagingState) {
         // Check if it's an opponent piece
-        if (isCard(selectedTilePiece) && selectedTilePiece.owner === 'opponent') {
-          // Don't handle WASD for opponent pieces
-        } else {
-          // Get fresh piece data from store to avoid stale closure
-          const freshCards = useGameStore.getState().cards;
-          const freshPlayers = useGameStore.getState().players;
+        if (inputStore.selectedTilePiece.owner === 'player') {
+          const freshCards = gameStore.cards;
+          const freshPlayers = gameStore.players;
           const currentPiece = [...freshCards, ...freshPlayers].find(
-            p => p.id === selectedTilePiece.id &&
-              (isCard(p) === isCard(selectedTilePiece))
+            p => p.id === inputStore.selectedTilePiece!.id &&
+              (isCard(p) === isCard(inputStore.selectedTilePiece!))
           );
 
           if (!currentPiece) return;
@@ -70,7 +56,7 @@ export function useKeyboardHandler() {
 
           if (moved) {
             // Check if new position is within 1 square of ORIGINAL position
-            const originalPos = stagingState.originalPosition;
+            const originalPos = gameStore.stagingState.originalPosition;
             const deltaX = Math.abs(newPosition.x - originalPos.x);
             const deltaY = Math.abs(newPosition.y - originalPos.y);
 
@@ -79,7 +65,7 @@ export function useKeyboardHandler() {
               if (isCard(currentPiece)) {
                 // Yu-Gi-Oh rule: When a card moves, it automatically switches to attack position
                 const updatedCard = { ...currentPiece, position: newPosition, isDefenseMode: false };
-                updateTilePiece(updatedCard);
+                gameStore.updateTilePiece(updatedCard);
 
                 // Update selected piece in input store to keep it fresh
                 useInputStore.getState().updateSelectedPiece(updatedCard);
@@ -92,7 +78,7 @@ export function useKeyboardHandler() {
                 }));
               } else {
                 const updatedPlayer = { ...currentPiece, position: newPosition };
-                updateTilePiece(updatedPlayer);
+                gameStore.updateTilePiece(updatedPlayer);
                 useInputStore.getState().updateSelectedPiece(updatedPlayer);
               }
 
@@ -110,95 +96,96 @@ export function useKeyboardHandler() {
 
       // CURSOR MOVEMENT (WASD or custom bindings)
       // Only handle cursor movement if NOT in staging mode (otherwise piece movement takes priority)
-      if (!selectedTilePiece || !stagingState) {
-        if (e.key.toLowerCase() === keyBindings.cursorUp.toLowerCase()) {
-          moveCursor('up');
+      if (!inputStore.selectedTilePiece || !gameStore.stagingState) {
+        if (e.key.toLowerCase() === inputStore.keyBindings.cursorUp.toLowerCase()) {
+          inputStore.moveCursor('up');
           return;
         }
-        if (e.key.toLowerCase() === keyBindings.cursorDown.toLowerCase()) {
-          moveCursor('down');
+        if (e.key.toLowerCase() === inputStore.keyBindings.cursorDown.toLowerCase()) {
+          inputStore.moveCursor('down');
           return;
         }
-        if (e.key.toLowerCase() === keyBindings.cursorLeft.toLowerCase()) {
-          moveCursor('left');
+        if (e.key.toLowerCase() === inputStore.keyBindings.cursorLeft.toLowerCase()) {
+          inputStore.moveCursor('left');
           return;
         }
-        if (e.key.toLowerCase() === keyBindings.cursorRight.toLowerCase()) {
-          moveCursor('right');
+        if (e.key.toLowerCase() === inputStore.keyBindings.cursorRight.toLowerCase()) {
+          inputStore.moveCursor('right');
           return;
         }
       }
 
       // COMMIT ACTION (Enter)
       if (e.key === 'Enter') {
-        commitAction();
-        selectTilePiece(null);
+        gameStore.commitAction();
+        inputStore.selectTilePiece(null);
         return;
       }
 
       // CANCEL ACTION (Escape or custom bindings)
-      if (keyBindings.cancel.includes(e.key)) {
-        if (selectedTilePiece && isPlayer(selectedTilePiece)) {
-          const closeHand = useGameStore.getState().closeHand;
+      if (inputStore.keyBindings.cancel.includes(e.key)) {
+        if (inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece)) {
+          const closeHand = gameStore.closeHand;
           closeHand();
         }
-        cancelAction();
-        selectTilePiece(null);
-        setShowDetails(false);
+        gameStore.cancelAction();
+        inputStore.selectTilePiece(null);
+        uiStore.setShowDetails(false);
         return;
       }
 
       // SELECT KEY
-      if (e.key.toLowerCase() === keyBindings.select.toLowerCase()) {
+      if (e.key.toLowerCase() === inputStore.keyBindings.select.toLowerCase()) {
         // If already in staging mode, commit the action
-        if (selectedTilePiece && stagingState) {
-          commitAction();
+        if (inputStore.selectedTilePiece && gameStore.stagingState) {
+          gameStore.commitAction();
+          inputStore.selectTilePiece(null);
           return;
         }
 
         // Otherwise, find and select piece at cursor position
-        const pieceAtCursor = [...cards, ...players].find(piece =>
-          Math.round(piece.position.x) === cursorPosition.x &&
-          Math.round(piece.position.y) === cursorPosition.y
+        const pieceAtCursor = [...gameStore.cards, ...gameStore.players].find(piece =>
+          Math.round(piece.position.x) === inputStore.cursorPosition.x &&
+          Math.round(piece.position.y) === inputStore.cursorPosition.y
         );
 
         if (pieceAtCursor) {
-          selectTilePiece(pieceAtCursor);
+          inputStore.selectTilePiece(pieceAtCursor);
         }
         return;
       }
 
       // VIEW DETAILS KEY
-      if (e.key.toLowerCase() === keyBindings.viewDetails.toLowerCase()) {
-        if (selectedTilePiece && isCard(selectedTilePiece)) {
-          setShowDetails(true);
+      if (e.key.toLowerCase() === inputStore.keyBindings.viewDetails.toLowerCase()) {
+        if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece)) {
+          uiStore.setShowDetails(true);
         }
         return;
       }
 
       // FLIP CARD KEY
-      if (e.key.toLowerCase() === keyBindings.flipCard.toLowerCase()) {
-        if (selectedTilePiece && isCard(selectedTilePiece) && stagingState) {
+      if (e.key.toLowerCase() === inputStore.keyBindings.flipCard.toLowerCase()) {
+        if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece) && gameStore.stagingState) {
           // Get fresh piece data
-          const freshCards = useGameStore.getState().cards;
-          const currentPiece = freshCards.find(p => p.id === selectedTilePiece.id);
+          const freshCards = gameStore.cards;
+          const currentPiece = freshCards.find(p => p.id === inputStore.selectedTilePiece!.id);
 
           if (!currentPiece) return;
 
           // Yu-Gi-Oh rule: Can't flip a card back down if it was originally face-up
-          if (stagingState.originalIsFaceDown === false) {
+          if (gameStore.stagingState.originalIsFaceDown === false) {
             return;
           }
 
           const updated = { ...currentPiece, isFaceDown: !currentPiece.isFaceDown };
-          updateTilePiece(updated);
+          gameStore.updateTilePiece(updated);
 
           // Update selected piece in input store to keep it fresh
           useInputStore.getState().updateSelectedPiece(updated);
 
           // Check if the new state is different from original
-          const isDifferentFromOriginal = stagingState.originalIsFaceDown !== undefined &&
-            updated.isFaceDown !== stagingState.originalIsFaceDown;
+          const isDifferentFromOriginal = gameStore.stagingState.originalIsFaceDown !== undefined &&
+            updated.isFaceDown !== gameStore.stagingState.originalIsFaceDown;
 
           // Mark as flipped in staging only if different from original
           useGameStore.setState((state) => ({
@@ -211,26 +198,26 @@ export function useKeyboardHandler() {
       }
 
       // CHANGE POSITION KEY
-      if (e.key.toLowerCase() === keyBindings.changePosition.toLowerCase()) {
-        if (selectedTilePiece && isCard(selectedTilePiece) && stagingState) {
+      if (e.key.toLowerCase() === inputStore.keyBindings.changePosition.toLowerCase()) {
+        if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece) && gameStore.stagingState) {
           // Get fresh piece data
-          const freshCards = useGameStore.getState().cards;
-          const currentPiece = freshCards.find(p => p.id === selectedTilePiece.id);
+          const freshCards = gameStore.cards;
+          const currentPiece = freshCards.find(p => p.id === inputStore.selectedTilePiece!.id);
 
           if (!currentPiece) return;
 
           // Can't change position if actually moved to a different position
-          if (!currentPiece.position.equals(stagingState.originalPosition)) return;
+          if (!currentPiece.position.equals(gameStore.stagingState.originalPosition)) return;
 
           const updated = { ...currentPiece, isDefenseMode: !currentPiece.isDefenseMode };
-          updateTilePiece(updated);
+          gameStore.updateTilePiece(updated);
 
           // Update selected piece in input store to keep it fresh
           useInputStore.getState().updateSelectedPiece(updated);
 
           // Check if the new mode is different from original
-          const isDifferentFromOriginal = stagingState.originalIsDefenseMode !== undefined &&
-            updated.isDefenseMode !== stagingState.originalIsDefenseMode;
+          const isDifferentFromOriginal = gameStore.stagingState.originalIsDefenseMode !== undefined &&
+            updated.isDefenseMode !== gameStore.stagingState.originalIsDefenseMode;
 
           // Mark as changed position in staging only if different from original
           useGameStore.setState((state) => ({
@@ -243,10 +230,9 @@ export function useKeyboardHandler() {
       }
 
       // PLAY CARD KEY (placeholder)
-      if (e.key.toLowerCase() === keyBindings.playCard.toLowerCase()) {
-        if (selectedTilePiece && isPlayer(selectedTilePiece)) {
-          const openHand = useGameStore.getState().openHand;
-          openHand();
+      if (e.key.toLowerCase() === inputStore.keyBindings.playCard.toLowerCase()) {
+        if (inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece)) {
+          gameStore.openHand();
           return;
         }
       }
@@ -255,17 +241,8 @@ export function useKeyboardHandler() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
-    keyBindings,
-    cursorPosition,
-    moveCursor,
-    selectedTilePiece,
-    selectTilePiece,
-    cards,
-    players,
-    stagingState,
-    updateTilePiece,
-    commitAction,
-    cancelAction,
-    setShowDetails
+    inputStore,
+    gameStore,
+    uiStore
   ]);
 }

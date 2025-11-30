@@ -12,6 +12,7 @@ export interface Tile {
 export type TilePiece = {
   id: number;
   position: Vector3;
+  owner: 'player' | 'opponent';
 };
 
 export interface Card extends TilePiece {
@@ -20,7 +21,6 @@ export interface Card extends TilePiece {
   attack: number;
   defense: number;
   description: string;
-  owner: 'player' | 'opponent';
   isFaceDown: boolean;
   isDefenseMode: boolean;
   level: number;
@@ -39,7 +39,6 @@ export interface Player extends TilePiece {
   textureUrl: string; // Red_rose_emblem.png or White_rose_emblem.png
   allCards: Card[]; // All cards the player owns
   cardsInPlay: number[]; // IDs of cards currently in play
-  type: 'player' | 'opponent';
 }
 
 // Type guards

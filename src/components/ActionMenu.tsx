@@ -17,6 +17,8 @@ export default function ActionMenu({
 }: ActionMenuProps) {
   const setShowDetails = useUIStore((state) => state.setShowDetails);
   const showKeyBindings = useUIStore((state) => state.showKeyBindings);
+  const showHand = useGameStore((state) => state.showHand);
+  const openHand = useGameStore((state) => state.openHand);
   const stagingState = useGameStore((state) => state.stagingState);
   const commitAction = useGameStore((state) => state.commitAction);
   const cancelAction = useGameStore((state) => state.cancelAction);
@@ -122,7 +124,12 @@ export default function ActionMenu({
       )}
       {player && (
         <>
-
+          <button
+            onClick={() => openHand()}
+            className="flex items-center gap-x-1 px-6 py-2 border-2 border-yellow-700 hover:border-yellow-300 rounded-lg font-bold transition-colors"
+          >
+            {showKeyBindings && <Key>{keyBindings.playCard}</Key>} Hand
+          </button> 
           <button
             onClick={() => setShowDetails(true)}
             className="flex items-center gap-x-1 px-6 py-2 border-2 border-yellow-700 hover:border-yellow-300 rounded-lg font-bold transition-colors"

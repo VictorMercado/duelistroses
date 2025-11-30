@@ -5,15 +5,14 @@ import { Vector3 } from "three";
 import YugiohCard from "@/components/YugiohCard";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
+import { useEffect } from "react";
 
 interface CardDetailViewProps {
 }
 
 export default function CardDetailView({ }: CardDetailViewProps) {
-  const showDetails = useUIStore((state) => state.showDetails);
   const setShowDetails = useUIStore((state) => state.setShowDetails);
   const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
-  if (!showDetails) return null;
   if (!(selectedTilePiece && isCard(selectedTilePiece))) return null;
   const card = selectedTilePiece;
   const isOpponentFaceDown = card.owner === 'opponent' && card.isFaceDown;
@@ -25,6 +24,19 @@ export default function CardDetailView({ }: CardDetailViewProps) {
     isFaceDown: isOpponentFaceDown,
     isDefenseMode: false,
   };
+  const handleCloseDetailView = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      setShowDetails(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleCloseDetailView);
+    return () => {
+      document.removeEventListener('keydown', handleCloseDetailView);
+    };
+  }, []);
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">

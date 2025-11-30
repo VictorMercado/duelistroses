@@ -7,18 +7,23 @@ import BoardCursor from "./BoardCursor";
 import { useGameStore } from "@/stores/gameStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
-import { isCard, isPlayer } from "@/types";
+import { isCard } from "@/types";
 import type { Tile } from "@/types";
+import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
+import { useBoardTiles } from "@/hooks/useBoardTiles";
 
+const VALID_PLAY_COLOR = '#00ccff';
+const GUIDE_LINE_COLOR = '#d2d2d2';
+const VALID_MOVE_COLOR = '#fff700';
 const BOARD_SIZE = 11;
 const SQUARE_SIZE = 1;
 
 export default function GameBoard() {
-  // Use stores instead of props
   const gameStore = useGameStore();
   const uiStore = useUIStore();
   const inputStore = useInputStore();
-  
+  const tiles = useBoardTiles();
+  useKeyboardHandler();
   // Load textures
   const grassTexture = useTexture('/textures/grass.png');
   const darkTexture = useTexture('/textures/dark.png');
@@ -26,59 +31,59 @@ export default function GameBoard() {
   const normalTexture = useTexture('/textures/normal.png');
   const waterTexture = useTexture('/textures/water.png');
 
-  const tilesAssets: Tile[] = [
-    {
-      type: 'grass',
-      name: 'Grass',
-      texture: grassTexture,
-      position: new Vector3(0, 0, 0),
-    },
-    {
-      type: 'dark',
-      name: 'Dark',
-      texture: darkTexture,
-      position: new Vector3(0, 0, 0),
-    },
-    {
-      type: 'labyrinth',
-      name: 'Labyrinth',
-      texture: labyrinthTexture,
-      position: new Vector3(0, 0, 0),
-    },
-    {
-      type: 'normal',
-      name: 'Normal',
-      texture: normalTexture,
-      position: new Vector3(0, 0, 0),
-    },
-    {
-      type: 'water',
-      name: 'Water',
-      texture: waterTexture,
-      position: new Vector3(0, 0, 0),
-    },
-  ];
-
-  // Generate tiles
-  const tiles: Tile[] = useMemo(() => {
-    const squares: Tile[] = [];
-    for (let i = 0; i < BOARD_SIZE; i++) {
-      for (let j = 0; j < BOARD_SIZE; j++) {
-        const textureIndex = Math.floor(Math.random() * tilesAssets.length);
-        squares.push({
-          position: new Vector3(
-            (i - BOARD_SIZE / 2 + 0.5) * SQUARE_SIZE,
-            (j - BOARD_SIZE / 2 + 0.5) * SQUARE_SIZE,
-            0,
-          ),
-          texture: tilesAssets[textureIndex].texture,
-          type: tilesAssets[textureIndex].type,
-          name: tilesAssets[textureIndex].name,
-        });
-      }
-    }
-    return squares;
-  }, [grassTexture, darkTexture, labyrinthTexture, normalTexture, waterTexture]);
+  // const tilesAssets: Tile[] = [
+  //   {
+  //     type: 'grass',
+  //     name: 'Grass',
+  //     texture: grassTexture,
+  //     position: new Vector3(0, 0, 0),
+  //   },
+  //   {
+  //     type: 'dark',
+  //     name: 'Dark',
+  //     texture: darkTexture,
+  //     position: new Vector3(0, 0, 0),
+  //   },
+  //   {
+  //     type: 'labyrinth',
+  //     name: 'Labyrinth',
+  //     texture: labyrinthTexture,
+  //     position: new Vector3(0, 0, 0),
+  //   },
+  //   {
+  //     type: 'normal',
+  //     name: 'Normal',
+  //     texture: normalTexture,
+  //     position: new Vector3(0, 0, 0),
+  //   },
+  //   {
+  //     type: 'water',
+  //     name: 'Water',
+  //     texture: waterTexture,
+  //     position: new Vector3(0, 0, 0),
+  //   },
+  // ];
+  
+  // // Generate tiles
+  // const tiles: Tile[] = useMemo(() => {
+  //   const squares: Tile[] = [];
+  //   for (let i = 0; i < BOARD_SIZE; i++) {
+  //     for (let j = 0; j < BOARD_SIZE; j++) {
+  //       const textureIndex = Math.floor(Math.random() * tilesAssets.length);
+  //       squares.push({
+  //         position: new Vector3(
+  //           (i - BOARD_SIZE / 2 + 0.5) * SQUARE_SIZE,
+  //           (j - BOARD_SIZE / 2 + 0.5) * SQUARE_SIZE,
+  //           0,
+  //         ),
+  //         texture: tilesAssets[textureIndex].texture,
+  //         type: tilesAssets[textureIndex].type,
+  //         name: tilesAssets[textureIndex].name,
+  //       });
+  //     }
+  //   }
+  //   return squares;
+  // }, [grassTexture, darkTexture, labyrinthTexture, normalTexture, waterTexture]);
 
   // Notify store when tiles are ready
   useEffect(() => {
@@ -86,18 +91,13 @@ export default function GameBoard() {
   }, [tiles, gameStore.setTiles]);
 
   // Calculate guide line positions (horizontal and vertical lines)
+  // move to game store
   const guideLinePositions = useMemo(() => {
     if (!inputStore.selectedTilePiece) return [];
-    if (isPlayer(inputStore.selectedTilePiece)) {
-      if (inputStore.selectedTilePiece.type === 'opponent') {
-        return [];
-      }
+    if (inputStore.selectedTilePiece.owner === 'opponent') {
+      return [];
     }
-    if (isCard(inputStore.selectedTilePiece)) {
-      if (inputStore.selectedTilePiece.owner === 'opponent') {
-        return [];
-      }
-    }
+
     const positions: [number, number, number][] = [];
     const pieceX = inputStore.selectedTilePiece.position.x;
     const pieceY = inputStore.selectedTilePiece.position.y;
@@ -120,17 +120,11 @@ export default function GameBoard() {
   }, [inputStore.selectedTilePiece]);
 
   // Calculate valid move positions (8 surrounding squares)
+  // move to game store
   const validMovePositions = useMemo(() => {
     if (!inputStore.selectedTilePiece || !gameStore.stagingState) return [];
-    if (isPlayer(inputStore.selectedTilePiece)) {
-      if (inputStore.selectedTilePiece.type === 'opponent') {
-        return [];
-      }
-    }
-    if (isCard(inputStore.selectedTilePiece)) {
-      if (inputStore.selectedTilePiece.owner === 'opponent') {
-        return [];
-      }
+    if (inputStore.selectedTilePiece.owner === 'opponent') {
+      return [];
     }
 
     const positions: [number, number, number][] = [];
@@ -144,10 +138,10 @@ export default function GameBoard() {
       [0, -1],  // S
       [1, 0],   // E
       [-1, 0],  // W
-      [1, 1],   // NE
-      [-1, 1],  // NW
-      [1, -1],  // SE
-      [-1, -1], // SW
+      // [1, 1],   // NE
+      // [-1, 1],  // NW
+      // [1, -1],  // SE
+      // [-1, -1], // SW
     ];
 
     for (const [dx, dy] of offsets) {
@@ -167,7 +161,6 @@ export default function GameBoard() {
     <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* Render board cursor */}
       <BoardCursor position={inputStore.cursorPosition} visible={true} />
-      
       {tiles.map((square: Tile, index: number) => {
         // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
         return(
@@ -216,7 +209,7 @@ export default function GameBoard() {
       {guideLinePositions.map((pos, index) => (
         <mesh key={`guide-${index}`} position={pos} rotation={[0, 0, 0]}>
           <planeGeometry args={[SQUARE_SIZE, SQUARE_SIZE]} />
-          <meshBasicMaterial color="#d2d2d2ff" transparent opacity={0.4} side={DoubleSide} />
+          <meshBasicMaterial color={GUIDE_LINE_COLOR} transparent opacity={0.4} side={DoubleSide} />
         </mesh>
       ))}
 
@@ -224,7 +217,7 @@ export default function GameBoard() {
       {validMovePositions.map((pos, index) => (
         <mesh key={`valid-${index}`} position={pos} rotation={[0, 0, 0]}>
           <planeGeometry args={[SQUARE_SIZE, SQUARE_SIZE]} />
-          <meshBasicMaterial color="#0099ff" transparent opacity={0.4} side={DoubleSide} />
+          <meshBasicMaterial color={VALID_MOVE_COLOR} transparent opacity={0.6} side={DoubleSide} />
         </mesh>
       ))}
       
@@ -244,7 +237,7 @@ export default function GameBoard() {
       
       {/* Render player emblems */}
       {uiStore.showPlayers && gameStore.players.map((player) => {
-        const isSelected = inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece) && inputStore.selectedTilePiece.id === player.id;
+        const isSelected = inputStore.selectedTilePiece && inputStore.selectedTilePiece.id === player.id;
         return (
           <PlayerEmblem 
             key={player.id} 

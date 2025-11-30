@@ -4,16 +4,17 @@ import { Vector3 } from "three";
 import YugiohCard from "./YugiohCard";
 import { useInputStore } from "@/stores/inputStore";
 import { useUIStore } from "@/stores/uiStore";
+import { Key } from "./Key";
 
 interface CardPreviewProps {
 }
 
 export default function CardPreview({ }: CardPreviewProps) {
   // Create a preview version of the card that is always face up and centered
-  const setShowDetails = useUIStore((state) => state.setShowDetails);
-  const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
-  if (!(selectedTilePiece && isCard(selectedTilePiece))) return null;
-  const card = selectedTilePiece;
+  const uiStore = useUIStore();
+  const inputStore = useInputStore();
+  if (!(inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece))) return null;
+  const card = inputStore.selectedTilePiece;
   // If it's an opponent's face-down card, keep it "face down" (masked) but don't rotate (handled by YugiohCard isPreview logic)
   const isOpponentFaceDown = card.owner === 'opponent' && card.isFaceDown;
   
@@ -41,10 +42,10 @@ export default function CardPreview({ }: CardPreviewProps) {
         card.owner === 'player' ? (
           //  View Details Button
           <button
-            onClick={() => setShowDetails(true)}
-            className="absolute bottom-2 left-1/2 transform -translate-x-1/2 px-4 bg-yellow-700 hover:bg-yellow-600 text-white font-bold rounded-lg border-2 border-yellow-500 transition-colors shadow-lg"
+            onClick={() => uiStore.setShowDetails(true)}
+            className="w-[70%] absolute bottom-2 left-1/2 transform -translate-x-1/2 px-4 bg-yellow-700 hover:bg-yellow-600 text-white font-bold rounded-lg border-2 border-yellow-500 transition-colors shadow-lg space-x-4 flex items-center justify-center"
           >
-            View Details
+            {uiStore.showKeyBindings && <Key size="sm">{inputStore.keyBindings.viewDetails}</Key>} <span>View Details</span>
           </button>
         ) : null
       }

@@ -9,13 +9,12 @@ import CardDetailView from "@/components/CardDetailView";
 import CardPreview from "@/components/CardPreview";
 import TilePreview from "@/components/TilePreview";
 import FPSCounter from "@/components/FPSCounter";
-import HandView from "@/components/HandView";
 import { useGameStore } from "@/stores/gameStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
-import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { isCard } from "@/types";
 import { SettingsModal } from "@/components/SettingsModal";
+import HandView from "./components/HandView";
 
 function App() {
   const controlsRef = useRef<any>(null);
@@ -26,7 +25,7 @@ function App() {
   const getPieceKey = useGameStore((state) => state.getPieceKey);
   const tiles = useGameStore((state) => state.tiles);
   const uiStore = useUIStore();
-  
+  const showDetails = useUIStore((state) => state.showDetails);
   const selectedTilePiece = useInputStore((state) => state.selectedTilePiece);
   const cursorPosition = useInputStore((state) => state.cursorPosition);
 
@@ -38,9 +37,6 @@ function App() {
     );
     uiStore.setSelectedTile(tileAtCursor || null);
   }, [cursorPosition, tiles, uiStore.setSelectedTile]);
-  
-  // Consolidated keyboard handler
-  useKeyboardHandler();
   
   const handleResetCamera = () => {
     if (controlsRef.current) {
@@ -136,7 +132,7 @@ function App() {
       {uiStore.showFPS && <FPSCounter />}
       <StaticAxisHelper />
       <div className="absolute top-0 right-0 text-white p-4 bg-black bg-opacity-50">
-        <p>Use W, A, S, D keys to move the card</p>
+        <p>Use W, A, S, D to move cards</p>
       </div>
 
       {/* Control Panel */}
@@ -145,14 +141,13 @@ function App() {
         controlsRef={controlsRef}
       />
       {uiStore.showSettings && <SettingsModal />}
-      {selectedTilePiece && isCard(selectedTilePiece) && selectedTilePiece.owner === 'player' && !uiStore.showDetails && !turnState.actedPieceIds.includes(getPieceKey(selectedTilePiece)) && (
+      {selectedTilePiece && selectedTilePiece.owner === 'player' && !turnState.actedPieceIds.includes(getPieceKey(selectedTilePiece)) && (
         <ActionMenu 
           onChangePosition={handlePosition}
           onFlip={handleFlip}
         />
       )}
-      
-      <CardDetailView />
+      {showDetails && <CardDetailView />}
       <CardPreview />
       <TilePreview />
     </div>
