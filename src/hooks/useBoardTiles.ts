@@ -2,9 +2,7 @@ import { useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 import { Vector3 } from 'three';
 import type { Tile } from '@/types';
-
-const BOARD_SIZE = 11;
-const SQUARE_SIZE = 1;
+import { BOARD_SIZE, SQUARE_SIZE } from '@/const';
 
 export function useBoardTiles() {
   // Load all textures

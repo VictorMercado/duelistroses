@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import type { KeyBindings } from "@/types/KeyBindings";
-import { DEFAULT_KEYBINDINGS } from "@/types/KeyBindings";
+import { type KeyBindings, DEFAULT_KEYBINDINGS } from "@/types";
 import { useInputStore } from "@/stores/inputStore";
 import { useUIStore } from "@/stores/uiStore";
 
 interface SettingsModalProps {
 }
 
-export function SettingsModal({ }: SettingsModalProps) {
+export default function SettingsModal({ }: SettingsModalProps) {
   const uiStore = useUIStore();
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const keyBindings = useInputStore((state) => state.keyBindings);

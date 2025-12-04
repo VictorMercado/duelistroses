@@ -1,9 +1,12 @@
 import { create } from 'zustand';
-import type { TilePiece } from '@/types';
-import type { KeyBindings } from '@/types/KeyBindings';
-import { DEFAULT_KEYBINDINGS } from '@/types/KeyBindings';
-import { isCard, isPlayer } from '@/types';
+import { type TilePiece, type KeyBindings, isCard, isPlayer, DEFAULT_KEYBINDINGS } from '@/types';
 import { useGameStore } from './gameStore';
+import {
+  X_AXIS_NEGATIVE_MAX,
+  X_AXIS_POSITIVE_MAX,
+  Y_AXIS_NEGATIVE_MAX,
+  Y_AXIS_POSITIVE_MAX
+} from "@/const";
 
 interface InputState {
   cursorPosition: { x: number; y: number; };
@@ -19,7 +22,7 @@ interface InputState {
 }
 
 export const useInputStore = create<InputState>((set, get) => ({
-  cursorPosition: { x: 0, y: -5 },
+  cursorPosition: { x: 0, y: Y_AXIS_NEGATIVE_MAX, },
   keyBindings: (() => {
     const saved = localStorage.getItem('keyBindings');
     return saved ? JSON.parse(saved) : DEFAULT_KEYBINDINGS;
@@ -40,23 +43,23 @@ export const useInputStore = create<InputState>((set, get) => ({
 
     switch (direction) {
       case 'up':
-        newY = Math.min(5, cursorPosition.y + 1);
+        newY = Math.min(Y_AXIS_POSITIVE_MAX, cursorPosition.y + 1);
         break;
       case 'down':
-        newY = Math.max(-5, cursorPosition.y - 1);
+        newY = Math.max(Y_AXIS_NEGATIVE_MAX, cursorPosition.y - 1);
         break;
       case 'left':
-        newX = Math.max(-5, cursorPosition.x - 1);
+        newX = Math.max(X_AXIS_NEGATIVE_MAX, cursorPosition.x - 1);
         break;
       case 'right':
-        newX = Math.min(5, cursorPosition.x + 1);
+        newX = Math.min(X_AXIS_POSITIVE_MAX, cursorPosition.x + 1);
         break;
     }
 
-    const newPosKey = `${newX},${newY}`;
 
     // Only move if not in staging mode OR the position is valid
-    if (!isInStagingMode || validPositions.has(newPosKey)) {
+    const isValidPosition = validPositions.some(([x, y]) => x === newX && y === newY);
+    if (!isInStagingMode || isValidPosition) {
       set({ cursorPosition: { x: newX, y: newY } });
     }
   },
@@ -96,7 +99,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       // Don't initialize staging for pieces that already acted
       return;
     }
-    
+
     // Check if it's the correct player's turn
     const isPlayerPiece = (isCard(piece) && piece.owner === 'player') ||
       (isPlayer(piece) && piece.owner === 'player');

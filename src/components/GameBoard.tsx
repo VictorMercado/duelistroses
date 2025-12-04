@@ -1,6 +1,6 @@
-import { DoubleSide, Vector3 } from "three";
+import { DoubleSide } from "three";
 import { useEffect, useMemo } from "react";
-import { useTexture, Text } from "@react-three/drei";
+import { Text } from "@react-three/drei";
 import YugiohCard from "./YugiohCard";
 import PlayerEmblem from "./PlayerEmblem";
 import BoardCursor from "./BoardCursor";
@@ -11,12 +11,11 @@ import { isCard } from "@/types";
 import type { Tile } from "@/types";
 import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { useBoardTiles } from "@/hooks/useBoardTiles";
+import { SQUARE_SIZE, BOARD_SIZE, X_AXIS_NEGATIVE_MAX, X_AXIS_POSITIVE_MAX, Y_AXIS_NEGATIVE_MAX, Y_AXIS_POSITIVE_MAX } from "@/const";
 
-const VALID_PLAY_COLOR = '#00ccff';
+// const VALID_PLAY_COLOR = '#00ccff';
 const GUIDE_LINE_COLOR = '#d2d2d2';
 const VALID_MOVE_COLOR = '#fff700';
-const BOARD_SIZE = 11;
-const SQUARE_SIZE = 1;
 
 export default function GameBoard() {
   const gameStore = useGameStore();
@@ -24,66 +23,6 @@ export default function GameBoard() {
   const inputStore = useInputStore();
   const tiles = useBoardTiles();
   useKeyboardHandler();
-  // Load textures
-  const grassTexture = useTexture('/textures/grass.png');
-  const darkTexture = useTexture('/textures/dark.png');
-  const labyrinthTexture = useTexture('/textures/labyrinth.png');
-  const normalTexture = useTexture('/textures/normal.png');
-  const waterTexture = useTexture('/textures/water.png');
-
-  // const tilesAssets: Tile[] = [
-  //   {
-  //     type: 'grass',
-  //     name: 'Grass',
-  //     texture: grassTexture,
-  //     position: new Vector3(0, 0, 0),
-  //   },
-  //   {
-  //     type: 'dark',
-  //     name: 'Dark',
-  //     texture: darkTexture,
-  //     position: new Vector3(0, 0, 0),
-  //   },
-  //   {
-  //     type: 'labyrinth',
-  //     name: 'Labyrinth',
-  //     texture: labyrinthTexture,
-  //     position: new Vector3(0, 0, 0),
-  //   },
-  //   {
-  //     type: 'normal',
-  //     name: 'Normal',
-  //     texture: normalTexture,
-  //     position: new Vector3(0, 0, 0),
-  //   },
-  //   {
-  //     type: 'water',
-  //     name: 'Water',
-  //     texture: waterTexture,
-  //     position: new Vector3(0, 0, 0),
-  //   },
-  // ];
-  
-  // // Generate tiles
-  // const tiles: Tile[] = useMemo(() => {
-  //   const squares: Tile[] = [];
-  //   for (let i = 0; i < BOARD_SIZE; i++) {
-  //     for (let j = 0; j < BOARD_SIZE; j++) {
-  //       const textureIndex = Math.floor(Math.random() * tilesAssets.length);
-  //       squares.push({
-  //         position: new Vector3(
-  //           (i - BOARD_SIZE / 2 + 0.5) * SQUARE_SIZE,
-  //           (j - BOARD_SIZE / 2 + 0.5) * SQUARE_SIZE,
-  //           0,
-  //         ),
-  //         texture: tilesAssets[textureIndex].texture,
-  //         type: tilesAssets[textureIndex].type,
-  //         name: tilesAssets[textureIndex].name,
-  //       });
-  //     }
-  //   }
-  //   return squares;
-  // }, [grassTexture, darkTexture, labyrinthTexture, normalTexture, waterTexture]);
 
   // Notify store when tiles are ready
   useEffect(() => {
@@ -103,14 +42,14 @@ export default function GameBoard() {
     const pieceY = inputStore.selectedTilePiece.position.y;
 
     // Horizontal positions (same Y, different X)
-    for (let x = -5; x <= 5; x++) {
+    for (let x = X_AXIS_NEGATIVE_MAX; x <= X_AXIS_POSITIVE_MAX; x++) {
       if (x !== pieceX) {
         positions.push([x, pieceY, 0.05]);
       }
     }
 
     // Vertical positions (same X, different Y)
-    for (let y = -5; y <= 5; y++) {
+    for (let y = Y_AXIS_NEGATIVE_MAX; y <= Y_AXIS_POSITIVE_MAX; y++) {
       if (y !== pieceY) {
         positions.push([pieceX, y, 0.05]);
       }
@@ -119,43 +58,8 @@ export default function GameBoard() {
     return positions;
   }, [inputStore.selectedTilePiece]);
 
-  // Calculate valid move positions (8 surrounding squares)
-  // move to game store
-  const validMovePositions = useMemo(() => {
-    if (!inputStore.selectedTilePiece || !gameStore.stagingState) return [];
-    if (inputStore.selectedTilePiece.owner === 'opponent') {
-      return [];
-    }
-
-    const positions: [number, number, number][] = [];
-    // Use ORIGINAL position, not current position
-    const pieceX = gameStore.stagingState.originalPosition.x;
-    const pieceY = gameStore.stagingState.originalPosition.y;
-
-    // 8 surrounding positions (N, S, E, W, NE, NW, SE, SW)
-    const offsets = [
-      [0, 1],   // N
-      [0, -1],  // S
-      [1, 0],   // E
-      [-1, 0],  // W
-      // [1, 1],   // NE
-      // [-1, 1],  // NW
-      // [1, -1],  // SE
-      // [-1, -1], // SW
-    ];
-
-    for (const [dx, dy] of offsets) {
-      const newX = pieceX + dx;
-      const newY = pieceY + dy;
-      
-      // Check bounds
-      if (newX >= -5 && newX <= 5 && newY >= -5 && newY <= 5) {
-        positions.push([newX, newY, 0.06]);
-      }
-    }
-
-    return positions;
-  }, [inputStore.selectedTilePiece, gameStore.stagingState]);
+  // Get valid move positions from gameStore (cardinal directions only)
+  const validMovePositions = gameStore.getValidMovePositions();
 
   return (
     <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>

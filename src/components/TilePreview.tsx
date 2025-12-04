@@ -1,10 +1,27 @@
 import { useUIStore } from "@/stores/uiStore";
+import { getCachedTexture } from "@/hooks/usePreloadTextures";
+import { useMemo } from "react";
 
 interface TilePreviewProps {
 }
 
 export default function TilePreview({ }: TilePreviewProps) {
   const selectedTile = useUIStore((state) => state.selectedTile);
+  
+  // Get cached image or fall back to direct URL
+  const imageUrl = useMemo(() => {
+    if (!selectedTile) return '';
+    
+    const cachedImg = getCachedTexture(selectedTile.type);
+    if (cachedImg && cachedImg.complete) {
+      // Use the cached image's src (it's already loaded)
+      return cachedImg.src;
+    }
+    
+    // Fallback to direct URL if not cached yet
+    return `/textures/${selectedTile.type}.png`;
+  }, [selectedTile]);
+
   if (!selectedTile) return null;
 
   return (
@@ -13,9 +30,12 @@ export default function TilePreview({ }: TilePreviewProps) {
         {/* 3D Texture Preview */}
         <div className="flex-1 bg-gray-900 flex items-center justify-center relative">
           <img 
-            src={`/textures/${selectedTile.type}.png`}
+            key={selectedTile.type}
+            src={imageUrl}
             alt={selectedTile.name}
             className="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
           />
         </div>
         

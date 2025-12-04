@@ -13,33 +13,37 @@ export default function CardPreview({ }: CardPreviewProps) {
   // Create a preview version of the card that is always face up and centered
   const uiStore = useUIStore();
   const inputStore = useInputStore();
-  if (!(inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece))) return null;
-  const card = inputStore.selectedTilePiece;
-  // If it's an opponent's face-down card, keep it "face down" (masked) but don't rotate (handled by YugiohCard isPreview logic)
-  const isOpponentFaceDown = card.owner === 'opponent' && card.isFaceDown;
   
-  const previewCard: Card = {
+  const hasSelection = inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece);
+  const card = hasSelection ? (inputStore.selectedTilePiece as Card) : null;
+
+  const isOpponentFaceDown = card && card.owner === 'opponent' && card.isFaceDown;
+  
+  const previewCard: Card | null = card ? {
     ...card,
     position: new Vector3(0, 0, 0),
-    isFaceDown: isOpponentFaceDown, 
+    isFaceDown: !!isOpponentFaceDown, 
     isDefenseMode: false,
-  };
+  } : null;
 
   return (
-    <div className="absolute bottom-4 right-4 w-80 h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl">
-      <Canvas camera={{ position: [0, 0, 1.5], fov: 45 }}>
+    <div 
+      className={`absolute bottom-4 right-4 w-80 h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+    >
+      <Canvas style={{ pointerEvents: 'none' }} aria-label="Card Preview" camera={{ position: [0, 0, 1.5], fov: 45 }}>
         <ambientLight intensity={1} />
         <pointLight position={[5, 5, 5]} intensity={2} />
-        <YugiohCard 
-            card={previewCard} 
-            isSelected={false} 
-            onSelect={() => {}} 
-            isPreview={true}
-        />
+        {previewCard && (
+          <YugiohCard 
+              card={previewCard} 
+              isSelected={false}
+              onSelect={() => {}}
+              isPreview={true}
+          />
+        )}
       </Canvas>
       
-      {
-        card.owner === 'player' ? (
+      {card ? (
           //  View Details Button
           <button
             onClick={() => uiStore.setShowDetails(true)}

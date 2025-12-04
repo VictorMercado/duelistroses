@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import type { Card, Player, Tile, TilePiece, TurnState, StagingState } from '@/types';
 import { isCard, isPlayer } from '@/types';
 import { cards, players } from '@/data';
+import { useInputStore } from './inputStore';
+import { X_AXIS_NEGATIVE_MAX, 
+  X_AXIS_POSITIVE_MAX, 
+  Y_AXIS_NEGATIVE_MAX, 
+  Y_AXIS_POSITIVE_MAX } from "@/const";
 
 interface GameState {
   cards: Card[];
@@ -19,6 +24,8 @@ interface GameState {
   updatePlayer: (player: Player) => void;
   updateTilePiece: (tilePiece: TilePiece) => void;
   setTiles: (tiles: Tile[]) => void;
+  flipSelectedCard: () => void;
+  changePosition: () => void;
 
   // Turn management
   initializeStagingState: (piece: TilePiece) => void;
@@ -32,7 +39,7 @@ interface GameState {
 
   // Helpers
   getPieceKey: (piece: TilePiece) => string;
-  getValidMovePositions: () => Set<string>;
+  getValidMovePositions: () => [number, number, number][];
   hasActedThisTurn: (piece: TilePiece) => boolean;
 }
 
@@ -80,7 +87,55 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
   },
+  flipSelectedCard: () => {
+    const state = get();
+    const selectedTilePiece = useInputStore.getState().selectedTilePiece;
+    const stagingState = state.stagingState;
+    if (!selectedTilePiece || !isCard(selectedTilePiece)) return;
+    if (!stagingState) return;
 
+    // Get fresh piece data
+    const freshCards = state.cards;
+    const currentPiece = freshCards.find(p => p.id === selectedTilePiece.id);
+
+    if (!currentPiece) return;
+
+    // Yu-Gi-Oh rule: Can't flip a card back down if it was originally face-up
+    if (stagingState.originalIsFaceDown === false) {
+      return;
+    }
+
+    const updated = { ...currentPiece, isFaceDown: !currentPiece.isFaceDown };
+    state.updateTilePiece(updated);
+
+    // Update selected piece in input store to keep it fresh
+    useInputStore.getState().updateSelectedPiece(updated);
+
+    // Mark as flipped in staging
+    const isDifferentFromOriginal = stagingState.originalIsFaceDown !== undefined &&
+      updated.isFaceDown !== stagingState.originalIsFaceDown;
+
+    set((state) => ({
+      stagingState: state.stagingState
+        ? { ...state.stagingState, hasFlipped: isDifferentFromOriginal }
+        : null
+    }));
+  },
+  changePosition() {
+    const state = get();
+    const selectedTilePiece = useInputStore.getState().selectedTilePiece;
+    const stagingState = state.stagingState;
+    if (!selectedTilePiece || !isCard(selectedTilePiece) || !stagingState) return;
+    if (!selectedTilePiece.position.equals(stagingState.originalPosition)) return;
+    const updated = { ...selectedTilePiece, isDefenseMode: !selectedTilePiece.isDefenseMode };
+    state.updateTilePiece(updated);
+    useInputStore.getState().updateSelectedPiece(updated);
+    const isDifferentFromOriginal = stagingState.originalIsDefenseMode !== undefined &&
+      updated.isDefenseMode !== stagingState.originalIsDefenseMode;
+    state.stagingState = state.stagingState
+      ? { ...state.stagingState, hasChangedPosition: isDifferentFromOriginal }
+      : null;
+  },
   setTiles: (tiles) => set({ tiles }),
 
   // Turn management
@@ -114,12 +169,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!piece) return;
 
     // Check if any action was taken
-    const actuallyMoved = !piece.position.equals(stagingState.originalPosition);
-    if (!actuallyMoved && !stagingState.hasFlipped && !stagingState.hasChangedPosition) {
-      // No action taken, just clear staging
-      set({ stagingState: null });
-      return;
-    }
+    // const actuallyMoved = !piece.position.equals(stagingState.originalPosition);
+    // if (!actuallyMoved && !stagingState.hasFlipped && !stagingState.hasChangedPosition) {
+    //   // No action taken, just clear staging
+    //   set({ stagingState: null });
+    //   return;
+    // }
 
     // Mark piece as having acted
     set((state) => ({
@@ -161,27 +216,33 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   getValidMovePositions: () => {
     const state = get();
-    if (!state.stagingState) return new Set();
+    if (!state.stagingState) return [];
 
-    const validPositions = new Set<string>();
+    const positions: [number, number, number][] = [];
     const originalPos = state.stagingState.originalPosition;
 
-    // Add the 8 surrounding squares
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        if (dx === 0 && dy === 0) continue;
-        const x = Math.round(originalPos.x) + dx;
-        const y = Math.round(originalPos.y) + dy;
-        if (x >= -5 && x <= 5 && y >= -5 && y <= 5) {
-          validPositions.add(`${x},${y}`);
-        }
+    // Add only the 4 cardinal directions (N, S, E, W)
+    const offsets: [number, number][] = [
+      [0, 1],   // N
+      [0, -1],  // S
+      [1, 0],   // E
+      [-1, 0],  // W
+    ];
+
+    for (const [dx, dy] of offsets) {
+      const x = Math.round(originalPos.x) + dx;
+      const y = Math.round(originalPos.y) + dy;
+
+      // Check bounds
+      if (x >= X_AXIS_NEGATIVE_MAX && x <= X_AXIS_POSITIVE_MAX && y >= Y_AXIS_NEGATIVE_MAX && y <= Y_AXIS_POSITIVE_MAX) {
+        positions.push([x, y, 0.06]);
       }
     }
 
-    // Also add the original position
-    validPositions.add(`${Math.round(originalPos.x)},${Math.round(originalPos.y)}`);
+    // Also add the original position (allows moving back)
+    positions.push([Math.round(originalPos.x), Math.round(originalPos.y), 0.06]);
 
-    return validPositions;
+    return positions;
   },
 
   hasActedThisTurn: (piece) => {

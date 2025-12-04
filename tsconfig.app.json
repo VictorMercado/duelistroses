@@ -33,6 +33,7 @@
       "@/routes/*": ["src/routes/*"],
       "@/types/*": ["src/types/*"],
       "@data/*": ["src/data/*"],
+      "@shaders/*": ["src/shaders/*"],
     }
   },
   "include": ["src"],

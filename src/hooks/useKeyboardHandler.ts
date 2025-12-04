@@ -3,6 +3,12 @@ import { useGameStore } from '@/stores/gameStore';
 import { useInputStore } from '@/stores/inputStore';
 import { useUIStore } from '@/stores/uiStore';
 import { isCard, isPlayer } from '@/types';
+import {
+  X_AXIS_NEGATIVE_MAX,
+  X_AXIS_POSITIVE_MAX,
+  Y_AXIS_NEGATIVE_MAX,
+  Y_AXIS_POSITIVE_MAX
+} from "@/const";
 
 /**
  * Consolidated keyboard handler hook that manages ALL keyboard interactions:
@@ -17,12 +23,51 @@ export function useKeyboardHandler() {
   const uiStore = useUIStore();
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeydownEvent = (e: KeyboardEvent) => {
       // PIECE MOVEMENT (WASD) - Check this FIRST when in staging mode
       // This takes priority over cursor movement so selected pieces move instead of cursor
       if (inputStore.selectedTilePiece && gameStore.stagingState) {
         // Check if it's an opponent piece
         if (inputStore.selectedTilePiece.owner === 'player') {
+          // CANCEL ACTION (Escape or custom bindings)
+          if (inputStore.keyBindings.cancel.includes(e.key)) {
+            if (isPlayer(inputStore.selectedTilePiece) && gameStore.showHand) {
+              gameStore.closeHand();
+              return;
+            }
+            gameStore.cancelAction();
+            inputStore.selectTilePiece(null);
+            uiStore.setShowDetails(false);
+            return;
+          }
+          // COMMIT ACTION (Enter)
+          if (e.key === 'Enter') {
+            gameStore.commitAction();
+            inputStore.selectTilePiece(null);
+            return;
+          }
+          // CARD ACTIONS
+          if (isCard(inputStore.selectedTilePiece)) {
+            // FLIP CARD ACTION
+            if (e.key.toLowerCase() === inputStore.keyBindings.flipCard.toLowerCase()) {
+              gameStore.flipSelectedCard();
+              return;
+            }
+            // CHANGE POSITION ACTION
+            if (e.key.toLowerCase() === inputStore.keyBindings.changePosition.toLowerCase()) {
+              gameStore.changePosition();
+              return;
+            }
+          }
+          // PLAYER ACTIONS
+          if (isPlayer(inputStore.selectedTilePiece)) {
+            // PLAY CARD KEY (placeholder)
+            if (e.key.toLowerCase() === inputStore.keyBindings.playCard.toLowerCase()) {
+              gameStore.openHand();
+              return;
+            }
+          }
+          // TODO: Move most of this logic to gameStore
           const freshCards = gameStore.cards;
           const freshPlayers = gameStore.players;
           const currentPiece = [...freshCards, ...freshPlayers].find(
@@ -37,31 +82,34 @@ export function useKeyboardHandler() {
 
           switch (e.key) {
             case 'w':
-              newPosition.y = Math.min(newPosition.y + 1, 5);
+              newPosition.y = Math.min(newPosition.y + 1, Y_AXIS_POSITIVE_MAX);
               moved = true;
               break;
             case 's':
-              newPosition.y = Math.max(newPosition.y - 1, -5);
+              newPosition.y = Math.max(newPosition.y - 1, Y_AXIS_NEGATIVE_MAX);
               moved = true;
               break;
             case 'a':
-              newPosition.x = Math.max(newPosition.x - 1, -5);
+              newPosition.x = Math.max(newPosition.x - 1, X_AXIS_NEGATIVE_MAX);
               moved = true;
               break;
             case 'd':
-              newPosition.x = Math.min(newPosition.x + 1, 5);
+              newPosition.x = Math.min(newPosition.x + 1, X_AXIS_POSITIVE_MAX);
               moved = true;
               break;
           }
 
+          // TODO: Move most of this logic to gameStore
           if (moved) {
-            // Check if new position is within 1 square of ORIGINAL position
-            const originalPos = gameStore.stagingState.originalPosition;
-            const deltaX = Math.abs(newPosition.x - originalPos.x);
-            const deltaY = Math.abs(newPosition.y - originalPos.y);
+            // Get valid move positions from gameStore (cardinal directions only)
+            const validPositions = gameStore.getValidMovePositions();
+            const targetX = Math.round(newPosition.x);
+            const targetY = Math.round(newPosition.y);
 
-            // Only allow if within 1 square in both directions
-            if (deltaX <= 1 && deltaY <= 1) {
+            // Check if the new position is in the list of valid positions
+            const isValidMove = validPositions.some(([x, y]) => x === targetX && y === targetY);
+
+            if (isValidMove) {
               if (isCard(currentPiece)) {
                 // Yu-Gi-Oh rule: When a card moves, it automatically switches to attack position
                 const updatedCard = { ...currentPiece, position: newPosition, isDefenseMode: false };
@@ -115,25 +163,6 @@ export function useKeyboardHandler() {
         }
       }
 
-      // COMMIT ACTION (Enter)
-      if (e.key === 'Enter') {
-        gameStore.commitAction();
-        inputStore.selectTilePiece(null);
-        return;
-      }
-
-      // CANCEL ACTION (Escape or custom bindings)
-      if (inputStore.keyBindings.cancel.includes(e.key)) {
-        if (inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece)) {
-          const closeHand = gameStore.closeHand;
-          closeHand();
-        }
-        gameStore.cancelAction();
-        inputStore.selectTilePiece(null);
-        uiStore.setShowDetails(false);
-        return;
-      }
-
       // SELECT KEY
       if (e.key.toLowerCase() === inputStore.keyBindings.select.toLowerCase()) {
         // If already in staging mode, commit the action
@@ -162,84 +191,10 @@ export function useKeyboardHandler() {
         }
         return;
       }
-
-      // FLIP CARD KEY
-      if (e.key.toLowerCase() === inputStore.keyBindings.flipCard.toLowerCase()) {
-        if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece) && gameStore.stagingState) {
-          // Get fresh piece data
-          const freshCards = gameStore.cards;
-          const currentPiece = freshCards.find(p => p.id === inputStore.selectedTilePiece!.id);
-
-          if (!currentPiece) return;
-
-          // Yu-Gi-Oh rule: Can't flip a card back down if it was originally face-up
-          if (gameStore.stagingState.originalIsFaceDown === false) {
-            return;
-          }
-
-          const updated = { ...currentPiece, isFaceDown: !currentPiece.isFaceDown };
-          gameStore.updateTilePiece(updated);
-
-          // Update selected piece in input store to keep it fresh
-          useInputStore.getState().updateSelectedPiece(updated);
-
-          // Check if the new state is different from original
-          const isDifferentFromOriginal = gameStore.stagingState.originalIsFaceDown !== undefined &&
-            updated.isFaceDown !== gameStore.stagingState.originalIsFaceDown;
-
-          // Mark as flipped in staging only if different from original
-          useGameStore.setState((state) => ({
-            stagingState: state.stagingState
-              ? { ...state.stagingState, hasFlipped: isDifferentFromOriginal }
-              : null
-          }));
-        }
-        return;
-      }
-
-      // CHANGE POSITION KEY
-      if (e.key.toLowerCase() === inputStore.keyBindings.changePosition.toLowerCase()) {
-        if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece) && gameStore.stagingState) {
-          // Get fresh piece data
-          const freshCards = gameStore.cards;
-          const currentPiece = freshCards.find(p => p.id === inputStore.selectedTilePiece!.id);
-
-          if (!currentPiece) return;
-
-          // Can't change position if actually moved to a different position
-          if (!currentPiece.position.equals(gameStore.stagingState.originalPosition)) return;
-
-          const updated = { ...currentPiece, isDefenseMode: !currentPiece.isDefenseMode };
-          gameStore.updateTilePiece(updated);
-
-          // Update selected piece in input store to keep it fresh
-          useInputStore.getState().updateSelectedPiece(updated);
-
-          // Check if the new mode is different from original
-          const isDifferentFromOriginal = gameStore.stagingState.originalIsDefenseMode !== undefined &&
-            updated.isDefenseMode !== gameStore.stagingState.originalIsDefenseMode;
-
-          // Mark as changed position in staging only if different from original
-          useGameStore.setState((state) => ({
-            stagingState: state.stagingState
-              ? { ...state.stagingState, hasChangedPosition: isDifferentFromOriginal }
-              : null
-          }));
-        }
-        return;
-      }
-
-      // PLAY CARD KEY (placeholder)
-      if (e.key.toLowerCase() === inputStore.keyBindings.playCard.toLowerCase()) {
-        if (inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece)) {
-          gameStore.openHand();
-          return;
-        }
-      }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeydownEvent);
+    return () => window.removeEventListener('keydown', handleKeydownEvent);
   }, [
     inputStore,
     gameStore,

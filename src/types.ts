@@ -1,5 +1,39 @@
 import { Texture, Vector3 } from "three";
 
+export interface KeyBindings {
+  select: string;           // Default: "k"
+  cancel: string[];         // Default: ["l", "Escape"]
+  playCard: string;         // Default: "j" (placeholder)
+  viewDetails: string;      // Default: "i"
+  flipCard: string;         // Default: "o"
+  changePosition: string;   // Default: "u"
+  cursorUp: string;         // Default: "w"
+  cursorDown: string;       // Default: "s"
+  cursorLeft: string;       // Default: "a"
+  cursorRight: string;      // Default: "d"
+}
+
+export const DEFAULT_KEYBINDINGS: KeyBindings = {
+  select: "k",
+  cancel: ["l", "Escape"],
+  playCard: "j",
+  viewDetails: "i",
+  flipCard: "o",
+  changePosition: "u",
+  cursorUp: "w",
+  cursorDown: "s",
+  cursorLeft: "a",
+  cursorRight: "d"
+};
+
+export const TILE_TEXTURES: TileType[] = [
+  'grass',
+  'dark',
+  'labyrinth',
+  'normal',
+  'water'
+];
+
 export type TileType = 'grass' | 'dark' | 'labyrinth' | 'normal' | 'water' | 'crush' | 'mountain' | 'wasteland' | 'forest';
 
 export interface Tile {
@@ -15,6 +49,8 @@ export type TilePiece = {
   owner: 'player' | 'opponent';
 };
 
+export type Rarity = 'common' | 'rare' | 'secret' | 'ghost' | 'super' | 'ultra' | 'ultimate' | 'prismatic' | 'starlight' | 'gold';
+
 export interface Card extends TilePiece {
   id: number;
   name: string;
@@ -23,11 +59,13 @@ export interface Card extends TilePiece {
   description: string;
   isFaceDown: boolean;
   isDefenseMode: boolean;
+  rarity: Rarity;
   level: number;
   attribute: string;
   attributeUrl: string;
   textureUrl: string;
   textureTemplateUrl: string;
+  maskUrl?: string;
 }
 
 export type Clan = 'Yorkists' | 'Lancastrians';

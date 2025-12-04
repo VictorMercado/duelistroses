@@ -18,6 +18,8 @@ export default defineConfig({
       "@/types": resolve(__dirname, "src", "types"),
       "@/lib/utils": resolve(__dirname, "src", "lib", "utils"),
       "@/data": resolve(__dirname, "src", "data"),
+      "@/shaders": resolve(__dirname, "src", "shaders"),
+      "@/const": resolve(__dirname, "src", "const"),
     },
   },
 });

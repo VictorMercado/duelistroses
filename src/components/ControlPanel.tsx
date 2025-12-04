@@ -1,13 +1,12 @@
 import { useUIStore } from '@/stores/uiStore';
 import { useEffect, useState } from 'react';
+import MusicToggle from "@/components/MusicToggle";
 
 interface ControlPanelProps {
-  onResetCamera: () => void;
   controlsRef: React.RefObject<any>;
 }
 
 export default function ControlPanel({
-  onResetCamera,
   controlsRef,
 }: ControlPanelProps) {
   const [cameraStats, setCameraStats] = useState({
@@ -17,7 +16,11 @@ export default function ControlPanel({
     panOffset: { x: 0, y: 0, z: 0 },
   });
   const uiStore = useUIStore((state) => state);
-
+  const handleResetCamera = () => {
+    if (controlsRef.current) {
+      controlsRef.current.reset();
+    }
+  };
   useEffect(() => {
     const updateStats = () => {
       if (controlsRef.current) {
@@ -47,11 +50,12 @@ export default function ControlPanel({
   }, [controlsRef]);
 
   return (
-    <div className="absolute top-20 right-4 bg-black/80 text-white p-4 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 w-64">
+    <div className="absolute top-50 right-4 bg-black/80 text-white p-4 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 w-64">
       {/* Settings Modal */}
       <h3 className="text-lg font-bold mb-4 border-b border-white/20 pb-2">
-        Camera Controls
+        Control Panel
       </h3>
+      <MusicToggle />
       
       {/* Camera Stats */}
       <div className="mb-4 p-3 bg-gray-900/50 rounded-lg border border-white/10">
@@ -63,7 +67,9 @@ export default function ControlPanel({
           <p><span className="text-blue-400">Pan:</span> ({cameraStats.panOffset.x}, {cameraStats.panOffset.y}, {cameraStats.panOffset.z})</p>
         </div>
       </div>
-
+      <div className="text-sm text-white p-2 bg-black bg-opacity-50 mb-4 border-b border-white/20 pb-2">
+        <p>Use W, A, S, D to move cards</p>
+      </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label htmlFor="zoom-toggle" className="cursor-pointer select-none">
@@ -175,7 +181,7 @@ export default function ControlPanel({
           Settings
         </button>
         <button
-          onClick={onResetCamera}
+          onClick={handleResetCamera}
           className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors"
         >
           Reset Camera

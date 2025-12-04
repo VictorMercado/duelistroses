@@ -33,13 +33,13 @@ export default function PlayerEmblem({ player, isSelected, onSelect }: PlayerEmb
         />
       </mesh>
       
-      {/* Glow effect - brighter when selected */}
-      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.6, 32]} />
+      {/* Glow */}
+      <mesh position={[0, 0, -0.01]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[1, 1]} />
         <meshBasicMaterial 
-          color={player.clan === 'Yorkists' ? '#ff0000' : '#ffffff'}
+          color={player.owner === 'opponent' ? '#ff4343' : '#ffffff'}
           transparent
-          opacity={isSelected ? 0.6 : 0.3}
+          opacity={0.6}
         />
       </mesh>
     </group>

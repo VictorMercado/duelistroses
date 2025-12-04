@@ -4,7 +4,7 @@ export interface KeyProps {
   pressed?: boolean;
 }
 
-export function Key({ children, size = "md", pressed = false }: KeyProps) {
+export function Key({ children, size = "md" }: KeyProps) {
   const sizeMap = {
     sm: "px-2 py-0.5 text-xs",
     md: "px-2.5 py-0.5 text-md",
