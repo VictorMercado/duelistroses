@@ -11,7 +11,7 @@ import { isCard } from "@/types";
 import type { Tile } from "@/types";
 import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { useBoardTiles } from "@/hooks/useBoardTiles";
-import { SQUARE_SIZE, BOARD_SIZE, X_AXIS_NEGATIVE_MAX, X_AXIS_POSITIVE_MAX, Y_AXIS_NEGATIVE_MAX, Y_AXIS_POSITIVE_MAX } from "@/const";
+import { SQUARE_SIZE, X_AXIS_NEGATIVE_MAX, X_AXIS_POSITIVE_MAX, Y_AXIS_NEGATIVE_MAX, Y_AXIS_POSITIVE_MAX } from "@/const";
 
 // const VALID_PLAY_COLOR = '#00ccff';
 const GUIDE_LINE_COLOR = '#d2d2d2';
@@ -141,12 +141,10 @@ export default function GameBoard() {
       
       {/* Render player emblems */}
       {uiStore.showPlayers && gameStore.players.map((player) => {
-        const isSelected = inputStore.selectedTilePiece && inputStore.selectedTilePiece.id === player.id;
         return (
           <PlayerEmblem 
             key={player.id} 
             player={player}
-            isSelected={!!isSelected}
             onSelect={() => inputStore.selectTilePiece(player)}
           />
         );

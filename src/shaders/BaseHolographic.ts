@@ -63,16 +63,32 @@ export const BaseHolographicMaterial = shaderMaterial(
       float maskFactor = mix(1.0, invertedMaskVal, useMask);
 
       // --- Light Sweep Effect ---
-      // Create a diagonal band that moves across the card
-      // (vUv.x + vUv.y) creates a diagonal gradient
-      // time * 0.5 controls the speed
-      float sweep = sin((vUv.x + vUv.y) * 5.0 - time * 2.0);
-      // Sharpen the sine wave to make it a distinct band
-      sweep = smoothstep(0.9, 1.0, sweep);
+      // "Blurred thin oval light sweep"
+      
+      // 1. Moving center position (loops)
+      // Moves from bottom-left (-0.5) to top-right (1.5)
+      float t = mod(time * 0.5, 2.5) - 0.5;
+      vec2 center = vec2(t, t);
+      
+      // 2. Vector from center
+      vec2 p = vUv - center;
+      
+      // 3. Rotate coordinates -45 degrees to align with diagonal movement
+      // pX is perpendicular to movement (length of oval)
+      // pY is parallel to movement (width/thinness of oval)
+      float pX = p.x * 0.707 - p.y * 0.707;
+      float pY = p.x * 0.707 + p.y * 0.707;
+      
+      // 4. Create Oval Shape using Gaussian falloff
+      // High coefficient for pY makes it thin (narrow width)
+      // Low coefficient for pX makes it long (oval shape)
+      float shape = (pY * pY * 80.0) + (pX * pX * 2.0);
+      
+      // Exp creates a smooth, blurred gaussian falloff
+      float sweep = exp(-shape);
       
       // Add the sweep to the holographic effect
-      // It should also be masked
-      vec3 sweepColor = vec3(1.0, 1.0, 1.0) * sweep * 0.5;
+      vec3 sweepColor = vec3(1.0, 1.0, 1.0) * sweep * 0.6;
 
       // Apply the maskFactor to the shine calculation
       // If maskFactor is 0 (on the dragon), no shine is added.

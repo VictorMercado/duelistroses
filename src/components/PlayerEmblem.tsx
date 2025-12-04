@@ -5,11 +5,10 @@ import { useRef } from "react";
 
 interface PlayerEmblemProps {
   player: Player;
-  isSelected: boolean;
   onSelect: () => void;
 }
 
-export default function PlayerEmblem({ player, isSelected, onSelect }: PlayerEmblemProps) {
+export default function PlayerEmblem({ player, onSelect }: PlayerEmblemProps) {
   const emblemTexture = useTexture(player.textureUrl);
   const groupRef = useRef<Group>(null); 
 

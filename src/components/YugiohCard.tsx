@@ -69,6 +69,13 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
                 material.uniforms.time.value = state.clock.getElapsedTime();
             }
         }
+        // Animate Holographic Sweep in preview
+        if (holoMeshRef.current && card.rarity !== 'common') {
+            const material = holoMeshRef.current.material as any;
+            if (material.uniforms && material.uniforms.time) {
+                material.uniforms.time.value = state.clock.getElapsedTime();
+            }
+        }
         return;
     }
 
