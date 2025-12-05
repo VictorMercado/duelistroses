@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Tile } from '@/types';
+import { BOARD_SIZE } from '@/const';
 
 interface UIState {
   // Camera controls
@@ -17,7 +18,8 @@ interface UIState {
   showPlayers: boolean;
   // Tile selection/hover
   selectedTile: Tile | null;
-
+  boardSize: number;
+  tileArrangement: 'random' | 'player' | 'opponent';
   // Actions
   setEnableZoom: (enable: boolean) => void;
   setEnableRotate: (enable: boolean) => void;
@@ -30,6 +32,8 @@ interface UIState {
   setShowCards: (show: boolean) => void;
   setShowPlayers: (show: boolean) => void;
   setSelectedTile: (tile: Tile | null) => void;
+  setBoardSize: (size: number) => void;
+  setTileArrangement: (arrangement: 'random' | 'player' | 'opponent') => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -46,6 +50,8 @@ export const useUIStore = create<UIState>((set) => ({
   showKeyBindings: true,
   showCards: true,
   showPlayers: true,
+  boardSize: BOARD_SIZE,
+  tileArrangement: 'random',
 
   // Actions
   setEnableZoom: (enable) => set({ enableZoom: enable }),
@@ -59,4 +65,6 @@ export const useUIStore = create<UIState>((set) => ({
   setShowKeyBindings: (show) => set({ showKeyBindings: show }),
   setShowCards: (show) => set({ showCards: show }),
   setShowPlayers: (show) => set({ showPlayers: show }),
+  setBoardSize: (size) => set({ boardSize: size }),
+  setTileArrangement: (arrangement) => set({ tileArrangement: arrangement }),
 }));

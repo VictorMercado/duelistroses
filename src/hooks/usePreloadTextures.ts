@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { TILE_TEXTURES } from '@/types';
+import { TILE_TEXTURES } from '@/const';
 
 // Module-level cache to keep images in memory
 const textureCache = new Map<string, HTMLImageElement>();

@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
 import type { Card, Player } from "@/types";
-import { BOARD_SIZE } from "@/const";
+import { BOARD_SIZE, NORTH_BOARD_START, SOUTH_BOARD_START, EAST_BOARD_START, WEST_BOARD_START, PLAYER_BASE_Z } from "@/const";
 
 export const cards: Card[] = [
   {
@@ -139,7 +139,7 @@ export const cards: Card[] = [
     rarity: "common",
     level: 0,
     attribute: "Spell",
-    attributeUrl: "/attributes/spellAttr.png",
+    attributeUrl: "/attributes/spellAttr.svg",
     textureUrl: "/cards/Change_of_Heart.png",
     textureTemplateUrl: "/textures/magicTemplate.png",
   },
@@ -169,40 +169,44 @@ export const players: Player[] = [
     name: "Player_1",
     clan: "Yorkists",
     textureUrl: "/textures/Red_rose_emblem.png",
-    position: new Vector3(0, -((BOARD_SIZE - 1) / 2), 0.2),
+    position: new Vector3(0,0,PLAYER_BASE_Z),
     allCards: [],
     cardsInPlay: [1, 3],
     owner: "player",
+    boardSide: "N",
   },
   {
     id: 200,
     name: "Opponent",
     clan: "Lancastrians",
     textureUrl: "/textures/White_rose_emblem.png",
-    position: new Vector3(0, ((BOARD_SIZE - 1) / 2), 0.2),
+    position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: [],
     cardsInPlay: [2, 4],
     owner: "opponent",
+    boardSide: "S",
   },
   {
     id: 300,
     name: "Opponent_2",
     clan: "Lancastrians",
     textureUrl: "/textures/White_rose_emblem.png",
-    position: new Vector3(((BOARD_SIZE - 1) / 2), 0, 0.2),
+    position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: [],
     cardsInPlay: [2, 4],
     owner: "opponent",
+    boardSide: "E",
   },
   {
     id: 400,
     name: "Player_2",
     clan: "Yorkists",
     textureUrl: "/textures/Red_rose_emblem.png",
-    position: new Vector3(-((BOARD_SIZE - 1) / 2), 0, 0.2),
+    position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: [],
     cardsInPlay: [1, 3],
     owner: "player",
+    boardSide: "W",
   },
 ];
     

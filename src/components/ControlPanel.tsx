@@ -1,6 +1,7 @@
 import { useUIStore } from '@/stores/uiStore';
 import { useEffect, useState } from 'react';
 import MusicToggle from "@/components/MusicToggle";
+import { useGameStore } from '@/stores/gameStore';
 
 interface ControlPanelProps {
   controlsRef: React.RefObject<any>;
@@ -15,7 +16,8 @@ export default function ControlPanel({
     azimuthAngle: 0,
     panOffset: { x: 0, y: 0, z: 0 },
   });
-  const uiStore = useUIStore((state) => state);
+  const uiStore = useUIStore();
+  const gameStore = useGameStore();
   const handleResetCamera = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
@@ -67,6 +69,16 @@ export default function ControlPanel({
           <p><span className="text-blue-400">Pan:</span> ({cameraStats.panOffset.x}, {cameraStats.panOffset.y}, {cameraStats.panOffset.z})</p>
         </div>
       </div>
+      {/* GameBoard Stats */}
+      <div className="mb-4 p-3 bg-gray-900/50 rounded-lg border border-white/10">
+        <p className="text-xs text-gray-400 mb-2">GameBoard Stats:</p>
+        <div className="text-xs space-y-1">
+          <p><span className="text-blue-400">Board Size:</span> {uiStore.boardSize} x {uiStore.boardSize}</p>
+          <p><span className="text-blue-400">Tile Arrangement:</span> {uiStore.tileArrangement}</p>
+          <p><span className="text-blue-400">Players Count:</span> {gameStore.currentPlayersCount}</p>
+          <p><span className="text-blue-400">Cards Count:</span> {gameStore.currentCardsCount}</p>
+        </div>
+      </div>
       <div className="text-sm text-white p-2 bg-black bg-opacity-50 mb-4 border-b border-white/20 pb-2">
         <p>Use W, A, S, D to move cards</p>
       </div>
@@ -109,7 +121,7 @@ export default function ControlPanel({
         </div>
         <div className="flex items-center justify-between">
           <label htmlFor="tile-positions-toggle" className="cursor-pointer select-none">
-            Show Tile Positions
+            Show Tile Coordinates
           </label>
           <input
             id="tile-positions-toggle"

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { type KeyBindings, DEFAULT_KEYBINDINGS } from "@/types";
+import type { KeyBindings } from "@/types";
 import { useInputStore } from "@/stores/inputStore";
 import { useUIStore } from "@/stores/uiStore";
+import { DEFAULT_KEYBINDINGS } from "@/const"
 
 interface SettingsModalProps {
 }

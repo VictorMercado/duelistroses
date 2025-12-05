@@ -18,6 +18,8 @@ interface GameState {
   // Hand state
   handCards: Card[];
   showHand: boolean;
+  currentPlayersCount: number;
+  currentCardsCount: number;
 
   // Actions
   updateCard: (card: Card) => void;
@@ -45,9 +47,9 @@ interface GameState {
 
 export const useGameStore = create<GameState>((set, get) => ({
   cards: cards,
-
+  currentCardsCount: cards.length,
   players: players,
-
+  currentPlayersCount: players.length,
   tiles: [],
 
   turnState: {

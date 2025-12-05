@@ -13,27 +13,6 @@ export interface KeyBindings {
   cursorRight: string;      // Default: "d"
 }
 
-export const DEFAULT_KEYBINDINGS: KeyBindings = {
-  select: "k",
-  cancel: ["l", "Escape"],
-  playCard: "j",
-  viewDetails: "i",
-  flipCard: "o",
-  changePosition: "u",
-  cursorUp: "w",
-  cursorDown: "s",
-  cursorLeft: "a",
-  cursorRight: "d"
-};
-
-export const TILE_TEXTURES: TileType[] = [
-  'grass',
-  'dark',
-  'labyrinth',
-  'normal',
-  'water'
-];
-
 export type TileType = 'grass' | 'dark' | 'labyrinth' | 'normal' | 'water' | 'crush' | 'mountain' | 'wasteland' | 'forest';
 
 export interface Tile {
@@ -48,8 +27,21 @@ export type TilePiece = {
   position: Vector3;
   owner: 'player' | 'opponent';
 };
-
-export type Rarity = 'common' | 'rare' | 'secret' | 'ghost' | 'super' | 'ultra' | 'ultimate' | 'prismatic' | 'starlight' | 'gold';
+// secret: sparkle image
+// super: shiny art
+// ghost: white filter with shiny art and level and attribute
+// ultra: shiny art, level and attribute
+// gold: gold shiny art, bezels, level and attribute
+// ultimate: shiny art, bezels, card template, level and attribute, add halo effect
+// starlight: sparkle shiny art, bezels, card template, level and attribute, add halo effect
+export type Rarity = 'common' | 'secret' | 'ghost' | 'super' | 'ultra' | 'ultimate' | 'starlight' | 'gold';
+export const getGlowColor = (rarity: Omit<Rarity, 'common' | 'ghost' | 'secret' | 'ultra' | 'gold'>) => {
+  switch (rarity) {
+    case 'ultimate': return '#ffffff'; // Orange Red
+    case 'starlight': return '#ffd700'; // Orange Red
+    default: return '#ffd700'; // Default Gold
+  }
+};
 
 export interface Card extends TilePiece {
   id: number;
@@ -77,6 +69,7 @@ export interface Player extends TilePiece {
   textureUrl: string; // Red_rose_emblem.png or White_rose_emblem.png
   allCards: Card[]; // All cards the player owns
   cardsInPlay: number[]; // IDs of cards currently in play
+  boardSide: 'N' | 'S' | 'E' | 'W';
 }
 
 // Type guards

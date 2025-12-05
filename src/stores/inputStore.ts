@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import { type TilePiece, type KeyBindings, isCard, isPlayer, DEFAULT_KEYBINDINGS } from '@/types';
+import { type TilePiece, type KeyBindings, isCard, isPlayer } from '@/types';
 import { useGameStore } from './gameStore';
 import {
   X_AXIS_NEGATIVE_MAX,
   X_AXIS_POSITIVE_MAX,
   Y_AXIS_NEGATIVE_MAX,
-  Y_AXIS_POSITIVE_MAX
+  Y_AXIS_POSITIVE_MAX,
+  DEFAULT_KEYBINDINGS
 } from "@/const";
 
 interface InputState {
