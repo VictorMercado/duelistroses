@@ -5,7 +5,7 @@ interface MusicToggleProps {
 export default function MusicToggle({  }: MusicToggleProps) {
   const { isPlaying, volume, toggleMusic, setVolume } = useGameAudio();
   return (
-    <div className="flex flex-col gap-2 z-50 pb-4">
+    <div className="flex flex-col gap-2 z-50">
       <button
         onClick={toggleMusic}
         className="bg-black/80 text-white px-4 py-2 rounded-lg border border-white/20 hover:border-yellow-500 hover:bg-black/90 transition-all font-mono text-sm flex items-center gap-2"

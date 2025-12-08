@@ -2,6 +2,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useEffect, useState } from 'react';
 import MusicToggle from "@/components/MusicToggle";
 import { useGameStore } from '@/stores/gameStore';
+import FPSCounter from './FPSCounter';
 
 interface ControlPanelProps {
   controlsRef: React.RefObject<any>;
@@ -52,15 +53,18 @@ export default function ControlPanel({
   }, [controlsRef]);
 
   return (
-    <div className="absolute top-50 right-4 bg-black/80 text-white p-4 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 w-64">
+    <div className="bg-black/80 text-white p-4 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 space-y-2 w-64">
       {/* Settings Modal */}
-      <h3 className="text-lg font-bold mb-4 border-b border-white/20 pb-2">
+      <h3 className="text-lg font-bold border-b border-white/20 pb-2">
         Control Panel
       </h3>
+      <div className="text-sm text-white p-2 bg-black bg-opacity-50 border-b border-white/20 pb-2">
+        <p>Use W, A, S, D to move cards</p>
+      </div>
+      {uiStore.showFPS && <FPSCounter style="minimal"/>}
       <MusicToggle />
-      
       {/* Camera Stats */}
-      <div className="mb-4 p-3 bg-gray-900/50 rounded-lg border border-white/10">
+      <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10">
         <p className="text-xs text-gray-400 mb-2">Camera Stats:</p>
         <div className="text-xs space-y-1">
           <p><span className="text-blue-400">Distance:</span> {cameraStats.distance}</p>
@@ -70,7 +74,7 @@ export default function ControlPanel({
         </div>
       </div>
       {/* GameBoard Stats */}
-      <div className="mb-4 p-3 bg-gray-900/50 rounded-lg border border-white/10">
+      <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10">
         <p className="text-xs text-gray-400 mb-2">GameBoard Stats:</p>
         <div className="text-xs space-y-1">
           <p><span className="text-blue-400">Board Size:</span> {uiStore.boardSize} x {uiStore.boardSize}</p>
@@ -79,10 +83,19 @@ export default function ControlPanel({
           <p><span className="text-blue-400">Cards Count:</span> {gameStore.currentCardsCount}</p>
         </div>
       </div>
-      <div className="text-sm text-white p-2 bg-black bg-opacity-50 mb-4 border-b border-white/20 pb-2">
-        <p>Use W, A, S, D to move cards</p>
-      </div>
       <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label htmlFor="free-cam-toggle" className="cursor-pointer select-none">
+            Free Camera
+          </label>
+          <input
+            id="free-cam-toggle"
+            type="checkbox"
+            checked={uiStore.enableFreeCamera}
+            onChange={(e) => uiStore.setEnableFreeCamera(e.target.checked)}
+            className="w-4 h-4 accent-yellow-500 cursor-pointer"
+          />
+        </div>
         <div className="flex items-center justify-between">
           <label htmlFor="zoom-toggle" className="cursor-pointer select-none">
             Enable Zoom
@@ -116,6 +129,18 @@ export default function ControlPanel({
             type="checkbox"
             checked={uiStore.enablePan}
             onChange={(e) => uiStore.setEnablePan(e.target.checked)}
+            className="w-4 h-4 accent-blue-500 cursor-pointer"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="tile-toggle" className="cursor-pointer select-none">
+            Show Tiles
+          </label>
+          <input
+            id="tile-toggle"
+            type="checkbox"
+            checked={uiStore.showTiles}
+            onChange={(e) => uiStore.setShowTiles(e.target.checked)}
             className="w-4 h-4 accent-blue-500 cursor-pointer"
           />
         </div>
@@ -181,7 +206,7 @@ export default function ControlPanel({
         </div>
       </div>
        {/* Action Buttons */}
-      <div className="space-y-2 mt-4">
+      <div className="space-y-2">
         <button
           onClick={() => uiStore.setShowSettings(true)}
           className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"

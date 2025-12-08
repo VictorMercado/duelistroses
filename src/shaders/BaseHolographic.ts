@@ -50,7 +50,7 @@ export const BaseHolographicMaterial = shaderMaterial(
       
       // Create a rainbow effect based on view angle
       float viewDot = dot(viewDir, vNormal);
-      vec3 rainbow = 0.5 + 0.5 * cos(viewDot * 10.0 + vec3(0, 2, 4));
+      vec3 rainbow = 0.5 + 0.5 * cos(viewDot * 20.0 + vec3(0, 2, 4));
       
       // Calculate mask factor
       // The user wants the shine on the BLACK part of the mask (background).
@@ -92,7 +92,7 @@ export const BaseHolographicMaterial = shaderMaterial(
 
       // Apply the maskFactor to the shine calculation
       // If maskFactor is 0 (on the dragon), no shine is added.
-      vec3 holoEffect = (shine.r * rainbow * 0.5 + sweepColor) * maskFactor;
+      vec3 holoEffect = (shine.r * rainbow * 0.6 + sweepColor) * maskFactor;
       
       vec3 finalColor = baseColor.rgb + holoEffect;
 

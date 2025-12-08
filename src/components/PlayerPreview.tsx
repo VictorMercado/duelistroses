@@ -1,0 +1,48 @@
+
+import { Canvas } from "@react-three/fiber";
+import { Vector3 } from "three";
+import { useInputStore } from "@/stores/inputStore";
+import PlayerEmblem from "./PlayerEmblem";
+import { isPlayer, type Player } from "@/types";
+
+export default function PlayerPreview() {
+  const inputStore = useInputStore();
+  
+  const hasSelection = inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece);
+  const player = hasSelection ? (inputStore.selectedTilePiece as Player) : null;
+
+  // Create a preview version of the player that is centered
+  const previewPlayer: Player | null = player ? {
+    ...player,
+    position: new Vector3(0, 0, 0),
+  } : null;
+
+  return (
+    <div 
+      className={`absolute bottom-4 right-4 w-80 h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+    >
+      {/* 3D Preview */}
+      <Canvas style={{ pointerEvents: 'none' }} aria-label="Player Preview" camera={{ position: [0, 0, 2], fov: 45 }}>
+        <ambientLight intensity={1} />
+        <pointLight position={[5, 5, 5]} intensity={2} />
+        {previewPlayer && (
+          <PlayerEmblem 
+              player={previewPlayer}
+              onSelect={() => {}}
+              preview
+          />
+        )}
+      </Canvas>
+      
+      {/* Name and Details */}
+      {player ? (
+        <div className="absolute bottom-4 w-full flex flex-col items-center space-y-2 pointer-events-auto">
+           {/* Player Name */}
+           <div className="text-white font-bold text-xl mb-2 drop-shadow-md">
+            {player.name}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

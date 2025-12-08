@@ -6,6 +6,7 @@ import { Vector3, Group } from "three";
 import YugiohCard from "@/components/YugiohCard";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
+import { useGameStore } from "@/stores/gameStore";
 
 interface CardDetailViewProps {
 }
@@ -33,9 +34,15 @@ function CardTilter({ children }: { children: React.ReactNode }) {
 export default function CardDetailView({ }: CardDetailViewProps) {
   const setShowDetails = useUIStore((state) => state.setShowDetails);
   const inputStore = useInputStore();
+  const gameStore = useGameStore();
+
+  const isHandOpen = gameStore.showHand || (gameStore.summoningState.active && gameStore.summoningState.phase === 'card');
+  const handCard = isHandOpen && inputStore.handSelectedIndex >= 0 
+    ? gameStore.handCards[inputStore.handSelectedIndex] 
+    : null;
 
   const hasSelection = inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece);
-  const card = hasSelection ? (inputStore.selectedTilePiece as Card) : null;
+  const card = handCard || (hasSelection ? (inputStore.selectedTilePiece as Card) : null);
   const isOpponentFaceDown = card && card.owner === 'opponent' && card.isFaceDown;
 
   // Create a preview version of the card that is always face up and centered
@@ -45,6 +52,7 @@ export default function CardDetailView({ }: CardDetailViewProps) {
     isFaceDown: !!isOpponentFaceDown,
     isDefenseMode: false,
   } : null;
+
   const handleCloseDetailView = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       event.stopPropagation();
@@ -89,11 +97,16 @@ export default function CardDetailView({ }: CardDetailViewProps) {
 
         {/* Right Side: Details */}
         <div className="w-1/2 p-8 flex flex-col">
-          <h2 className="text-4xl font-bold mb-2 text-yellow-500">
+          <h2 className="text-4xl font-bold mb-2">
             {isOpponentFaceDown ? '????' : card?.name}
           </h2>
-          <div className="text-sm text-gray-400 mb-6 uppercase tracking-wider">
-            {card?.owner === 'player' ? 'Your Card' : 'Opponent Card'}
+          <div className="flex gap-2">
+            <div className="text-sm text-gray-400 mb-6 uppercase tracking-wider">
+              {card?.type}
+            </div>
+            <div className="text-sm text-gray-400 mb-6 uppercase tracking-wider font-bold" style={{ color: card?.rarity === 'common' ? 'inherit' : '#ffbb00' }}>
+              {card?.rarity}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-8">

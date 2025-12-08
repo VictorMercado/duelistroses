@@ -13,12 +13,19 @@ export interface KeyBindings {
   cursorRight: string;      // Default: "d"
 }
 
-export type TileType = 'grass' | 'dark' | 'labyrinth' | 'normal' | 'water' | 'crush' | 'mountain' | 'wasteland' | 'forest';
+export type TerrainType = 'sogen' | 'yami' | 'labyrinth' | 'normal' | 'umi' | 'crush' | 'mountain' | 'wasteland' | 'forest' | 'toon';
+
+export type Terrain = {
+  type: TerrainType;
+  name: string;
+  textureUrl: string;
+  displacementUrl?: string;
+};
 
 export interface Tile {
-  type: TileType;
-  name: string;
+  terrain: Terrain;
   texture: Texture;
+  displacementTexture?: Texture;
   position: Vector3;
 }
 
@@ -35,12 +42,58 @@ export type TilePiece = {
 // ultimate: shiny art, bezels, card template, level and attribute, add halo effect
 // starlight: sparkle shiny art, bezels, card template, level and attribute, add halo effect
 export type Rarity = 'common' | 'secret' | 'ghost' | 'super' | 'ultra' | 'ultimate' | 'starlight' | 'gold';
-export const getGlowColor = (rarity: Omit<Rarity, 'common' | 'ghost' | 'secret' | 'ultra' | 'gold'>) => {
-  switch (rarity) {
-    case 'ultimate': return '#ffffff'; // Orange Red
-    case 'starlight': return '#ffd700'; // Orange Red
-    default: return '#ffd700'; // Default Gold
-  }
+
+export type MonsterType =
+  'aqua' |
+  'beast' |
+  'beast-warrior' |
+  'dinosaur' |
+  'dragon' |
+  'fairy' |
+  'fish' |
+  'fiend' |
+  'immortal' |
+  'insect' |
+  'machine' |
+  'plant' |
+  'pyro' |
+  'reptile' |
+  'rock' |
+  'sea-serpent' |
+  'spellcaster' |
+  'toon' |
+  'thunder' |
+  'warrior' |
+  'winged-beast' |
+  'zombie';
+
+export type SpellType =
+  'normal' |
+  'power-up' |
+  'field' |
+  'ritual';
+// 'continuous' |
+// 'quick-play' |
+
+export type TrapType =
+  'limited-range' |
+  'full-range';
+// 'normal' |
+// 'continuous' |
+// 'counter'
+
+export type Spell = SpellType;
+export type Trap = TrapType;
+export type Monster = "normal" | "effect" | "fusion" | "ritual";
+
+export type MonsterKind = {
+  monster: MonsterType;
+  strongIn: TerrainType[];
+  weakIn: TerrainType[];
+};
+export type Attribute = {
+  type: "light" | "dark" | "wind" | "water" | "earth" | "fire" | "spell" | "trap";
+  attributeUrl: string;
 };
 
 export interface Card extends TilePiece {
@@ -49,15 +102,16 @@ export interface Card extends TilePiece {
   attack: number;
   defense: number;
   description: string;
+  level: number;
+  monster: MonsterKind | null;
+  type: Monster | Spell | Trap;
+  templateUrl: string;
+  attribute: Attribute;
+  rarity: Rarity;
+  textureUrl: string;
+  maskUrl?: string;
   isFaceDown: boolean;
   isDefenseMode: boolean;
-  rarity: Rarity;
-  level: number;
-  attribute: string;
-  attributeUrl: string;
-  textureUrl: string;
-  textureTemplateUrl: string;
-  maskUrl?: string;
 }
 
 export type Clan = 'Yorkists' | 'Lancastrians';
@@ -68,6 +122,9 @@ export interface Player extends TilePiece {
   clan: Clan;
   textureUrl: string; // Red_rose_emblem.png or White_rose_emblem.png
   allCards: Card[]; // All cards the player owns
+  deck: number[]; // IDs of cards in deck
+  hand: number[]; // IDs of cards in hand
+  graveyard: number[]; // IDs of cards in graveyard
   cardsInPlay: number[]; // IDs of cards currently in play
   boardSide: 'N' | 'S' | 'E' | 'W';
 }
@@ -94,6 +151,13 @@ export interface StagingState {
   hasMoved: boolean;
   hasFlipped: boolean; // flipped face up/down
   hasChangedPosition: boolean; // changed attack/defense mode
+}
+
+export interface SummoningState {
+  active: boolean;
+  phase: 'target' | 'card' | 'position';
+  targetTile: Vector3 | null;
+  selectedCardId: number | null;
 }
 
 export interface CursorState {

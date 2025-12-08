@@ -2,7 +2,8 @@ import { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text, useTexture } from "@react-three/drei";
 import { Vector3, Group, DoubleSide, Mesh } from "three";
-import { type Card, getGlowColor } from "@/types";
+import { type Card } from "@/types";
+import { getGlowColor } from "@/const"
 
 type CardPropType = {
   card: Card;
@@ -22,10 +23,10 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
   const shineTexture = useTexture("/textures/shine_mask_2.png"); 
   
   const maskTexture = useTexture(card.maskUrl || "/textures/blank_mask.png");
-  const attributeTexture = useTexture(card.attributeUrl);
-  const yugiohCardTexture = useTexture(card.textureTemplateUrl);
+  const attributeTexture = useTexture(card.attribute.attributeUrl);
+  const cardTemplate = useTexture(card.templateUrl);
   const levelStarTexture = useTexture("/textures/levelStar.png");
-  const opponentCardTexture = useTexture("/cards/opponentCard.png");
+  const mysteryCardTexture = useTexture("/cards/mysteryCard.png");
 
   // Setting textures to repeat/wrap is usually good for holo patterns, 
   // though 512x512 fits the card well by default.
@@ -40,38 +41,43 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
   const OPP_CARD_Z = -0.001;
 
   useEffect(() => {
+    // Snap to initial state on mount to avoid weird entry spin.
+    // Subsequent updates will be handled by useFrame for smooth animation.
     if (innerGroup.current) {
-      innerGroup.current.rotation.y = (card.isFaceDown && !isPreview) ? Math.PI : 0;
+      const targetRotationY = card.isFaceDown ? Math.PI : 0;
+      innerGroup.current.rotation.y = targetRotationY;
     }
     if (outerGroup.current) {
-      outerGroup.current.rotation.z = card.isDefenseMode ? Math.PI / 2 : defaultCardRotation;
+      const targetRotationZ = card.isDefenseMode ? Math.PI / 2 : defaultCardRotation;
+      outerGroup.current.rotation.z = targetRotationZ;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useFrame((state) => {
     if (isPreview) {
-        // Still animate glow in preview
-        if (glowRef.current && card.rarity !== 'common') {
-            const material = glowRef.current.material as any;
-            if (material.uniforms) {
-                material.uniforms.time.value = state.clock.getElapsedTime();
-            }
-        }
-        // Animate Holographic Sweep in preview
-        if (holoMeshRef.current && card.rarity !== 'common') {
-            const material = holoMeshRef.current.material as any;
-            if (material.uniforms && material.uniforms.time) {
-                material.uniforms.time.value = state.clock.getElapsedTime();
-            }
-        }
-        return;
+      // Still animate glow in preview
+      if (glowRef.current && card.rarity !== 'common') {
+          const material = glowRef.current.material as any;
+          if (material.uniforms) {
+              material.uniforms.time.value = state.clock.getElapsedTime();
+          }
+      }
+      // Animate Holographic Sweep in preview
+      if (holoMeshRef.current && card.rarity !== 'common') {
+          const material = holoMeshRef.current.material as any;
+          if (material.uniforms && material.uniforms.time) {
+              material.uniforms.time.value = state.clock.getElapsedTime();
+          }
+      }
+      return;
     }
 
     if (outerGroup.current && innerGroup.current) {
-      const targetZ = isSelected ? 0.25 : card.position.z;
-      
+      // const targetZ = isSelected ? 0.25 : card.position.z;
       outerGroup.current.position.lerp(
-        new Vector3(card.position.x, card.position.y, targetZ),
+        new Vector3(card.position.x, card.position.y, card.position.z),
+        // new Vector3(card.position.x, card.position.y, targetZ),
         0.1
       );
       
@@ -98,6 +104,17 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
       }
     }
   });
+  
+  if (card.owner === 'opponent' && card.isFaceDown && isPreview)  {
+    return(
+      <group rotation={[0, 0, 0]}>
+        <mesh position={[0, 0, BASE_CARD_Z]}>
+          <planeGeometry args={[0.68, 0.98]} />
+          <meshBasicMaterial map={mysteryCardTexture} />
+        </mesh>
+      </group>
+    ) 
+  }
 
   return (
     <group position={card.position} ref={outerGroup} onClick={(e) => {
@@ -108,6 +125,14 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
         <mesh position={[0, 0, OPP_CARD_Z]}>
           <planeGeometry args={[0.85, 1.25]} />
           <meshStandardMaterial transparent opacity={0.6} color="#b45672" />
+        </mesh>
+      )}
+      
+      {/* SELECTION BORDER */}
+      {isSelected && (
+         <mesh position={[0, 0, -0.02]}>
+          <planeGeometry args={[0.74, 1.04]} />
+          <meshBasicMaterial color="#0044aa" side={DoubleSide} />
         </mesh>
       )}
       <group ref={innerGroup}>
@@ -130,7 +155,7 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
           </mesh>
         )}
 
-        {/* Back Face (Classic Design) */}
+       {/* Back Face (Classic Design) */}
         <group rotation={[0, Math.PI, 0]}>
           <mesh position={[0, 0, BASE_CARD_Z]}>
             <planeGeometry args={[0.68, 1.06]} />
@@ -145,14 +170,14 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
             <meshStandardMaterial color="black" />
           </mesh>
         </group>
-        
+
         {/* Front Face Logic */}
         {card.owner === 'opponent' && card.isFaceDown ? (
           // Simple opponent card (NO HOLO HERE)
           <group rotation={[0, 0, 0]}>
             <mesh position={[0, 0, BASE_CARD_Z]}>
               <planeGeometry args={[0.68, 0.98]} />
-              <meshBasicMaterial map={opponentCardTexture} />
+              <meshBasicMaterial map={mysteryCardTexture} />
             </mesh>
           </group>
         ) : (
@@ -161,7 +186,7 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
             {/* Card Template */}
             <mesh position={[0, 0, BASE_CARD_Z]}>
               <planeGeometry args={[0.68, 0.98]} />
-              <meshBasicMaterial map={yugiohCardTexture} />
+              <meshBasicMaterial map={cardTemplate} />
             </mesh>
 
             {/* --- ARTWORK IMAGE WITH HOLO EFFECT --- */}

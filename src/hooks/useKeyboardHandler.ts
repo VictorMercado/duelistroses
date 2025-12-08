@@ -3,6 +3,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { useInputStore } from '@/stores/inputStore';
 import { useUIStore } from '@/stores/uiStore';
 import { isCard, isPlayer } from '@/types';
+import { SUMMON_OPTIONS } from '@/components/SummonOptions';
 import {
   X_AXIS_NEGATIVE_MAX,
   X_AXIS_POSITIVE_MAX,
@@ -24,6 +25,36 @@ export function useKeyboardHandler() {
 
   useEffect(() => {
     const handleKeydownEvent = (e: KeyboardEvent) => {
+      // GLOBAL CANCEL (Escape or custom bindings)
+      if (inputStore.keyBindings.cancel.includes(e.key)) {
+        if (gameStore.summoningState.active) {
+          if (gameStore.summoningState.phase === 'position') {
+            gameStore.returnToHand();
+            inputStore.resetSummonOptionIndex();
+            return;
+          }
+          if (gameStore.summoningState.phase === 'card') {
+            gameStore.returnToTarget();
+            return;
+          }
+          gameStore.cancelSummoning();
+          return;
+        }
+
+        if (gameStore.showHand) {
+          gameStore.closeHand();
+          return;
+        }
+
+        // Default cancel behavior
+        if (inputStore.selectedTilePiece) {
+          gameStore.cancelAction();
+          inputStore.selectTilePiece(null);
+          uiStore.setShowDetails(false);
+          return;
+        }
+      }
+
       // PIECE MOVEMENT (WASD) - Check this FIRST when in staging mode
       // This takes priority over cursor movement so selected pieces move instead of cursor
       if (inputStore.selectedTilePiece && gameStore.stagingState) {
@@ -63,13 +94,13 @@ export function useKeyboardHandler() {
           if (isPlayer(inputStore.selectedTilePiece)) {
             // PLAY CARD KEY (placeholder)
             if (e.key.toLowerCase() === inputStore.keyBindings.playCard.toLowerCase()) {
-              gameStore.openHand();
+              gameStore.enterSummoningMode(); // New flow
               return;
             }
           }
           // TODO: Move most of this logic to gameStore
-          const freshCards = gameStore.cards;
-          const freshPlayers = gameStore.players;
+          const freshCards = useGameStore.getState().cards;
+          const freshPlayers = useGameStore.getState().players;
           const currentPiece = [...freshCards, ...freshPlayers].find(
             p => p.id === inputStore.selectedTilePiece!.id &&
               (isCard(p) === isCard(inputStore.selectedTilePiece!))
@@ -142,29 +173,50 @@ export function useKeyboardHandler() {
         }
       }
 
-      // CURSOR MOVEMENT (WASD or custom bindings)
-      // Only handle cursor movement if NOT in staging mode (otherwise piece movement takes priority)
-      if (!inputStore.selectedTilePiece || !gameStore.stagingState) {
-        if (e.key.toLowerCase() === inputStore.keyBindings.cursorUp.toLowerCase()) {
-          inputStore.moveCursor('up');
-          return;
-        }
-        if (e.key.toLowerCase() === inputStore.keyBindings.cursorDown.toLowerCase()) {
-          inputStore.moveCursor('down');
-          return;
-        }
-        if (e.key.toLowerCase() === inputStore.keyBindings.cursorLeft.toLowerCase()) {
-          inputStore.moveCursor('left');
-          return;
-        }
-        if (e.key.toLowerCase() === inputStore.keyBindings.cursorRight.toLowerCase()) {
-          inputStore.moveCursor('right');
-          return;
+      // --- MOVEMENT ---
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+        if (gameStore.summoningState.active && gameStore.summoningState.phase === 'position') {
+          const currentIndex = inputStore.summonOptionIndex;
+          let newIndex = currentIndex;
+          if (e.key === 'ArrowUp' || e.key === 'w') newIndex = Math.max(0, currentIndex - 1);
+          if (e.key === 'ArrowDown' || e.key === 's') newIndex = Math.min(SUMMON_OPTIONS.length - 1, currentIndex + 1);
+          inputStore.setSummonOptionIndex(newIndex);
+          return; // Don't move cursor
+        } else {
+          // Standard cursor movement
+          // Only handle cursor movement if NOT in staging mode (otherwise piece movement takes priority)
+          if (!inputStore.selectedTilePiece || !gameStore.stagingState) {
+            const direction =
+              (e.key === 'ArrowUp' || e.key === 'w') ? 'up' :
+                (e.key === 'ArrowDown' || e.key === 's') ? 'down' :
+                  (e.key === 'ArrowLeft' || e.key === 'a') ? 'left' : 'right';
+
+            inputStore.moveCursor(direction);
+            return;
+          }
         }
       }
 
-      // SELECT KEY
+      // --- SELECT (Confirm) ---
       if (e.key.toLowerCase() === inputStore.keyBindings.select.toLowerCase()) {
+        if (gameStore.summoningState.active) {
+          const { phase } = gameStore.summoningState;
+
+          if (phase === 'target') {
+            gameStore.confirmSummonTarget();
+          } else if (phase === 'card') {
+            gameStore.selectCardForSummon();
+          } else if (phase === 'position') {
+            const index = inputStore.summonOptionIndex;
+            const options = SUMMON_OPTIONS[index];
+            if (options) {
+              gameStore.confirmSummonPosition(options);
+            }
+          }
+          return;
+        }
+
+        // Standard Select Logic (existing)
         // If already in staging mode, commit the action
         if (inputStore.selectedTilePiece && gameStore.stagingState) {
           gameStore.commitAction();
@@ -186,9 +238,26 @@ export function useKeyboardHandler() {
 
       // VIEW DETAILS KEY
       if (e.key.toLowerCase() === inputStore.keyBindings.viewDetails.toLowerCase()) {
-        if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece)) {
+        const isHandOpen = gameStore.showHand || (gameStore.summoningState.active && gameStore.summoningState.phase === 'card');
+
+        if (isHandOpen && inputStore.handSelectedIndex >= 0) {
           uiStore.setShowDetails(true);
+          return;
         }
+
+        if (inputStore.selectedTilePiece) {
+          if (isCard(inputStore.selectedTilePiece)) {
+            uiStore.setShowDetails(true);
+          } else if (isPlayer(inputStore.selectedTilePiece)) {
+            uiStore.setShowPlayerDetails(true);
+          }
+        }
+        return;
+      }
+
+      // PLAY CARD KEY (J) - Enter Summoning Mode
+      if (e.key.toLowerCase() === inputStore.keyBindings.playCard.toLowerCase()) {
+        gameStore.enterSummoningMode();
         return;
       }
     };
@@ -200,4 +269,4 @@ export function useKeyboardHandler() {
     gameStore,
     uiStore
   ]);
-}
+};

@@ -5,7 +5,8 @@ import { useInputStore } from "@/stores/inputStore";
 
 export default function HandView() {
   const gameStore = useGameStore();
-  const selectTilePiece = useInputStore((state) => state.selectTilePiece);
+  const handSelectedIndex = useInputStore((state) => state.handSelectedIndex);
+  
   if (!gameStore.showHand) return null;
   // Position cards in a horizontal arc
   const cardSpacing = .8;
@@ -18,11 +19,12 @@ export default function HandView() {
     <group rotation={[-.5, 0, 0]} scale={2}>
       {gameStore.handCards.map((card, index) => {
         const xPosition = startX + (index * cardSpacing);
+        const isSelected = handSelectedIndex === index;
         
         // Create a hand version of the card with custom position
         const handCard = {
           ...card,
-          position: new Vector3(xPosition, baseY, baseZ),
+          position: new Vector3(xPosition, baseY, baseZ), // Keep flat z-index
           isFaceDown: false,  // Always show face up in hand
           isDefenseMode: false,
         };
@@ -31,11 +33,11 @@ export default function HandView() {
           <YugiohCard
             key={`hand-${card.id}`}
             card={handCard}
-            isSelected={false}
+            isSelected={isSelected}
             isPreview={true}  // Use preview mode to prevent rotation/movement
             onSelect={() => {
-              // trigger card details view
-              selectTilePiece(handCard);
+              // Mouse selection support
+              useInputStore.getState().setHandSelectedIndex(index);
             }}
           />
         );

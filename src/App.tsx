@@ -10,11 +10,13 @@ import GameBoard from "@/components/GameBoard";
 import ControlPanel from "@/components/ControlPanel";
 import ActionMenu from "@/components/ActionMenu";
 import CardDetailView from "@/components/CardDetailView";
+import PlayerDetailView from "@/components/PlayerDetailView";
 import CardPreview from "@/components/CardPreview";
+import PlayerPreview from "@/components/PlayerPreview";
 import TilePreview from "@/components/TilePreview";
-import FPSCounter from "@/components/FPSCounter";
 import SettingsModal from "@/components/SettingsModal";
 import HandView from "@/components/HandView";
+import DevTools from "@/components/DevTools";
 import { BaseHolographicMaterial } from "@/shaders/BaseHolographic";
 import { GodRaysMaterial } from "@/shaders/GodRays";
 import { BOARD_SIZE } from "@/const";
@@ -52,29 +54,34 @@ function App() {
           enableRotate={uiStore.enableRotate}
           enablePan={uiStore.enablePan}
           // makeDefault
-          minPolarAngle={50 * Math.PI / 180}
-          maxPolarAngle={50 * Math.PI / 180}
-          minAzimuthAngle={Math.PI * 0}
-          maxAzimuthAngle={Math.PI * 0}
-          minDistance={BOARD_SIZE + 3}
-          maxDistance={BOARD_SIZE + 3}
+          minPolarAngle={uiStore.enableFreeCamera ? 0 : 50 * Math.PI / 180}
+          maxPolarAngle={uiStore.enableFreeCamera ? Math.PI : 50 * Math.PI / 180}
+          minAzimuthAngle={uiStore.enableFreeCamera ? -Infinity : Math.PI * 0}
+          maxAzimuthAngle={uiStore.enableFreeCamera ? Infinity : Math.PI * 0}
+          minDistance={uiStore.enableFreeCamera ? 2 : BOARD_SIZE + 3}
+          maxDistance={uiStore.enableFreeCamera ? 50 : BOARD_SIZE + 3}
         />
       </Canvas>
       <StaticAxisHelper />
-      {uiStore.showFPS && <FPSCounter />}
-      <ControlPanel
-        controlsRef={controlsRef}
-      />
+      <div className="absolute top-40 right-4">
+        <button
+          onClick={() => uiStore.setShowControlPanel(!uiStore.showControlPanel)}
+          className="bg-black/80 text-white px-4 py-2 rounded-lg border border-white/20 hover:border-yellow-500 hover:bg-black/90 transition-all font-mono text-sm flex items-center gap-2"
+        >
+          {uiStore.showControlPanel ? ">" : "<"}
+        </button>
+        {uiStore.showControlPanel && <ControlPanel
+          controlsRef={controlsRef}
+        />}
+      </div>
       {uiStore.showSettings && <SettingsModal />}
-      {inputStore.selectedTilePiece 
-      && inputStore.selectedTilePiece.owner === 'player' 
-      && !gameStore.turnState.actedPieceIds.includes(gameStore.getPieceKey(inputStore.selectedTilePiece)) 
-      && (
-        <ActionMenu />
-      )}
+      <ActionMenu />
       {uiStore.showDetails && <CardDetailView />}
+      {uiStore.showPlayerDetails && <PlayerDetailView />}
       <CardPreview />
+      <PlayerPreview />
       <TilePreview />
+      <DevTools />
     </div>
   );
 }

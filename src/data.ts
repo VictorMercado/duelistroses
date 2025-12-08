@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
 import type { Card, Player } from "@/types";
-import { BOARD_SIZE, NORTH_BOARD_START, SOUTH_BOARD_START, EAST_BOARD_START, WEST_BOARD_START, PLAYER_BASE_Z } from "@/const";
+import { PLAYER_BASE_Z, SPELLCASTER, DARK, LIGHT, DRAGON, EARTH, WARRIOR, SPELL, FIEND, NORMALMONSTER, EFFECTMONSTER, FUSIONMONSTER, RITUALMONSTER, NORMALSPELL } from "@/const";
 
 export const cards: Card[] = [
   {
@@ -15,10 +15,11 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "ultra",
     level: 8,
-    attribute: "Dark",
-    attributeUrl: "/attributes/darkAttr.svg",
+    monster: SPELLCASTER,
+    type: NORMALMONSTER,
+    attribute: DARK,
+    templateUrl: "/textures/normalTemplate.png",
     textureUrl: "/cards/Dark_Magician.png",
-    textureTemplateUrl: "/textures/normalTemplate.png",
     maskUrl: "/cards/Dark_Magician_Mask.png",
   },
   {
@@ -33,10 +34,12 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "ultra",
     level: 8,
-    attribute: "Light",
-    attributeUrl: "/attributes/lightAttr.svg",
+    monster: DRAGON,
+    type: NORMALMONSTER,
+    attribute: LIGHT,
     textureUrl: "/cards/Blue_Eyes_White_Dragon.png",
-    textureTemplateUrl: "/textures/normalTemplate.png",
+    templateUrl: "/textures/normalTemplate.png",
+    maskUrl: "/cards/Blue_Eyes_White_Dragon_Mask.png",
   },
   {
     id: 3,
@@ -50,10 +53,11 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "ultra",
     level: 6,
-    attribute: "Dark",
-    attributeUrl: "/attributes/darkAttr.svg",
+    monster: SPELLCASTER,
+    type: EFFECTMONSTER,
+    attribute: DARK,
+    templateUrl: "/textures/effectTemplate.png",
     textureUrl: "/cards/Dark_Magician_Girl.png",
-    textureTemplateUrl: "/textures/effectTemplate.png",
     maskUrl: "/cards/Dark_Magician_Girl_Mask.png",
   },
   {
@@ -68,10 +72,11 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "common",
     level: 7,
-    attribute: "Dark",
-    attributeUrl: "/attributes/darkAttr.svg",
+    monster: DRAGON,
+    type: NORMALMONSTER,
+    attribute: DARK,
+    templateUrl: "/textures/normalTemplate.png",
     textureUrl: "/cards/Red_Eyes_Black_Dragon.png",
-    textureTemplateUrl: "/textures/normalTemplate.png",
   },
   {
     id: 5,
@@ -85,10 +90,11 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "ultra",
     level: 8,
-    attribute: "Light",
-    attributeUrl: "/attributes/lightAttr.svg",
+    monster: DRAGON,
+    type: NORMALMONSTER,
+    attribute: LIGHT,
+    templateUrl: "/textures/normalTemplate.png",
     textureUrl: "/cards/Blue_Eyes_White_Dragon.png",
-    textureTemplateUrl: "/textures/normalTemplate.png",
     maskUrl: "/cards/Blue_Eyes_White_Dragon_Mask.png",
   },
   {
@@ -103,10 +109,11 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "ultra",
     level: 12,
-    attribute: "Light",
-    attributeUrl: "/attributes/lightAttr.svg",
+    monster: DRAGON,
+    type: FUSIONMONSTER,
+    attribute: LIGHT,
+    templateUrl: "/textures/fusionTemplate.png",
     textureUrl: "/cards/Blue_Eyes_Ultimate_Dragon.png",
-    textureTemplateUrl: "/textures/fusionTemplate.png",
     maskUrl: "/cards/Blue_Eyes_Ultimate_Dragon_Mask.png",
   },
   {
@@ -121,10 +128,12 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "common",
     level: 8,
-    attribute: "Earth",
-    attributeUrl: "/attributes/earthAttr.svg",
+    monster: WARRIOR,
+    type: RITUALMONSTER,
+    attribute: EARTH,
+    templateUrl: "/textures/ritualTemplate.png",
     textureUrl: "/cards/Black_Luster_Soldier.png",
-    textureTemplateUrl: "/textures/ritualTemplate.png",
+    // maskUrl: "/cards/Black_Luster_Soldier_Mask.png",
   },
   {
     id: 8,
@@ -137,11 +146,13 @@ export const cards: Card[] = [
     isFaceDown: true,
     isDefenseMode: false,
     rarity: "common",
+    monster: null,
+    type: NORMALSPELL,
     level: 0,
-    attribute: "Spell",
-    attributeUrl: "/attributes/spellAttr.svg",
+    attribute: SPELL,
+    templateUrl: "/textures/spellTemplate.png",
     textureUrl: "/cards/Change_of_Heart.png",
-    textureTemplateUrl: "/textures/magicTemplate.png",
+    // maskUrl: "/cards/Change_of_Heart_Mask.png",
   },
   {
     id: 9,
@@ -155,13 +166,43 @@ export const cards: Card[] = [
     isDefenseMode: false,
     rarity: "ultra",
     level: 6,
-    attribute: "Dark",
-    attributeUrl: "/attributes/darkAttr.svg",
+    monster: FIEND,
+    type: NORMALMONSTER,
+    attribute: DARK,
+    templateUrl: "/textures/normalTemplate.png",
     textureUrl: "/cards/Summoned_Skull.png",
-    textureTemplateUrl: "/textures/normalTemplate.png",
     maskUrl: "/cards/Summoned_Skull_Mask.png",
   }
 ];
+
+// Helper to generate deck cards
+function generateDeck(owner: 'player' | 'opponent', startId: number): Card[] {
+  const deck: Card[] = [];
+  let idCounter = startId;
+  const templates = cards.filter(c => c.owner === 'player'); // Use player cards as templates
+
+  // Create 40 cards
+  for (let i = 0; i < 40; i++) {
+    const template = templates[i % templates.length];
+    deck.push({
+      ...template,
+      id: idCounter++,
+      owner: owner,
+      position: new Vector3(0, 0, -10), // Hidden initially
+      isFaceDown: true,
+      isDefenseMode: true,
+    });
+  }
+  return deck;
+}
+
+const playerDeckCards = generateDeck('player', 1000);
+const opponentDeckCards = generateDeck('opponent', 2000);
+
+// Combine initial board cards with generated decks for "allCards"
+// Actually, gameStore.cards tracks board cards.
+// Player.allCards should probably track ALL cards owned by player (deck + hand + graveyard + field)
+// For now, let's just make sure we populate the deck IDs.
 
 export const players: Player[] = [
   {
@@ -169,11 +210,18 @@ export const players: Player[] = [
     name: "Player_1",
     clan: "Yorkists",
     textureUrl: "/textures/Red_rose_emblem.png",
-    position: new Vector3(0,0,PLAYER_BASE_Z),
-    allCards: [],
-    cardsInPlay: [1, 3],
+    position: new Vector3(0, 0, PLAYER_BASE_Z),
+    allCards: playerDeckCards, // Only deck cards for now? Or include the initial ones? 
+    // Initial cards 1,3 are hardcoded on board. Let's add them to deck tracking or separate?
+    // Plan says: "Initialize player's deck with these IDs".
+    // Let's assume the cards array exported above IS the board state.
+    // And playerDeckCards are the OFF-BOARD deck.
+    deck: playerDeckCards.map(c => c.id),
+    hand: [],
+    graveyard: [],
+    cardsInPlay: [1, 3], // These are the hardcoded ones in 'cards' array
     owner: "player",
-    boardSide: "N",
+    boardSide: "S",
   },
   {
     id: 200,
@@ -181,10 +229,13 @@ export const players: Player[] = [
     clan: "Lancastrians",
     textureUrl: "/textures/White_rose_emblem.png",
     position: new Vector3(0, 0, PLAYER_BASE_Z),
-    allCards: [],
+    allCards: opponentDeckCards,
+    deck: opponentDeckCards.map(c => c.id),
+    hand: [],
+    graveyard: [],
     cardsInPlay: [2, 4],
     owner: "opponent",
-    boardSide: "S",
+    boardSide: "N",
   },
   {
     id: 300,
@@ -193,6 +244,9 @@ export const players: Player[] = [
     textureUrl: "/textures/White_rose_emblem.png",
     position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: [],
+    deck: [],
+    hand: [],
+    graveyard: [],
     cardsInPlay: [2, 4],
     owner: "opponent",
     boardSide: "E",
@@ -204,9 +258,11 @@ export const players: Player[] = [
     textureUrl: "/textures/Red_rose_emblem.png",
     position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: [],
+    deck: [],
+    hand: [],
+    graveyard: [],
     cardsInPlay: [1, 3],
     owner: "player",
     boardSide: "W",
   },
 ];
-    

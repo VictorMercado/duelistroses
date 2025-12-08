@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type TilePiece, type KeyBindings, isCard, isPlayer } from '@/types';
+import { type TilePiece, type KeyBindings, isCard } from '@/types';
 import { useGameStore } from './gameStore';
 import {
   X_AXIS_NEGATIVE_MAX,
@@ -13,13 +13,18 @@ interface InputState {
   cursorPosition: { x: number; y: number; };
   keyBindings: KeyBindings;
   selectedTilePiece: TilePiece | null;
+  handSelectedIndex: number; // -1 if not navigating hand
+  summonOptionIndex: number;
 
   // Actions
   setCursorPosition: (position: { x: number; y: number; }) => void;
   moveCursor: (direction: 'up' | 'down' | 'left' | 'right') => void;
   updateKeyBindings: (bindings: KeyBindings) => void;
   selectTilePiece: (piece: TilePiece | null) => void;
-  updateSelectedPiece: (piece: TilePiece) => void;
+  updateSelectedPiece: (p: TilePiece | null) => void;
+  setHandSelectedIndex: (index: number) => void;
+  setSummonOptionIndex: (index: number) => void;
+  resetSummonOptionIndex: () => void;
 }
 
 export const useInputStore = create<InputState>((set, get) => ({
@@ -29,15 +34,60 @@ export const useInputStore = create<InputState>((set, get) => ({
     return saved ? JSON.parse(saved) : DEFAULT_KEYBINDINGS;
   })(),
   selectedTilePiece: null,
+  handSelectedIndex: -1,
+  summonOptionIndex: 0,
 
   // Actions
   setCursorPosition: (position) => set({ cursorPosition: position }),
-
+  setHandSelectedIndex: (i) => set({ handSelectedIndex: i }),
+  setSummonOptionIndex: (i) => set({ summonOptionIndex: i }),
+  resetSummonOptionIndex: () => set({ summonOptionIndex: 0 }),
   moveCursor: (direction) => {
     const state = get();
+    const gameStore = useGameStore.getState();
     const { cursorPosition } = state;
-    const validPositions = useGameStore.getState().getValidMovePositions();
-    const isInStagingMode = state.selectedTilePiece && useGameStore.getState().stagingState;
+    const validPositions = gameStore.getValidMovePositions();
+    const isInStagingMode = state.selectedTilePiece && gameStore.stagingState;
+
+    // HAND NAVIGATION
+    if (gameStore.showHand) {
+      if (direction === 'left' || direction === 'right') {
+        const handSize = gameStore.handCards.length;
+        if (handSize === 0) return;
+
+        let newIndex = state.handSelectedIndex;
+        if (newIndex === -1) newIndex = 0; // Initialize selection if none
+
+        if (direction === 'left') {
+          newIndex = Math.max(0, newIndex - 1);
+        } else {
+          newIndex = Math.min(handSize - 1, newIndex + 1);
+        }
+        set({ handSelectedIndex: newIndex });
+      }
+      return;
+    }
+
+    // SUMMONING MODE BOARD NAVIGATION
+    if (gameStore.summoningState.active) {
+      let newX = cursorPosition.x;
+      let newY = cursorPosition.y;
+
+      switch (direction) {
+        case 'up': newY += 1; break;
+        case 'down': newY -= 1; break;
+        case 'left': newX -= 1; break;
+        case 'right': newX += 1; break;
+      }
+
+      const validSummonPositions = gameStore.getValidSummonPositions();
+      const isValid = validSummonPositions.some(([x, y]) => x === newX && y === newY);
+
+      if (isValid) {
+        set({ cursorPosition: { x: newX, y: newY } });
+      }
+      return;
+    }
 
     let newX = cursorPosition.x;
     let newY = cursorPosition.y;
@@ -56,7 +106,6 @@ export const useInputStore = create<InputState>((set, get) => ({
         newX = Math.min(X_AXIS_POSITIVE_MAX, cursorPosition.x + 1);
         break;
     }
-
 
     // Only move if not in staging mode OR the position is valid
     const isValidPosition = validPositions.some(([x, y]) => x === newX && y === newY);
@@ -102,11 +151,9 @@ export const useInputStore = create<InputState>((set, get) => ({
     }
 
     // Check if it's the correct player's turn
-    const isPlayerPiece = (isCard(piece) && piece.owner === 'player') ||
-      (isPlayer(piece) && piece.owner === 'player');
+    const isPlayerPiece = piece.owner === 'player';
 
-    if ((gameStore.turnState.currentTurn === 'player' && !isPlayerPiece) ||
-      (gameStore.turnState.currentTurn === 'opponent' && isPlayerPiece)) {
+    if ((gameStore.turnState.currentTurn === 'player' && !isPlayerPiece) || (gameStore.turnState.currentTurn === 'opponent' && isPlayerPiece)) {
       set({ selectedTilePiece: piece });
       // Don't initialize staging for opponent's pieces
       return;

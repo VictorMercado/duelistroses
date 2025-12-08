@@ -1,20 +1,36 @@
 import { useTexture } from "@react-three/drei";
 import type { Player } from "@/types";
 import { DoubleSide, Group } from "three";
-import { useRef } from "react";
+import { forwardRef } from "react";
 
 interface PlayerEmblemProps {
+  preview?: boolean;
   player: Player;
   onSelect: () => void;
 }
 
-export default function PlayerEmblem({ player, onSelect }: PlayerEmblemProps) {
+const PlayerEmblem = forwardRef<Group, PlayerEmblemProps>(({ player, onSelect, preview }, ref) => {
   const emblemTexture = useTexture(player.textureUrl);
-  const groupRef = useRef<Group>(null); 
-
+  let orientation = 0;
+  if (!preview) {
+    switch (player.boardSide) {
+      case 'N':
+        orientation = Math.PI;
+        break;
+      case 'S':
+        orientation = 0;
+        break;
+      case 'E':
+        orientation = Math.PI / 2;
+        break;
+      case 'W':
+        orientation = -Math.PI / 2;
+        break;
+    }
+  }
   return (
     <group 
-      ref={groupRef} 
+      ref={ref} 
       position={[player.position.x, player.position.y, player.position.z]}
       onClick={(e) => {
         e.stopPropagation();
@@ -22,7 +38,7 @@ export default function PlayerEmblem({ player, onSelect }: PlayerEmblemProps) {
       }}
     >
       {/* Emblem */}
-      <mesh rotation={[0, 0, 0]}>
+      <mesh rotation={[0, 0, orientation]}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial 
           map={emblemTexture} 
@@ -43,4 +59,6 @@ export default function PlayerEmblem({ player, onSelect }: PlayerEmblemProps) {
       </mesh>
     </group>
   );
-}
+});
+
+export default PlayerEmblem;
