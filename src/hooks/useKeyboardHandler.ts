@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { gameManager } from '@/game/GameManager';
+import { gameManager } from '@/game/gameManager';
 import { useGameStore } from '@/stores/gameStore';
 import { isCard, isPlayer } from '@/types';
 import { useKeyBindings } from '@/hooks/useKeyBindings';

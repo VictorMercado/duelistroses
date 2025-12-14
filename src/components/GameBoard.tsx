@@ -25,7 +25,7 @@ import {
 import { ToonBook } from "./ToonBook";
 import HandView from "./HandView";
  import SummonCardPreview from "./SummonCardPreview";
-import { gameManager } from "@/game/GameManager";
+import { gameManager } from "@/game/gameManager";
 
 // const VALID_PLAY_COLOR = '#00ccff';
 const GUIDE_LINE_COLOR = '#d2d2d2';
