@@ -20,6 +20,7 @@ export default defineConfig({
       "@/data": resolve(__dirname, "src", "data"),
       "@/shaders": resolve(__dirname, "src", "shaders"),
       "@/const": resolve(__dirname, "src", "const"),
+      "@/game": resolve(__dirname, "src", "game"),
     },
   },
 });

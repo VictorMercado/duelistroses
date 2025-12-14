@@ -173,7 +173,7 @@ export default function YugiohCard({ card, isSelected, isPreview, onSelect }: Ca
 
         {/* Front Face Logic */}
         {card.owner === 'opponent' && card.isFaceDown ? (
-          // Simple opponent card (NO HOLO HERE)
+          // mystery opponent card
           <group rotation={[0, 0, 0]}>
             <mesh position={[0, 0, BASE_CARD_Z]}>
               <planeGeometry args={[0.68, 0.98]} />

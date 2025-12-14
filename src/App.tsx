@@ -1,9 +1,7 @@
 import { Canvas, extend } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useRef, useEffect } from 'react';
-import { useGameStore } from "@/stores/gameStore";
+import { useRef } from 'react';
 import { useUIStore } from "@/stores/uiStore";
-import { useInputStore } from "@/stores/inputStore";
 import { usePreloadTextures } from "@/hooks/usePreloadTextures";
 import StaticAxisHelper from "@/components/StaticAxisHelper";
 import GameBoard from "@/components/GameBoard";
@@ -20,26 +18,26 @@ import DevTools from "@/components/DevTools";
 import { BaseHolographicMaterial } from "@/shaders/BaseHolographic";
 import { GodRaysMaterial } from "@/shaders/GodRays";
 import { BOARD_SIZE } from "@/const";
+import { useKeyBindings } from "./hooks/useKeyBindings";
 
 extend({ BaseHolographicMaterial, GodRaysMaterial });
 
 function App() {
   // Preload all tile textures to prevent refetching
   usePreloadTextures();
-  const gameStore = useGameStore();
+  useKeyBindings();
   const uiStore = useUIStore();
-  const inputStore = useInputStore();
   const controlsRef = useRef<any>(null);
 
-  // TODO: Maybe should live in gameStore or inputStore
-  // Update hovered tile based on cursor position
-  useEffect(() => {
-    const tileAtCursor = gameStore.tiles.find(t => 
-      Math.round(t.position.x) === inputStore.cursorPosition.x && 
-      Math.round(t.position.y) === inputStore.cursorPosition.y
-    );
-    uiStore.setSelectedTile(tileAtCursor || null);
-  }, [inputStore.cursorPosition, gameStore.tiles, uiStore.setSelectedTile]);
+  // // TODO: Maybe should live in gameStore or inputStore
+  // // Update hovered tile based on cursor position
+  // useEffect(() => {
+  //   const tileAtCursor = gameStore.tiles.find(t => 
+  //     Math.round(t.position.x) === inputStore.cursorPosition.x && 
+  //     Math.round(t.position.y) === inputStore.cursorPosition.y
+  //   );
+  //   uiStore.setSelectedTile(tileAtCursor || null);
+  // }, [inputStore.cursorPosition, gameStore.tiles, uiStore.setSelectedTile]);
   
   return (
     <div className="w-screen h-screen">

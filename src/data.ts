@@ -222,6 +222,7 @@ export const players: Player[] = [
     cardsInPlay: [1, 3], // These are the hardcoded ones in 'cards' array
     owner: "player",
     boardSide: "S",
+    firstMove: true,
   },
   {
     id: 200,
@@ -236,6 +237,7 @@ export const players: Player[] = [
     cardsInPlay: [2, 4],
     owner: "opponent",
     boardSide: "N",
+    firstMove: false,
   },
   {
     id: 300,
@@ -250,6 +252,7 @@ export const players: Player[] = [
     cardsInPlay: [2, 4],
     owner: "opponent",
     boardSide: "E",
+    firstMove: false,
   },
   {
     id: 400,
@@ -264,5 +267,6 @@ export const players: Player[] = [
     cardsInPlay: [1, 3],
     owner: "player",
     boardSide: "W",
+    firstMove: false,
   },
 ];

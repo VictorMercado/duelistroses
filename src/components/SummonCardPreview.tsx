@@ -1,34 +1,28 @@
 import { useGameStore } from "@/stores/gameStore";
-import { useInputStore } from "@/stores/inputStore";
 import YugiohCard from "./YugiohCard";
 import { Vector3 } from "three";
-import { SUMMON_OPTIONS } from "./SummonOptions";
 
 export default function SummonCardPreview() {
   const summoningState = useGameStore((state) => state.summoningState);
   const handCards = useGameStore((state) => state.handCards);
-  const summonOptionIndex = useInputStore((state) => state.summonOptionIndex);
 
-  if (!summoningState.active || summoningState.phase !== 'position' || !summoningState.selectedCardId) {
+  if (!summoningState|| summoningState.phase !== 'confirm' || !summoningState.selectedCardId) {
     return null;
   }
 
   const card = handCards.find(c => c.id === summoningState.selectedCardId);
   if (!card) return null;
 
-  // Determine Visual State based on Option Index
-  const option = SUMMON_OPTIONS[summonOptionIndex];
-  
   // Create a preview version of the card
   const previewCard = {
     ...card,
-    position: new Vector3(0, 5, 8), // Adjusted for rotated group (Y=Up)
-    isFaceDown: option.isFaceDown,
-    isDefenseMode: option.isDefenseMode,
+    position: new Vector3(0, -0.3, 12), // Adjusted for rotated group (Y=Up)
+    isFaceDown: false,
+    isDefenseMode: false,
   };
 
   return (
-    <group rotation={[-0.05, 0,0]}>
+    <group rotation={[-Math.PI/5, 0, 0]}>
         {/* Render the card */}
         <YugiohCard
             card={previewCard}

@@ -127,7 +127,15 @@ export interface Player extends TilePiece {
   graveyard: number[]; // IDs of cards in graveyard
   cardsInPlay: number[]; // IDs of cards currently in play
   boardSide: 'N' | 'S' | 'E' | 'W';
+  firstMove: boolean;
 }
+
+// export interface GamePlayer extends Player {
+//   hand: Card[]; // IDs of cards in hand
+//   graveyard: Card[]; // IDs of cards in graveyard
+//   cardsInPlay: Card[]; // IDs of cards currently in play
+//   boardSide: 'N' | 'S' | 'E' | 'W';
+// }
 
 // Type guards
 export function isCard(tilePiece: TilePiece): tilePiece is Card {
@@ -139,7 +147,7 @@ export function isPlayer(tilePiece: TilePiece): tilePiece is Player {
 }
 
 export interface TurnState {
-  currentTurn: 'player' | 'opponent';
+  playerTurnIndex: number;
   actedPieceIds: string[]; // Composite keys like "card-1" or "player-1" to avoid ID collision
 }
 
@@ -154,10 +162,10 @@ export interface StagingState {
 }
 
 export interface SummoningState {
-  active: boolean;
-  phase: 'target' | 'card' | 'position';
+  phase: 'target' | 'card' | 'confirm';
   targetTile: Vector3 | null;
   selectedCardId: number | null;
+  playerIndex: number;
 }
 
 export interface CursorState {

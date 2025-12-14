@@ -1,15 +1,15 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Vector3 } from "three";
-import { useInputStore } from "@/stores/inputStore";
 import PlayerEmblem from "./PlayerEmblem";
 import { isPlayer, type Player } from "@/types";
+import { useGameStore } from "@/stores/gameStore";
 
 export default function PlayerPreview() {
-  const inputStore = useInputStore();
+  const selectedTilePiece = useGameStore(state => state.selectedTilePiece);
   
-  const hasSelection = inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece);
-  const player = hasSelection ? (inputStore.selectedTilePiece as Player) : null;
+  const hasSelection = selectedTilePiece && isPlayer(selectedTilePiece);
+  const player = hasSelection ? (selectedTilePiece as Player) : null;
 
   // Create a preview version of the player that is centered
   const previewPlayer: Player | null = player ? {
@@ -19,7 +19,7 @@ export default function PlayerPreview() {
 
   return (
     <div 
-      className={`absolute bottom-4 right-4 w-80 h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      className={`absolute bottom-4 right-4 w-24 h-32 lg:w-80 lg:h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
     >
       {/* 3D Preview */}
       <Canvas style={{ pointerEvents: 'none' }} aria-label="Player Preview" camera={{ position: [0, 0, 2], fov: 45 }}>

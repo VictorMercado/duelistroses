@@ -7,6 +7,7 @@ import YugiohCard from "@/components/YugiohCard";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
 import { useGameStore } from "@/stores/gameStore";
+import { gameManager } from "@/game/GameManager";
 
 interface CardDetailViewProps {
 }
@@ -35,14 +36,15 @@ export default function CardDetailView({ }: CardDetailViewProps) {
   const setShowDetails = useUIStore((state) => state.setShowDetails);
   const inputStore = useInputStore();
   const gameStore = useGameStore();
+  
 
-  const isHandOpen = gameStore.showHand || (gameStore.summoningState.active && gameStore.summoningState.phase === 'card');
+  const isHandOpen = gameStore.showHand || (gameStore.summoningState && gameStore.summoningState.phase === 'card');
   const handCard = isHandOpen && inputStore.handSelectedIndex >= 0 
     ? gameStore.handCards[inputStore.handSelectedIndex] 
     : null;
 
-  const hasSelection = inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece);
-  const card = handCard || (hasSelection ? (inputStore.selectedTilePiece as Card) : null);
+  const hasSelection = gameManager.selectedTilePiece && isCard(gameManager.selectedTilePiece);
+  const card = handCard || (hasSelection ? (gameManager.selectedTilePiece as Card) : null);
   const isOpponentFaceDown = card && card.owner === 'opponent' && card.isFaceDown;
 
   // Create a preview version of the card that is always face up and centered
@@ -69,7 +71,7 @@ export default function CardDetailView({ }: CardDetailViewProps) {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 w-full">
-      <div className="bg-gray-900 text-white w-full lg:w-[70%] h-[70%] rounded-2xl shadow-2xl border border-white/10 flex overflow-hidden relative">
+      <div className="bg-gray-900 text-white w-full xl:w-[70%] h-[70%] rounded-2xl shadow-2xl border border-white/10 flex overflow-hidden relative">
         <button
           onClick={() => setShowDetails(false)}
           className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold z-10"

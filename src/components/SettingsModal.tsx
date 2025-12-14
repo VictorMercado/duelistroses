@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import type { KeyBindings } from "@/types";
-import { useInputStore } from "@/stores/inputStore";
 import { useUIStore } from "@/stores/uiStore";
 import { DEFAULT_KEYBINDINGS } from "@/const"
+import { useKeyBindings } from "@/hooks/useKeyBindings";
 
 interface SettingsModalProps {
 }
 
 export default function SettingsModal({ }: SettingsModalProps) {
   const uiStore = useUIStore();
+  const {keyBindings, updateKeyBindings} = useKeyBindings();
   const [editingKey, setEditingKey] = useState<string | null>(null);
-  const keyBindings = useInputStore((state) => state.keyBindings);
-  const updateKeyBindings = useInputStore((state) => state.updateKeyBindings);
   const [tempBindings, setTempBindings] = useState<KeyBindings>(keyBindings);
 
   const handleKeyPress = (e: React.KeyboardEvent, bindingKey: keyof KeyBindings) => {

@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
-import { useInputStore } from "@/stores/inputStore";
 import { isPlayer, type Player } from "@/types";
+import { gameManager } from "@/game/GameManager";
 
 export default function PlayerDetailView() {
   const setShowPlayerDetails = useUIStore((state) => state.setShowPlayerDetails);
-  const inputStore = useInputStore();
+  const selectedTilePiece = gameManager.selectedTilePiece;
   
-  const hasSelection = inputStore.selectedTilePiece && isPlayer(inputStore.selectedTilePiece);
-  const player = hasSelection ? (inputStore.selectedTilePiece as Player) : null;
+  const hasSelection = selectedTilePiece && isPlayer(selectedTilePiece);
+  const player = hasSelection ? (selectedTilePiece as Player) : null;
 
   const handleClose = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {

@@ -1,12 +1,12 @@
-import { useUIStore } from "@/stores/uiStore";
 import { getCachedTexture } from "@/hooks/usePreloadTextures";
 import { useMemo } from "react";
+import { useGameStore } from "@/stores/gameStore";
 
 interface TilePreviewProps {
 }
 
 export default function TilePreview({ }: TilePreviewProps) {
-  const selectedTile = useUIStore((state) => state.selectedTile);
+  const selectedTile = useGameStore(state => state.selectedTile);
   
   // Get cached image or fall back to direct URL
   const imageUrl = useMemo(() => {
@@ -25,7 +25,7 @@ export default function TilePreview({ }: TilePreviewProps) {
   if (!selectedTile) return null;
 
   return (
-    <div className="absolute bottom-4 left-4 w-64 h-80 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl">
+    <div className="absolute bottom-4 left-4 w-24 h-32 lg:w-64 lg:h-80 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl">
         <div className="h-full flex flex-col">
           {/* 3D Texture Preview */}
           <div className="flex-1 bg-gray-900 flex items-center justify-center relative">
@@ -40,8 +40,8 @@ export default function TilePreview({ }: TilePreviewProps) {
           </div>
           
           {/* Tile Info */}
-          <div className="p-4 bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-yellow-700">
-            <h3 className="text-xl font-bold text-yellow-500 mb-1">{selectedTile.terrain.name}</h3>
+          <div className="p-1 lg:p-4 bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-yellow-700">
+            <h3 className="text-sm lg:text-xl font-bold text-yellow-500 mb-1">{selectedTile.terrain.name}</h3>
           </div>
         </div>
       </div>

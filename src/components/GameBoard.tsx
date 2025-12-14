@@ -8,7 +8,6 @@ import BoardCursor from "./BoardCursor";
 import { useGameStore } from "@/stores/gameStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
-import { isCard } from "@/types";
 import type { Tile } from "@/types";
 import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { useBoardTiles } from "@/hooks/useBoardTiles";
@@ -26,7 +25,7 @@ import {
 import { ToonBook } from "./ToonBook";
 import HandView from "./HandView";
  import SummonCardPreview from "./SummonCardPreview";
- import SummonOptions from "./SummonOptions";
+import { gameManager } from "@/game/GameManager";
 
 // const VALID_PLAY_COLOR = '#00ccff';
 const GUIDE_LINE_COLOR = '#d2d2d2';
@@ -98,14 +97,15 @@ export default function GameBoard() {
   // Calculate guide line positions (horizontal and vertical lines)
   // move to game store
   const guideLinePositions = useMemo(() => {
-    if (!inputStore.selectedTilePiece) return [];
-    if (inputStore.selectedTilePiece.owner === 'opponent') {
+    const selectedTilePiece = gameManager.selectedTilePiece;
+    if (!selectedTilePiece) return [];
+    if (selectedTilePiece.owner === 'opponent') {
       return [];
     }
 
     const positions: [number, number, number][] = [];
-    const pieceX = inputStore.selectedTilePiece.position.x;
-    const pieceY = inputStore.selectedTilePiece.position.y;
+    const pieceX = selectedTilePiece.position.x;
+    const pieceY = selectedTilePiece.position.y;
 
     // Horizontal positions (same Y, different X)
     for (let x = X_AXIS_NEGATIVE_MAX; x <= X_AXIS_POSITIVE_MAX; x++) {
@@ -122,13 +122,13 @@ export default function GameBoard() {
     }
 
     return positions;
-  }, [inputStore.selectedTilePiece]);
+  }, [gameManager.selectedTilePiece]);
 
   // Get valid move positions from gameStore (cardinal directions only)
-  const validMovePositions = gameStore.getValidMovePositions();
+  const validMovePositions = gameManager.selectedTilePiece && gameManager.isUsersPiece(gameManager.selectedTilePiece) ? gameStore.getValidMovePositions() : [];
   
   // Get valid summon positions if in summoning mode OR hand is open
-  const isSummoning = gameStore.summoningState.active || gameStore.showHand;
+  const isSummoning = gameStore.summoningState;
   const validSummonPositions = isSummoning ? gameStore.getValidSummonPositions() : [];
 
   return (
@@ -161,24 +161,14 @@ export default function GameBoard() {
                 <ToonBook 
                   position={tile.position} 
                   onClick={() => {
-                      inputStore.selectTilePiece(null); // Deselect when clicking empty tile
-                      uiStore.setSelectedTile({
-                        terrain: tile.terrain,
-                        position: tile.position,
-                        texture: tile.texture,
-                      });
+                      gameManager.select(undefined, tile.position, tile);
                     }} 
                 />
               ) : (
                 <mesh
                   position={tile.position}
                   onClick={() => {
-                    inputStore.selectTilePiece(null); // Deselect when clicking empty tile
-                    uiStore.setSelectedTile({
-                      terrain: tile.terrain,
-                      position: tile.position,
-                      texture: tile.texture,
-                    });
+                    gameManager.select(undefined, tile.position, tile);
                   }}
                 >
                   <planeGeometry args={[TILE_SIZE, TILE_SIZE, 64, 64]} />
@@ -208,15 +198,30 @@ export default function GameBoard() {
 
       {/* Render valid move positions (surrounding squares) */}
       {validMovePositions.map((pos, index) => (
-        <mesh key={`valid-move-${index}`} position={pos} rotation={[0, 0, 0]}>
+        <mesh key={`valid-move-${index}`} 
+          position={pos} 
+          rotation={[0, 0, 0]}           
+          onClick={(e) => {
+              // Stop propagation so we don't click the tile underneath
+              e.stopPropagation();
+              console.log('Selected valid move position:', pos);
+              gameManager.select(undefined,pos);
+              // Check if we have a card selected from hand (via inputStore)
+              // if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece)) {
+              //   const cardInHand = gameStore.handCards.find(c => c.id === inputStore.selectedTilePiece?.id);
+              //   if (cardInHand) {
+              //     gameStore.summonCard(cardInHand, pos);
+              //     // Clear selection after summoning
+              //     inputStore.selectTilePiece(null);
+              //   }
+              // }
+            }}>
           <planeGeometry args={[TILE_SIZE, TILE_SIZE]} />
           <meshBasicMaterial color={VALID_MOVE_COLOR} transparent opacity={0.6} side={DoubleSide} />
         </mesh>
       ))}
 
-      {validSummonPositions.map((arr, index) => {
-        const pos = new Vector3(arr[0], arr[1], arr[2]);
-        return (
+      {validSummonPositions.map((pos, index) => (
         <mesh 
           key={`valid-summon-${index}`} 
           position={pos} 
@@ -224,22 +229,23 @@ export default function GameBoard() {
           onClick={(e) => {
             // Stop propagation so we don't click the tile underneath
             e.stopPropagation();
-            
+            console.log('Selected valid summon position:', pos);
+            gameManager.select(undefined, pos);
             // Check if we have a card selected from hand (via inputStore)
-            if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece)) {
-              const cardInHand = gameStore.handCards.find(c => c.id === inputStore.selectedTilePiece?.id);
-              if (cardInHand) {
-                gameStore.summonCard(cardInHand, pos);
-                // Clear selection after summoning
-                inputStore.selectTilePiece(null);
-              }
-            }
+            // if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece)) {
+            //   const cardInHand = gameStore.handCards.find(c => c.id === inputStore.selectedTilePiece?.id);
+            //   if (cardInHand) {
+            //     gameStore.summonCard(cardInHand, pos);
+            //     // Clear selection after summoning
+            //     inputStore.selectTilePiece(null);
+            //   }
+            // }
           }}
         >
           <planeGeometry args={[TILE_SIZE, TILE_SIZE]} />
           <meshBasicMaterial color="#0055ff" transparent opacity={0.5} side={DoubleSide} />
         </mesh>
-      )})}
+      ))}
       
       {/* Render cards */}
       {uiStore.showCards && gameStore.cards.map((card) => {
@@ -249,7 +255,11 @@ export default function GameBoard() {
             card={card}
             isSelected={false} // Disable selection border on board as requested
             isPreview={false}
-            onSelect={() => inputStore.selectTilePiece(card)}
+            onSelect={() => {
+              console.log('Selected card:');
+              console.log(card);
+              gameManager.select(card, new Vector3(card.position.x, card.position.y, card.position.z));
+            }}
           />
         );
       })}
@@ -261,7 +271,7 @@ export default function GameBoard() {
             key={player.id}
             ref={(el) => { playerRefs.current[String(player.id)] = el; }}
             player={player}
-            onSelect={() => inputStore.selectTilePiece(player)}
+            onSelect={() => gameManager.select(player, new Vector3(player.position.x, player.position.y, player.position.z))}
           />
         );
       })}
@@ -270,7 +280,6 @@ export default function GameBoard() {
       
       <group rotation={[Math.PI / 2, 0, 0]}>
          <SummonCardPreview />
-         <SummonOptions />
       </group>
     </group>
   );

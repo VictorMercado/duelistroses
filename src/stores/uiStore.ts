@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import type { Tile } from '@/types';
 import { BOARD_SIZE } from '@/const';
 
 interface UIState {
@@ -23,8 +22,6 @@ interface UIState {
   showDetails: boolean;
   showPlayerDetails: boolean;
 
-  // Tile selection/hover
-  selectedTile: Tile | null;
   boardSize: number;
   tileArrangement: 'random' | 'player' | 'opponent';
   // Actions
@@ -41,7 +38,7 @@ interface UIState {
   setShowKeyBindings: (show: boolean) => void;
   setShowCards: (show: boolean) => void;
   setShowPlayers: (show: boolean) => void;
-  setSelectedTile: (tile: Tile | null) => void;
+  
   setBoardSize: (size: number) => void;
   setTileArrangement: (arrangement: 'random' | 'player' | 'opponent') => void;
   setShowPlayerDetails: (show: boolean) => void;
@@ -61,7 +58,6 @@ export const useUIStore = create<UIState>((set) => ({
   showPlayerDetails: false,
   showSettings: false,
   hoveredTile: null,
-  selectedTile: null,
   showKeyBindings: true,
   showCards: true,
   showPlayers: true,
@@ -79,7 +75,6 @@ export const useUIStore = create<UIState>((set) => ({
   setShowFPS: (show) => set({ showFPS: show }),
   setShowDetails: (show) => set({ showDetails: show }),
   setShowSettings: (show) => set({ showSettings: show }),
-  setSelectedTile: (tile) => set({ selectedTile: tile }),
   setShowKeyBindings: (show) => set({ showKeyBindings: show }),
   setShowCards: (show) => set({ showCards: show }),
   setShowPlayers: (show) => set({ showPlayers: show }),
