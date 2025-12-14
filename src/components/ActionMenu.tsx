@@ -1,7 +1,7 @@
 import { Key } from "@/components/Key";
 import { useUIStore } from "@/stores/uiStore";
 import { isCard, isPlayer, type Card, type Player } from "@/types";
-import { gameManager } from "@/game/GameManager";
+import { gameManager } from "@/game/gameManager";
 import { useKeyBindings } from "@/hooks/useKeyBindings";
 import { useGameStore } from "@/stores/gameStore";
 

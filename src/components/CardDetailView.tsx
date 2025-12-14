@@ -7,7 +7,7 @@ import YugiohCard from "@/components/YugiohCard";
 import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
 import { useGameStore } from "@/stores/gameStore";
-import { gameManager } from "@/game/GameManager";
+import { gameManager } from "@/game/gameManager";
 
 interface CardDetailViewProps {
 }

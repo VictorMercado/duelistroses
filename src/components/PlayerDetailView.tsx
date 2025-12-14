@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { isPlayer, type Player } from "@/types";
-import { gameManager } from "@/game/GameManager";
+import { gameManager } from "@/game/gameManager";
 
 export default function PlayerDetailView() {
   const setShowPlayerDetails = useUIStore((state) => state.setShowPlayerDetails);
