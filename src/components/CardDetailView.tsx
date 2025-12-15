@@ -8,6 +8,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useInputStore } from "@/stores/inputStore";
 import { useGameStore } from "@/stores/gameStore";
 import { gameManager } from "@/game/gameManager";
+import { useKeyBindings } from "@/hooks/useKeyBindings";
 
 interface CardDetailViewProps {
 }
@@ -36,7 +37,7 @@ export default function CardDetailView({ }: CardDetailViewProps) {
   const setShowDetails = useUIStore((state) => state.setShowDetails);
   const inputStore = useInputStore();
   const gameStore = useGameStore();
-  
+  const { keyBindings } = useKeyBindings();
 
   const isHandOpen = gameStore.showHand || (gameStore.summoningState && gameStore.summoningState.phase === 'card');
   const handCard = isHandOpen && inputStore.handSelectedIndex >= 0 
@@ -56,7 +57,7 @@ export default function CardDetailView({ }: CardDetailViewProps) {
   } : null;
 
   const handleCloseDetailView = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    if (keyBindings.cancel.includes(event.key)) {
       event.stopPropagation();
       setShowDetails(false);
     }

@@ -13,6 +13,7 @@ interface ActionMenuProps {
 export default function ActionMenu({ }: ActionMenuProps) {
   const uiStore = useUIStore();
   const selectedTilePiece = useGameStore((state)=> state.selectedTilePiece);
+  const showHand = useGameStore((state)=> state.showHand);
   const {keyBindings} = useKeyBindings();
 
   let card: Card | null = null;
@@ -44,10 +45,6 @@ export default function ActionMenu({ }: ActionMenuProps) {
       return;
     }
   }
-  const viewDetailsInHandHandler = () => {
-    uiStore.setShowDetails(true);
-    return;
-  }
 
   const wasOriginallyFaceUp = gameManager.stagingState?.originalIsFaceDown === false;
   const hasChangedMode = gameManager.stagingState?.hasChangedPosition || false
@@ -56,7 +53,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
   const canChangeMode = !hasMoved;
   const canSelect = true;
   const canFlip = !wasOriginallyFaceUp;
-  const handMenu = gameManager.showHand;
+  const handMenu = showHand;
   const tilePieceMenu = !handMenu && (card || player);
   const defaultMenu = !handMenu && !tilePieceMenu;
 
@@ -88,7 +85,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
           Select
         </button>
         <button
-          onClick={viewDetailsInHandHandler}
+          onClick={() => viewDetailsHandler()}
           className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-yellow-700 hover:border-yellow-300 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
         >
           {uiStore.showKeyBindings && <Key>{keyBindings.viewDetails}</Key>} 
