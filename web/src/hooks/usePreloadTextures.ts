@@ -9,6 +9,10 @@ const textureCache = new Map<TerrainType, HTMLImageElement>();
 function preloadTexture(terrain: Terrain): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    
+    // TESTING REMOVE ONCE FIXED
+    img.crossOrigin = "anonymous";
+    
     img.onload = () => {
       textureCache.set(terrain.type, img);
       console.log(`Loaded texture: ${terrain.type}`);
