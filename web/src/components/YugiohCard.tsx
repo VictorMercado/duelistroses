@@ -21,7 +21,7 @@ export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }
   const selectedTilePiece = useGameStore((state) => state.selectedTilePiece);
   const isSelected = selectedTilePiece?.id === card.id;
   const isSelectedInHand = isHandSelected;
-  const texture = useTexture(ASSET_URL + card.textureUrl);
+  const texture = useTexture(card.textureUrl);
   // --- Load the shine mask here ---
   const shineTexture = useTexture(ASSET_URL + "/textures/shine_mask_2.png"); 
   
