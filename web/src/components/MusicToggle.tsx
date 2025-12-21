@@ -1,9 +1,14 @@
-import { useGameAudio } from "@/hooks/useGameAudio";
+// import { useGameAudio } from "@/hooks/useGameAudio";
+
 interface MusicToggleProps {
+  isPlaying: boolean;
+  volume: number;
+  toggleMusic: () => void;
+  setVolume: (vol: number) => void;
 }
 
-export default function MusicToggle({  }: MusicToggleProps) {
-  const { isPlaying, volume, toggleMusic, setVolume } = useGameAudio();
+export default function MusicToggle({ isPlaying, volume, toggleMusic, setVolume }: MusicToggleProps) {
+  // const { isPlaying, volume, toggleMusic, setVolume } = useGameAudio();
   return (
     <div className="flex flex-col gap-2 z-50">
       <button

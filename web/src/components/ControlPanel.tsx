@@ -6,10 +6,18 @@ import FPSCounter from './FPSCounter';
 
 interface ControlPanelProps {
   controlsRef: React.RefObject<any>;
+  isPlaying: boolean;
+  volume: number;
+  toggleMusic: () => void;
+  setVolume: (vol: number) => void;
 }
 
 export default function ControlPanel({
   controlsRef,
+  isPlaying,
+  volume,
+  toggleMusic,
+  setVolume
 }: ControlPanelProps) {
   const [cameraStats, setCameraStats] = useState({
     distance: 0,
@@ -53,7 +61,7 @@ export default function ControlPanel({
   }, [controlsRef]);
 
   return (
-    <div className="bg-black/80 text-white p-4 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 space-y-2 w-64">
+    <div className="bg-black/90 md:bg-black/80 text-white p-4 pt-16 md:pt-4 w-full h-full md:w-64 md:h-auto md:rounded-lg shadow-lg backdrop-blur-sm border-l md:border border-white/10 space-y-2 overflow-y-auto z-50">
       {/* Settings Modal */}
       <h3 className="text-lg font-bold border-b border-white/20 pb-2">
         Control Panel
@@ -62,7 +70,12 @@ export default function ControlPanel({
         <p>Use W, A, S, D to move cards</p>
       </div>
       {uiStore.showFPS && <FPSCounter style="minimal"/>}
-      <MusicToggle />
+      <MusicToggle 
+        isPlaying={isPlaying}
+        volume={volume}
+        toggleMusic={toggleMusic}
+        setVolume={setVolume}
+      />
       {/* Camera Stats */}
       <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10">
         <p className="text-xs text-gray-400 mb-2">Camera Stats:</p>

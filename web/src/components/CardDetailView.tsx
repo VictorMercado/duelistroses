@@ -1,7 +1,7 @@
 import { isCard, type Card } from "@/types";
 
 import { useRef, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Vector3, Group } from "three";
 import YugiohCard from "@/components/YugiohCard";
 import { useUIStore } from "@/stores/uiStore";
@@ -14,18 +14,66 @@ interface CardDetailViewProps {
 
 function CardTilter({ children }: { children: React.ReactNode }) {
   const group = useRef<Group>(null);
+  const { gl } = useThree();
+  const isTouch = useRef(false);
+  const targetRotation = useRef({ x: 0, y: 0 });
+  const lastTouch = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    isTouch.current = window.matchMedia("(pointer: coarse)").matches;
+
+    if (isTouch.current) {
+      const handleTouchStart = (e: TouchEvent) => {
+        if (e.touches.length > 0) {
+          lastTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        /* Prevent Pull-to-Refresh or scroll on the canvas */
+        e.preventDefault(); 
+        if (e.touches.length > 0) {
+          const cx = e.touches[0].clientX;
+          const cy = e.touches[0].clientY;
+          const dx = cx - lastTouch.current.x;
+          const dy = cy - lastTouch.current.y;
+
+          // Provide simple sensitivity scaling
+          // Moving finger right (dx > 0) -> Rotate Y positive
+          // Moving finger down (dy > 0) -> Rotate X positive
+          targetRotation.current.y += dx * 0.005;
+          targetRotation.current.x += dy * 0.005;
+
+          lastTouch.current = { x: cx, y: cy };
+        }
+      };
+
+      // Passive: false is required to use preventDefault
+      gl.domElement.addEventListener("touchstart", handleTouchStart, { passive: false });
+      gl.domElement.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+      return () => {
+        gl.domElement.removeEventListener("touchstart", handleTouchStart);
+        gl.domElement.removeEventListener("touchmove", handleTouchMove);
+      };
+    }
+  }, [gl.domElement]);
 
   useFrame((state) => {
     if (group.current) {
-      const { x, y } = state.pointer;
-      // Tilt based on mouse position
-      // X mouse moves rotates around Y axis
-      // Y mouse moves rotates around X axis
-      const targetRotationX = -y * 0.5; // Max tilt up/down
-      const targetRotationY = x * 0.5;  // Max tilt left/right
+      if (isTouch.current) {
+         // Touch Mode: Interpolate to the dragged rotation
+         group.current.rotation.x += (targetRotation.current.x - group.current.rotation.x) * 0.1;
+         group.current.rotation.y += (targetRotation.current.y - group.current.rotation.y) * 0.1;
+      } else {
+         // Desktop Mode: Tilt based on mouse pointer position from center
+         const { x, y } = state.pointer;
+         const targetRotationX = -y * 0.5; // Max tilt up/down
+         const targetRotationY = x * 0.5;  // Max tilt left/right
 
-      group.current.rotation.x += (targetRotationX - group.current.rotation.x) * 0.1;
-      group.current.rotation.y += (targetRotationY - group.current.rotation.y) * 0.1;
+         group.current.rotation.x += (targetRotationX - group.current.rotation.x) * 0.1;
+         group.current.rotation.y += (targetRotationY - group.current.rotation.y) * 0.1;
+      }
     }
   });
 
@@ -70,33 +118,16 @@ export default function CardDetailView({ }: CardDetailViewProps) {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 w-full">
-      <div className="bg-gray-900 text-white w-full xl:w-[70%] h-[70%] rounded-2xl shadow-2xl border border-white/10 flex overflow-hidden relative">
+      <div className="bg-gray-900 text-white w-full h-full xl:w-[70%] lg:h-[70%] rounded-2xl shadow-2xl border border-white/10 flex flex-col lg:flex-row lg:flex-row-reverse overflow-hidden relative">
         <button
           onClick={() => setShowDetails(false)}
           className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold z-10"
         >
           ✕
         </button>
-        
-        {/* Left Side: 3D Card Preview */}
-        <div className={`w-1/2 lg:w-1/2 bg-gray-800 flex items-center justify-center border-r border-white/10 relative `}>
-          <Canvas camera={{ position: [0, 0, 2], fov: 45 }}>
-              <ambientLight intensity={1} />
-              <pointLight position={[5, 5, 5]} intensity={2} />
-              {previewCard && (
-                <CardTilter>
-                  <YugiohCard 
-                      card={previewCard} 
-                      onSelect={() => {}} 
-                      isPreview={true}
-                  />
-                </CardTilter>
-              )}
-          </Canvas>
-        </div>
 
-        {/* Right Side: Details */}
-        <div className="w-1/2 p-8 flex flex-col">
+        {/* Left Side: Details */}
+        <div className="w-full lg:w-1/2 p-8 flex flex-col">
           <h2 className="text-4xl font-bold mb-2">
             {isOpponentFaceDown ? '????' : card?.name}
           </h2>
@@ -132,6 +163,22 @@ export default function CardDetailView({ }: CardDetailViewProps) {
               {isOpponentFaceDown ? '????' : card?.description}
             </p>
           </div>
+        </div>
+        {/* Right Side: 3D Card Preview */}
+        <div className={`w-full flex-grow lg:w-1/2 bg-gray-800 flex items-center justify-center border-r border-white/10 relative `}>
+          <Canvas camera={{ position: [0, 0, 2], fov: 45 }}>
+              <ambientLight intensity={1} />
+              <pointLight position={[5, 5, 5]} intensity={2} />
+              {previewCard && (
+                <CardTilter>
+                  <YugiohCard 
+                      card={previewCard} 
+                      onSelect={() => {}} 
+                      isPreview={true}
+                  />
+                </CardTilter>
+              )}
+          </Canvas>
         </div>
       </div>
     </div>

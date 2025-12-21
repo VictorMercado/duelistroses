@@ -231,17 +231,17 @@ export default function ActionMenu({ }: ActionMenuProps) {
   const defaultMenuActions = () => {
     return (
       <>
-          <button
-            onClick={() => gameManager.startSummoning()}
-            disabled={!gameManager.canSummon()}
-            className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
-              gameManager.canSummon()
-                ? 'border-yellow-700 hover:bg-yellow-700'
-                : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
-            }`}
-            title="Play a card from your hand (J)"
+        <button
+          onClick={() => gameManager.startSummoning()}
+          disabled={!gameManager.canSummon()}
+          className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+            gameManager.canSummon()
+              ? 'border-yellow-700 hover:bg-yellow-700'
+              : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
+          }`}
+          title="Play a card from your hand (J)"
         >
-            {uiStore.showKeyBindings && <Key>{keyBindings.playCard}</Key>} Summon
+          {uiStore.showKeyBindings && <Key>{keyBindings.playCard}</Key>} Summon
         </button>
       </>
     )
@@ -304,7 +304,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
   const isConfirmPhase = summoningState?.phase === 'confirm';
 
   return (
-    <div className="absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 yugiohGradientBackground bg-opacity-90 md:bg-opacity-80 p-2 md:p-4 rounded-lg md:rounded-xl grid grid-cols-3 md:flex w-[95%] md:w-auto gap-2 md:gap-4 h-auto md:h-20 backdrop-blur-sm border md:border-2 border-yellow-700 shadow-2xl z-50">
+    <div className="absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 yugiohGradientBackground bg-opacity-90 w-[95%] md:w-auto p-2 md:p-4 rounded-lg md:rounded-xl grid grid-cols-3 md:flex gap-2 md:gap-4 h-auto md:h-20 backdrop-blur-sm border md:border-2 border-yellow-700 shadow-2xl z-50">
       {isTargetPhase && summoningTargetActions()}
       {isConfirmPhase && summoningConfirmActions()}
       {!isTargetPhase && !isConfirmPhase && handMenu && handMenuActions()}
