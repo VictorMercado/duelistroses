@@ -38,9 +38,9 @@ func main() {
 		fs.ServeHTTP(w, r)
 	})
 
-	http.HandleFunc("deploy", func(w http.ResponseWriter, r *http.Request) {
+	// http.HandleFunc("deploy", func(w http.ResponseWriter, r *http.Request) {
 		
-	})
+	// })
 
 	port := "8080"
 	log.Printf("Starting server on http://localhost:%s", port)
