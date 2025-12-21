@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 import { LinearFilter, MeshStandardMaterial, NearestFilter, Vector3, DoubleSide } from 'three';
-import { TILE_SIZE } from '@/const';
+import { ASSET_URL, TILE_SIZE } from '@/const';
 
 interface ToonBookProps {
   position: Vector3;
@@ -10,7 +10,7 @@ interface ToonBookProps {
 
 export const ToonBook = ({ position, onClick }: ToonBookProps) => {
   // 1. Load the texture
-  const texture = useTexture('/textures/toon_world_sprite.png');
+  const texture = useTexture(ASSET_URL + '/textures/toon_world_sprite.png');
   
   // Optional: Set filtering to Nearest for that crisp "pixel art" look
   texture.magFilter = NearestFilter;
