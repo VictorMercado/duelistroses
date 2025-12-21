@@ -1,6 +1,10 @@
 import type { KeyBindings, Terrain, Attribute, Rarity, MonsterKind, Monster, Spell, Trap } from "@/types";
 import { Vector3 } from "three";
 
+// if prod do https://storage.googleapis.com/duelistassets
+// if dev do /public
+export const ASSET_URL = import.meta.env.DEV ? "" : "https://storage.googleapis.com/duelistassets";
+
 export const PLAYER_BASE_Z = 0.1;
 export const BOARD_SIZE = 11;
 export const TILE_SIZE = 1;
@@ -30,53 +34,53 @@ export const DEFAULT_KEYBINDINGS: KeyBindings = {
 export const SOGEN_TERRAIN: Terrain = {
   type: "sogen",
   name: "Sogen",
-  textureUrl: "/terrains/sogen.png"
+  textureUrl: ASSET_URL + "/terrains/sogen.png"
 };
 export const YAMI_TERRAIN: Terrain = {
   type: "yami",
   name: "Yami",
-  textureUrl: "/terrains/yami.png"
+  textureUrl: ASSET_URL + "/terrains/yami.png"
 };
 export const LABYRINTH_TERRAIN: Terrain = {
   type: "labyrinth",
   name: "Labyrinth",
-  textureUrl: "/terrains/labyrinth.png"
+  textureUrl: ASSET_URL + "/terrains/labyrinth.png"
 };
 export const NORMAL_TERRAIN: Terrain = {
   type: "normal",
   name: "Normal",
-  textureUrl: "/terrains/normal.png"
+  textureUrl: ASSET_URL + "/terrains/normal.png"
 };
 export const UMI_TERRAIN: Terrain = {
   type: "umi",
   name: "Umi",
-  textureUrl: "/terrains/umi.png"
+  textureUrl: ASSET_URL + "/terrains/umi.png"
 };
 export const CRUSH_TERRAIN: Terrain = {
   type: "crush",
   name: "Crush",
-  textureUrl: "/terrains/crush.png"
+  textureUrl: ASSET_URL + "/terrains/crush.png"
 };
 export const MOUNTAIN_TERRAIN: Terrain = {
   type: "mountain",
   name: "Mountain",
-  textureUrl: "/terrains/mountain.png",
-  displacementUrl: "/terrains/mountain.png"
+  textureUrl: ASSET_URL + "/terrains/mountain.png",
+  displacementUrl: ASSET_URL + "/terrains/mountain.png"
 };
 export const WASTELAND_TERRAIN: Terrain = {
   type: "wasteland",
   name: "Wasteland",
-  textureUrl: "/terrains/wasteland.png"
+  textureUrl: ASSET_URL + "/terrains/wasteland.png"
 };
 export const FOREST_TERRAIN: Terrain = {
   type: "forest",
   name: "Forest",
-  textureUrl: "/terrains/forest.png"
+  textureUrl: ASSET_URL + "/terrains/forest.png"
 };
 export const TOON_TERRAIN: Terrain = {
   type: "toon",
   name: "Toon",
-  textureUrl: "/terrains/toon.png"
+  textureUrl: ASSET_URL + "/terrains/toon.png"
 };
 export const TERRAINS: Terrain[] = [
   SOGEN_TERRAIN,
@@ -130,35 +134,35 @@ export const getRarityTextColor = (rarity: Rarity) => {
 
 export const LIGHT: Attribute = {
   type: "light",
-  attributeUrl: "/attributes/light_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/light_attribute.svg",
 };
 export const DARK: Attribute = {
   type: "dark",
-  attributeUrl: "/attributes/dark_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/dark_attribute.svg",
 };
 export const WIND: Attribute = {
   type: "wind",
-  attributeUrl: "/attributes/wind_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/wind_attribute.svg",
 };
 export const WATER: Attribute = {
   type: "water",
-  attributeUrl: "/attributes/water_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/water_attribute.svg",
 };
 export const EARTH: Attribute = {
   type: "earth",
-  attributeUrl: "/attributes/earth_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/earth_attribute.svg",
 };
 export const FIRE: Attribute = {
   type: "fire",
-  attributeUrl: "/attributes/fire_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/fire_attribute.svg",
 };
 export const SPELL: Attribute = {
   type: "spell",
-  attributeUrl: "/attributes/spell_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/spell_attribute.svg",
 };
 export const TRAP: Attribute = {
   type: "trap",
-  attributeUrl: "/attributes/trap_attribute.svg",
+  attributeUrl: ASSET_URL + "/attributes/trap_attribute.svg",
 };
 
 export const AQUA: MonsterKind = {

@@ -1,6 +1,7 @@
 import { Vector3 } from "three";
 import type { Card, Player } from "@/types";
 import { PLAYER_BASE_Z, SPELLCASTER, DARK, LIGHT, DRAGON, EARTH, WARRIOR, SPELL, FIEND, NORMALMONSTER, EFFECTMONSTER, FUSIONMONSTER, RITUALMONSTER, NORMALSPELL } from "@/const";
+import { ASSET_URL } from "@/const";
 
 export const cards: Card[] = [
   {
@@ -18,9 +19,9 @@ export const cards: Card[] = [
     monster: SPELLCASTER,
     type: NORMALMONSTER,
     attribute: DARK,
-    templateUrl: "/textures/normalTemplate.png",
-    textureUrl: "/cards/Dark_Magician.png",
-    maskUrl: "/cards/Dark_Magician_Mask.png",
+    templateUrl: ASSET_URL + "/textures/normalTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Dark_Magician.png",
+    maskUrl: ASSET_URL + "/cards/Dark_Magician_Mask.png",
   },
   {
     id: 2,
@@ -37,9 +38,9 @@ export const cards: Card[] = [
     monster: DRAGON,
     type: NORMALMONSTER,
     attribute: LIGHT,
-    textureUrl: "/cards/Blue_Eyes_White_Dragon.png",
-    templateUrl: "/textures/normalTemplate.png",
-    maskUrl: "/cards/Blue_Eyes_White_Dragon_Mask.png",
+    textureUrl: ASSET_URL + "/cards/Blue_Eyes_White_Dragon.png",
+    templateUrl: ASSET_URL + "/textures/normalTemplate.png",
+    maskUrl: ASSET_URL + "/cards/Blue_Eyes_White_Dragon_Mask.png",
   },
   {
     id: 3,
@@ -56,9 +57,9 @@ export const cards: Card[] = [
     monster: SPELLCASTER,
     type: EFFECTMONSTER,
     attribute: DARK,
-    templateUrl: "/textures/effectTemplate.png",
-    textureUrl: "/cards/Dark_Magician_Girl.png",
-    maskUrl: "/cards/Dark_Magician_Girl_Mask.png",
+    templateUrl: ASSET_URL + "/textures/effectTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Dark_Magician_Girl.png",
+    maskUrl: ASSET_URL + "/cards/Dark_Magician_Girl_Mask.png",
   },
   {
     id: 4,
@@ -75,8 +76,8 @@ export const cards: Card[] = [
     monster: DRAGON,
     type: NORMALMONSTER,
     attribute: DARK,
-    templateUrl: "/textures/normalTemplate.png",
-    textureUrl: "/cards/Red_Eyes_Black_Dragon.png",
+    templateUrl: ASSET_URL + "/textures/normalTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Red_Eyes_Black_Dragon.png",
   },
   {
     id: 5,
@@ -93,9 +94,9 @@ export const cards: Card[] = [
     monster: DRAGON,
     type: NORMALMONSTER,
     attribute: LIGHT,
-    templateUrl: "/textures/normalTemplate.png",
-    textureUrl: "/cards/Blue_Eyes_White_Dragon.png",
-    maskUrl: "/cards/Blue_Eyes_White_Dragon_Mask.png",
+    templateUrl: ASSET_URL + "/textures/normalTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Blue_Eyes_White_Dragon.png",
+    maskUrl: ASSET_URL + "/cards/Blue_Eyes_White_Dragon_Mask.png",
   },
   {
     id: 6,
@@ -112,9 +113,9 @@ export const cards: Card[] = [
     monster: DRAGON,
     type: FUSIONMONSTER,
     attribute: LIGHT,
-    templateUrl: "/textures/fusionTemplate.png",
-    textureUrl: "/cards/Blue_Eyes_Ultimate_Dragon.png",
-    maskUrl: "/cards/Blue_Eyes_Ultimate_Dragon_Mask.png",
+    templateUrl: ASSET_URL + "/textures/fusionTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Blue_Eyes_Ultimate_Dragon.png",
+    maskUrl: ASSET_URL + "/cards/Blue_Eyes_Ultimate_Dragon_Mask.png",
   },
   {
     id: 7,
@@ -131,8 +132,8 @@ export const cards: Card[] = [
     monster: WARRIOR,
     type: RITUALMONSTER,
     attribute: EARTH,
-    templateUrl: "/textures/ritualTemplate.png",
-    textureUrl: "/cards/Black_Luster_Soldier.png",
+    templateUrl: ASSET_URL + "/textures/ritualTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Black_Luster_Soldier.png",
     // maskUrl: "/cards/Black_Luster_Soldier_Mask.png",
   },
   {
@@ -150,8 +151,8 @@ export const cards: Card[] = [
     type: NORMALSPELL,
     level: 0,
     attribute: SPELL,
-    templateUrl: "/textures/spellTemplate.png",
-    textureUrl: "/cards/Change_of_Heart.png",
+    templateUrl: ASSET_URL + "/textures/spellTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Change_of_Heart.png",
     // maskUrl: "/cards/Change_of_Heart_Mask.png",
   },
   {
@@ -169,9 +170,9 @@ export const cards: Card[] = [
     monster: FIEND,
     type: NORMALMONSTER,
     attribute: DARK,
-    templateUrl: "/textures/normalTemplate.png",
-    textureUrl: "/cards/Summoned_Skull.png",
-    maskUrl: "/cards/Summoned_Skull_Mask.png",
+    templateUrl: ASSET_URL + "/textures/normalTemplate.png",
+    textureUrl: ASSET_URL + "/cards/Summoned_Skull.png",
+    maskUrl: ASSET_URL + "/cards/Summoned_Skull_Mask.png",
   }
 ];
 
@@ -209,7 +210,7 @@ export const players: Player[] = [
     id: 100,
     name: "Player_1",
     clan: "Yorkists",
-    textureUrl: "/textures/Red_rose_emblem.png",
+    textureUrl: ASSET_URL + "/textures/Red_rose_emblem.png",
     position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: playerDeckCards, // Only deck cards for now? Or include the initial ones? 
     // Initial cards 1,3 are hardcoded on board. Let's add them to deck tracking or separate?
@@ -228,7 +229,7 @@ export const players: Player[] = [
     id: 200,
     name: "Opponent",
     clan: "Lancastrians",
-    textureUrl: "/textures/White_rose_emblem.png",
+    textureUrl: ASSET_URL + "/textures/White_rose_emblem.png",
     position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: opponentDeckCards,
     deck: opponentDeckCards.map(c => c.id),
@@ -243,7 +244,7 @@ export const players: Player[] = [
     id: 300,
     name: "Opponent_2",
     clan: "Lancastrians",
-    textureUrl: "/textures/White_rose_emblem.png",
+    textureUrl: ASSET_URL + "/textures/White_rose_emblem.png",
     position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: [],
     deck: [],
@@ -258,7 +259,7 @@ export const players: Player[] = [
     id: 400,
     name: "Player_2",
     clan: "Yorkists",
-    textureUrl: "/textures/Red_rose_emblem.png",
+    textureUrl: ASSET_URL + "/textures/Red_rose_emblem.png",
     position: new Vector3(0, 0, PLAYER_BASE_Z),
     allCards: [],
     deck: [],

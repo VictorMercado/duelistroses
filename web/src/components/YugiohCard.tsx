@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Text, useTexture } from "@react-three/drei";
 import { Vector3, Group, DoubleSide, Mesh } from "three";
 import { type Card } from "@/types";
-import { getGlowColor } from "@/const"
+import { ASSET_URL, getGlowColor } from "@/const"
 import { useGameStore } from "@/stores/gameStore";
 
 type CardPropType = {
@@ -21,15 +21,15 @@ export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }
   const selectedTilePiece = useGameStore((state) => state.selectedTilePiece);
   const isSelected = selectedTilePiece?.id === card.id;
   const isSelectedInHand = isHandSelected;
-  const texture = useTexture(card.textureUrl);
+  const texture = useTexture(ASSET_URL + card.textureUrl);
   // --- Load the shine mask here ---
-  const shineTexture = useTexture("/textures/shine_mask_2.png"); 
+  const shineTexture = useTexture(ASSET_URL + "/textures/shine_mask_2.png"); 
   
-  const maskTexture = useTexture(card.maskUrl || "/textures/blank_mask.png");
+  const maskTexture = useTexture(card.maskUrl || ASSET_URL + "/textures/blank_mask.png");
   const attributeTexture = useTexture(card.attribute.attributeUrl);
   const cardTemplate = useTexture(card.templateUrl);
-  const levelStarTexture = useTexture("/textures/levelStar.png");
-  const mysteryCardTexture = useTexture("/cards/mysteryCard.png");
+  const levelStarTexture = useTexture(ASSET_URL + "/textures/levelStar.png");
+  const mysteryCardTexture = useTexture(ASSET_URL + "/cards/mysteryCard.png");
 
   // Setting textures to repeat/wrap is usually good for holo patterns, 
   // though 512x512 fits the card well by default.
