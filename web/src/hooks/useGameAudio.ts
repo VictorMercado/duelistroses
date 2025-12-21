@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ASSET_URL } from '@/const';
 
 // Load saved volume from localStorage or use default
 const loadSavedVolume = (): number => {
@@ -24,8 +25,8 @@ export function useGameAudio() {
     hasInitializedRef.current = true;
 
     // Create audio elements
-    const starterAudio = new Audio('/audio/VS_Yorkists_Starter.mp3');
-    const loopAudio = new Audio('/audio/VS_Yorkists_Loop.mp3');
+    const starterAudio = new Audio(ASSET_URL + '/audio/VS_Yorkists_Starter.mp3');
+    const loopAudio = new Audio(ASSET_URL + '/audio/VS_Yorkists_Loop.mp3');
 
     // Preload both audio files
     starterAudio.preload = 'auto';

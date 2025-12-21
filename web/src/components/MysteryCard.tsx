@@ -1,6 +1,7 @@
 import { useTexture } from "@react-three/drei";
+import { ASSET_URL } from "@/const";
 export const MysteryCard = () => {
-  const texture = useTexture('/cards/mysteryCard.png');
+  const texture = useTexture(ASSET_URL + '/cards/mysteryCard.png');
   const BASE_CARD_Z = 0.001;
   return (
     <group rotation={[0, 0, 0]}>
