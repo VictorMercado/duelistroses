@@ -62,7 +62,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
       <>
         <button
           onClick={() => gameManager.closeHand()}
-          className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+          className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md text-xs font-bold transition-colors"
           title="Cancel and revert changes (Esc)"
         >
           {uiStore.showKeyBindings && <Key>{keyBindings.cancel[0]}</Key>} 
@@ -74,7 +74,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         <button
           onClick={() => gameManager.select()}
           disabled={!canSelect}
-          className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+          className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
             canSelect
               ? 'border-green-600 bg-green-700 hover:bg-green-600 text-white'
               : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -86,7 +86,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         </button>
         <button
           onClick={() => viewDetailsHandler()}
-          className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-yellow-700 hover:border-yellow-300 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+          className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-yellow-700 hover:border-yellow-300 rounded-md text-xs font-bold transition-colors"
         >
           {uiStore.showKeyBindings && <Key>{keyBindings.viewDetails}</Key>} 
           Details
@@ -102,7 +102,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         <button
           onClick={() => gameManager.select()}
           disabled={!canCommit}
-          className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+          className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
             canCommit
               ? 'border-green-600 bg-green-700 hover:bg-green-600 text-white'
               : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -119,7 +119,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         <button
           onClick={() => gameManager.orientCard()}
           disabled={!canChangeMode}
-          className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+          className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
             canChangeMode
               ? 'border-yellow-700 hover:border-yellow-300'
               : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -132,7 +132,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         <button
           onClick={() => gameManager.flipCard()}
           disabled={!canFlip}
-          className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+          className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
             canFlip
               ? 'border-yellow-700 hover:border-yellow-300'
               : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -163,7 +163,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
           <button
             onClick={() => gameManager.select()}
             disabled={!canCommit}
-            className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+            className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
               canCommit
                 ? 'border-green-600 bg-green-700 hover:bg-green-600 text-white'
                 : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -178,7 +178,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
           </div>
           <button
               onClick={() => gameManager.showHand ? gameManager.closeHand() : gameManager.openHand()}
-              className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-green-600 bg-green-700 hover:bg-green-600 text-white rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+              className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-green-600 bg-green-700 hover:bg-green-600 text-white rounded-md text-xs font-bold transition-colors"
               title={gameManager.showHand ? "Hide your hand" : "View your hand cards"}
           >
               {/* No specific key binding for toggle shown, maybe generic or just text */}
@@ -187,7 +187,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
           <button
               onClick={() => gameManager.startSummoning()}
               disabled={!gameManager.canSummon()}
-              className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+              className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
                 gameManager.canSummon()
                   ? 'border-purple-600 bg-purple-700 hover:bg-purple-600'
                   : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -210,7 +210,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
       <>
         <button
           onClick={() => gameManager.cancel()}
-          className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+          className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md text-xs font-bold transition-colors"
           title="Cancel and revert changes (Esc)"
         >
           {uiStore.showKeyBindings && <Key>{keyBindings.cancel[0]}</Key>} 
@@ -220,7 +220,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         {isUsersPiece && canAct && player && playerActions()}
         <button
           onClick={viewDetailsHandler}
-          className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-yellow-700 hover:border-yellow-300 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+          className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-yellow-700 hover:border-yellow-300 rounded-md text-xs font-bold transition-colors"
         >
           {uiStore.showKeyBindings && <Key>{keyBindings.viewDetails}</Key>} 
           Details
@@ -234,7 +234,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         <button
           onClick={() => gameManager.startSummoning()}
           disabled={!gameManager.canSummon()}
-          className={`flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors ${
+          className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
             gameManager.canSummon()
               ? 'border-yellow-700 hover:bg-yellow-700'
               : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -251,19 +251,19 @@ export default function ActionMenu({ }: ActionMenuProps) {
       <>
         <button
           onClick={() => gameManager.cancel()}
-          className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+          className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md text-xs font-bold transition-colors"
           title="Cancel summoning"
         >
            {uiStore.showKeyBindings && <Key>{keyBindings.cancel[0]}</Key>}
           Cancel
         </button>
         <div className="hidden md:flex flex-col items-center justify-center px-4">
-             <span className="text-yellow-500 font-bold text-sm">Select Target Tile</span>
-             <span className="text-gray-400 text-xs">Use WASD or Arrows to move cursor</span>
+             <span className="text-yellow-500 font-bold text-xs">Select Target Tile</span>
+             <span className="text-gray-400 text-xs">Use WASD to move cursor</span>
         </div>
         <button
           onClick={() => gameManager.select()}
-            className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-green-600 bg-green-700 hover:bg-green-600 text-white rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+            className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-green-600 bg-green-700 hover:bg-green-600 text-white rounded-md text-xs font-bold transition-colors"
           title="Select this tile for summoning"
         >
            {uiStore.showKeyBindings && <Key>{keyBindings.select}</Key>}
@@ -278,7 +278,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
       <>
         <button
           onClick={() => gameManager.cancel()}
-          className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+          className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md text-xs font-bold transition-colors"
           title="Cancel summoning"
         >
            {uiStore.showKeyBindings && <Key>{keyBindings.cancel[0]}</Key>}
@@ -289,7 +289,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
           </div>
         <button
           onClick={() => gameManager.select()}
-            className="flex items-center justify-center gap-x-1 px-2 py-2 md:px-6 md:py-2 border md:border-2 border-green-600 bg-green-700 hover:bg-green-600 text-white rounded-md md:rounded-lg text-sm md:text-base font-bold transition-colors"
+            className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-green-600 bg-green-700 hover:bg-green-600 text-white rounded-md text-xs font-bold transition-colors"
           title="Confirm Summon"
         >
            {uiStore.showKeyBindings && <Key>{keyBindings.select}</Key>}
@@ -304,7 +304,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
   const isConfirmPhase = summoningState?.phase === 'confirm';
 
   return (
-    <div className="absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 yugiohGradientBackground bg-opacity-90 w-[95%] md:w-auto p-2 md:p-4 rounded-lg md:rounded-xl grid grid-cols-3 md:flex gap-2 md:gap-4 h-auto md:h-20 backdrop-blur-sm border md:border-2 border-yellow-700 shadow-2xl z-50">
+    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 yugiohGradientBackground bg-opacity-90 w-[95%] md:w-auto p-2 rounded-lg md:rounded-xl grid grid-cols-3 md:flex gap-2 md:gap-4 h-auto backdrop-blur-sm border md:border-2 border-yellow-700 shadow-2xl z-50">
       {isTargetPhase && summoningTargetActions()}
       {isConfirmPhase && summoningConfirmActions()}
       {!isTargetPhase && !isConfirmPhase && handMenu && handMenuActions()}

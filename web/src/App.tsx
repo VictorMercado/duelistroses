@@ -19,6 +19,7 @@ import { BaseHolographicMaterial } from "@/shaders/BaseHolographic";
 import { GodRaysMaterial } from "@/shaders/GodRays";
 import { BOARD_SIZE } from "@/const";
 import { useKeyBindings } from "./hooks/useKeyBindings";
+import { useIsMobileLandscape } from "./hooks/useIsMobile";
 
 extend({ BaseHolographicMaterial, GodRaysMaterial });
 
@@ -30,6 +31,7 @@ function App() {
   useKeyBindings();
   const uiStore = useUIStore();
   const controlsRef = useRef<any>(null);
+  const isMobileLandscape = useIsMobileLandscape();
   
   // Initialize audio at the top level
   const audioState = useGameAudio();    
@@ -51,17 +53,17 @@ function App() {
           maxPolarAngle={uiStore.enableFreeCamera ? Math.PI : 50 * Math.PI / 180}
           minAzimuthAngle={uiStore.enableFreeCamera ? -Infinity : Math.PI * 0}
           maxAzimuthAngle={uiStore.enableFreeCamera ? Infinity : Math.PI * 0}
-          minDistance={uiStore.enableFreeCamera ? 2 : BOARD_SIZE + 3}
-          maxDistance={uiStore.enableFreeCamera ? 50 : BOARD_SIZE + 3}
+          minDistance={isMobileLandscape ? 10 : uiStore.enableFreeCamera ? 2 : BOARD_SIZE + 3}
+          maxDistance={isMobileLandscape ? 10 : uiStore.enableFreeCamera ? 50 : BOARD_SIZE + 3}
         />
       </Canvas>
-      <StaticAxisHelper />
+      {/* <StaticAxisHelper /> */}
       {/* Toggle Button - Fixed on mobile, Absolute on desktop */}
       <button
         onClick={() => uiStore.setShowControlPanel(!uiStore.showControlPanel)}
         className={`
           fixed md:absolute z-70 
-          top-4 right-4 md:top-40 md:right-4
+          top-4 right-4
           bg-black/80 text-white 
           p-2 md:px-4 md:py-2 
           rounded-full md:rounded-lg 
@@ -70,13 +72,13 @@ function App() {
           w-10 h-10 md:w-auto md:h-auto z-70
         `}
       >
-        <span className="md:hidden">⚙️</span>
-        <span className="hidden md:inline">{uiStore.showControlPanel ? ">" : "<"}</span>
+        <span className="">⚙️</span>
       </button>
 
       {/* Control Panel Container */}
       {uiStore.showControlPanel && (
-        <div className="fixed inset-0 z-60 md:absolute md:top-40 md:right-16 md:bottom-auto md:left-auto md:z-0 flex justify-end md:block">
+        // md:absolute md:top-40 md:right-16 md:bottom-auto md:left-auto md:z-0 md:block
+        <div className="absolute left-0 top-0 h-full w-full z-60 flex justify-center">
            <ControlPanel controlsRef={controlsRef} {...audioState} />
         </div>
       )}

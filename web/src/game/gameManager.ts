@@ -343,6 +343,13 @@ class GameManager {
     // Summoning Confirmations - Delegating to methods that now contain validation
     if (summoningState) {
       const { phase } = summoningState;
+
+      // Restrict Interaction: During 'card' or 'confirm' phases, disallow clicking tiles/positions directly.
+      // We only allow interaction via the UI buttons or keyboard Enter (which passes no args).
+      if ((phase === 'card' || phase === 'confirm') && (tile || pos)) {
+        return;
+      }
+
       if (phase === 'target') {
         this.confirmSummonTarget(pos);
       } else if (phase === 'card') {

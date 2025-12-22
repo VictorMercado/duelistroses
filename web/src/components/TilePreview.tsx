@@ -35,7 +35,7 @@ export default function TilePreview({ }: TilePreviewProps) {
   if (!displayTile) return null;
 
   return (
-    <div className="absolute bottom-32 lg:bottom-4 left-4 w-24 h-32 lg:w-64 lg:h-80 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl">
+    <div className="absolute bottom-26 lg:bottom-4 left-4 w-24 h-32 lg:w-64 lg:h-80 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl">
         <div className="h-full flex flex-col">
           {/* 3D Texture Preview */}
           <div className="flex-1 bg-gray-900 flex items-center justify-center relative">

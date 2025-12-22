@@ -19,7 +19,7 @@ export default function PlayerPreview() {
 
   return (
     <div 
-      className={`absolute bottom-4 right-4 w-24 h-32 lg:w-80 lg:h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      className={`absolute bottom-26 right-4 w-24 h-32 lg:w-80 lg:h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
     >
       {/* 3D Preview */}
       <Canvas style={{ pointerEvents: 'none' }} aria-label="Player Preview" camera={{ position: [0, 0, 2], fov: 45 }}>
@@ -36,9 +36,9 @@ export default function PlayerPreview() {
       
       {/* Name and Details */}
       {player ? (
-        <div className="absolute bottom-4 w-full flex flex-col items-center space-y-2 pointer-events-auto">
+        <div className="absolute bottom-25 w-full flex flex-col items-center space-y-2 pointer-events-auto">
            {/* Player Name */}
-           <div className="text-white font-bold text-xl mb-2 drop-shadow-md">
+           <div className="text-white font-bold text-sm drop-shadow-md">
             {player.name}
           </div>
         </div>

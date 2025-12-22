@@ -121,7 +121,7 @@ export default function CardDetailView({ }: CardDetailViewProps) {
       <div className="bg-gray-900 text-white w-full h-full xl:w-[70%] lg:h-[70%] rounded-2xl shadow-2xl border border-white/10 flex flex-col lg:flex-row lg:flex-row-reverse overflow-hidden relative">
         <button
           onClick={() => setShowDetails(false)}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold z-10"
+          className="absolute top-4 left-4 text-gray-400 hover:text-white text-2xl font-bold z-10"
         >
           ✕
         </button>
@@ -166,7 +166,7 @@ export default function CardDetailView({ }: CardDetailViewProps) {
         </div>
         {/* Right Side: 3D Card Preview */}
         <div className={`w-full flex-grow lg:w-1/2 bg-gray-800 flex items-center justify-center border-r border-white/10 relative `}>
-          <Canvas camera={{ position: [0, 0, 2], fov: 45 }}>
+          <Canvas camera={{ position: [0, 0, 1.3], fov: 45 }}>
               <ambientLight intensity={1} />
               <pointLight position={[5, 5, 5]} intensity={2} />
               {previewCard && (

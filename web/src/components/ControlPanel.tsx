@@ -61,7 +61,7 @@ export default function ControlPanel({
   }, [controlsRef]);
 
   return (
-    <div className="bg-black/90 md:bg-black/80 text-white p-4 pt-16 md:pt-4 w-full h-full md:w-64 md:h-auto md:rounded-lg shadow-lg backdrop-blur-sm border-l md:border border-white/10 space-y-2 overflow-y-auto z-50">
+    <div className="bg-black/90 md:bg-black/80 text-white p-4 pt-16 md:pt-4 w-full h-full md:w-96 md:h-auto md:rounded-lg shadow-lg backdrop-blur-sm border-l md:border border-white/10 space-y-2 overflow-y-auto z-50">
       {/* Settings Modal */}
       <h3 className="text-lg font-bold border-b border-white/20 pb-2">
         Control Panel

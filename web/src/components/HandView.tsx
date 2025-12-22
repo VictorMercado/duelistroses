@@ -1,8 +1,10 @@
 import { useGameStore } from "@/stores/gameStore";
 import YugiohCard from "./YugiohCard";
 import { Vector3 } from "three";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function HandView() {
+  const isMobile = useIsMobile();
   const gameStore = useGameStore();
   const handSelectedIndex = useGameStore((state) => state.handSelectedIndex);
   
@@ -13,9 +15,10 @@ export default function HandView() {
   const startX = -(totalWidth / 2);
   const baseY = .5;  // Below the board
   const baseZ = 2;   // Raised toward camera
+  const scale = isMobile ? 0.75 : 2;
 
   return (
-    <group rotation={[-.5, 0, 0]} scale={2}>
+    <group rotation={[-.5, 0, 0]} scale={scale}>
       {gameStore.handCards.map((card, index) => {
         const xPosition = startX + (index * cardSpacing);
         const isSelected = handSelectedIndex === index;
