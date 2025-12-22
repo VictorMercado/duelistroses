@@ -3,7 +3,6 @@ import { OrbitControls } from "@react-three/drei";
 import { useRef } from 'react';
 import { useUIStore } from "@/stores/uiStore";
 import { usePreloadTextures } from "@/hooks/usePreloadTextures";
-import StaticAxisHelper from "@/components/StaticAxisHelper";
 import GameBoard from "@/components/GameBoard";
 import ControlPanel from "@/components/ControlPanel";
 import ActionMenu from "@/components/ActionMenu";
@@ -57,7 +56,6 @@ function App() {
           maxDistance={isMobileLandscape ? 10 : uiStore.enableFreeCamera ? 50 : BOARD_SIZE + 3}
         />
       </Canvas>
-      {/* <StaticAxisHelper /> */}
       {/* Toggle Button - Fixed on mobile, Absolute on desktop */}
       <button
         onClick={() => uiStore.setShowControlPanel(!uiStore.showControlPanel)}
