@@ -29,6 +29,7 @@ Thumbs.db
 # Web (in case local gitignore is missing, though it exists)
 web/node_modules
 web/dist
+web/dev-dist
 web/.env
 web/.env.local
 web/public/attributes/
