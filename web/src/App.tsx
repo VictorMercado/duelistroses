@@ -11,9 +11,9 @@ import PlayerDetailView from "@/components/PlayerDetailView";
 import CardPreview from "@/components/CardPreview";
 import PlayerPreview from "@/components/PlayerPreview";
 import TilePreview from "@/components/TilePreview";
-import SettingsModal from "@/components/SettingsModal";
 import HandView from "@/components/HandView";
 import DevTools from "@/components/DevTools";
+import PlayerStats from "@/components/PlayerStats";
 import { BaseHolographicMaterial } from "@/shaders/BaseHolographic";
 import { GodRaysMaterial } from "@/shaders/GodRays";
 import { BOARD_SIZE } from "@/const";
@@ -23,12 +23,16 @@ import { useIsMobileLandscape } from "./hooks/useIsMobile";
 extend({ BaseHolographicMaterial, GodRaysMaterial });
 
 import { useGameAudio } from "@/hooks/useGameAudio";
+import MusicToggle from "./components/MusicToggle";
+import FPSCounter from "./components/FPSCounter";
+import { useGameStore } from "./stores/gameStore";
 
 function App() {
   // Preload all tile textures to prevent refetching
   usePreloadTextures();
   useKeyBindings();
   const uiStore = useUIStore();
+  const gameStore = useGameStore();
   const controlsRef = useRef<any>(null);
   const isMobileLandscape = useIsMobileLandscape();
   
@@ -41,7 +45,6 @@ function App() {
         <color attach="background" args={['black']} />
         <ambientLight intensity={5} />
         <GameBoard />
-        <HandView />
         <OrbitControls
           ref={controlsRef}
           enableZoom={uiStore.enableZoom}
@@ -56,6 +59,7 @@ function App() {
           maxDistance={isMobileLandscape ? 10 : uiStore.enableFreeCamera ? 50 : BOARD_SIZE + 3}
         />
       </Canvas>
+      <PlayerStats />
       {/* Toggle Button - Fixed on mobile, Absolute on desktop */}
       <button
         onClick={() => uiStore.setShowControlPanel(!uiStore.showControlPanel)}
@@ -75,12 +79,21 @@ function App() {
 
       {/* Control Panel Container */}
       {uiStore.showControlPanel && (
-        // md:absolute md:top-40 md:right-16 md:bottom-auto md:left-auto md:z-0 md:block
-        <div className="absolute left-0 top-0 h-full w-full z-60 flex justify-center">
-           <ControlPanel controlsRef={controlsRef} {...audioState} />
+        <div className="absolute top-0 h-full w-full z-60 flex justify-end">
+          <ControlPanel controlsRef={controlsRef} {...audioState} />
         </div>
       )}
-      {uiStore.showSettings && <SettingsModal />}
+      <div className="hidden xl:flex absolute top-2 left-1/2 -translate-x-1/2 z-70 flex flex-row gap-2">
+        {uiStore.showFPS && <FPSCounter style="minimal"/>}
+        <MusicToggle
+          isPlaying={audioState.isPlaying}
+          volume={audioState.volume}
+          toggleMusic={audioState.toggleMusic}
+          setVolume={audioState.setVolume}
+          style="minimal"
+        />
+      </div>
+      <HandView />
       <ActionMenu />
       {uiStore.showDetails && <CardDetailView />}
       {uiStore.showPlayerDetails && <PlayerDetailView />}

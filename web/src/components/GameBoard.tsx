@@ -1,4 +1,4 @@
-import { DoubleSide, Group, Vector3 } from "three";
+import { DoubleSide, Group, Vector3, PlaneGeometry } from "three";
 import { useEffect, useMemo, useRef } from "react";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
@@ -22,8 +22,7 @@ import {
   WEST_BOARD_START,
  } from "@/const";
 import { ToonBook } from "./ToonBook";
-import HandView from "./HandView";
- import SummonCardPreview from "./SummonCardPreview";
+import SummonCardPreview from "./SummonCardPreview";
 import { InputManager } from "@/game/InputManager";
 import { gameManager } from "@/game/gameManager";
 
@@ -130,6 +129,11 @@ export default function GameBoard() {
   const isSummoning = gameStore.summoningState;
   const validSummonPositions = isSummoning ? gameStore.getValidSummonPositions() : [];
 
+
+  // Shared Geometries
+  const flatGeometry = useMemo(() => new PlaneGeometry(TILE_SIZE, TILE_SIZE, 1, 1), []);
+  const highPolyGeometry = useMemo(() => new PlaneGeometry(TILE_SIZE, TILE_SIZE, 64, 64), []);
+
   return (
     <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* <ToonBook position={[0, 0, 0]} /> */}
@@ -166,11 +170,11 @@ export default function GameBoard() {
               ) : (
                 <mesh
                   position={tile.position}
+                  geometry={tile.displacementTexture ? highPolyGeometry : flatGeometry}
                   onClick={() => {
                     InputManager.getInstance().handleInteraction('SELECT', { tile, pos: tile.position });
                   }}
                 >
-                  <planeGeometry args={[TILE_SIZE, TILE_SIZE, 64, 64]} />
                   <meshStandardMaterial
                     map={tile.texture}
                     displacementMap={tile.displacementTexture}
@@ -269,8 +273,6 @@ export default function GameBoard() {
           />
         );
       })}
-
-      {gameStore.showHand && <HandView />}
       
       <group rotation={[Math.PI / 2, 0, 0]}>
          <SummonCardPreview />

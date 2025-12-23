@@ -5,12 +5,13 @@ interface MusicToggleProps {
   volume: number;
   toggleMusic: () => void;
   setVolume: (vol: number) => void;
+  style: 'minimal' | 'full';
 }
 
-export default function MusicToggle({ isPlaying, volume, toggleMusic, setVolume }: MusicToggleProps) {
+export default function MusicToggle({ isPlaying, volume, toggleMusic, setVolume, style }: MusicToggleProps) {
   // const { isPlaying, volume, toggleMusic, setVolume } = useGameAudio();
   return (
-    <div className="flex flex-col gap-2 z-50">
+    <div className={style === 'minimal' ? 'flex flex-row z-50' : 'flex flex-col gap-2 z-50'}>
       <button
         onClick={toggleMusic}
         className="bg-black/80 text-white px-4 py-2 rounded-lg border border-white/20 hover:border-yellow-500 hover:bg-black/90 transition-all font-mono text-sm flex items-center gap-2"

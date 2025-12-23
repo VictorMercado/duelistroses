@@ -24,7 +24,7 @@ export default function CardPreview({ }: CardPreviewProps) {
 
   return (
     <div 
-      className={`absolute bottom-26 lg:bottom-4 right-4 w-24 h-32 lg:w-80 lg:h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      className={`absolute bottom-26 md:bottom-2 right-6 w-24 h-32 lg:w-48 lg:h-64 2xl:w-64 2xl:h-80 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
       onClick={() => {
         if (card) {
           gameManager.toggleDetails();

@@ -93,7 +93,6 @@ export default function CardDetailView({ }: CardDetailViewProps) {
   const hasSelection = gameManager.selectedTilePiece && isCard(gameManager.selectedTilePiece);
   const card = handCard || (hasSelection ? (gameManager.selectedTilePiece as Card) : null);
   const isOpponentFaceDown = card && card.owner === 'opponent' && card.isFaceDown;
-
   // Create a preview version of the card that is always face up and centered
   const previewCard: Card | null = card ? {
     ...card,
@@ -117,8 +116,8 @@ export default function CardDetailView({ }: CardDetailViewProps) {
   }, []);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 w-full">
-      <div className="bg-gray-900 text-white w-full h-full xl:w-[70%] lg:h-[70%] rounded-2xl shadow-2xl border border-white/10 flex flex-col lg:flex-row lg:flex-row-reverse overflow-hidden relative">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50 w-full">
+      <div className={`bg-gray-900 text-white w-full h-full 3xl:w-[70%] lg:h-[70%] rounded-2xl shadow-2xl border border-white/10 grid grid-cols-1 md:grid-cols-8 overflow-hidden relative`}>
         <button
           onClick={() => setShowDetails(false)}
           className="absolute top-4 left-4 text-gray-400 hover:text-white text-2xl font-bold z-10"
@@ -127,7 +126,7 @@ export default function CardDetailView({ }: CardDetailViewProps) {
         </button>
 
         {/* Left Side: Details */}
-        <div className="w-full lg:w-1/2 p-8 flex flex-col">
+        <div className="w-full pt-10 px-4 flex flex-col col-span-3">
           <h2 className="text-4xl font-bold mb-2">
             {isOpponentFaceDown ? '????' : card?.name}
           </h2>
@@ -140,45 +139,48 @@ export default function CardDetailView({ }: CardDetailViewProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            {
-              card?.attack !== -1 && (
-                <>
-                  <div className="bg-red-900/30 p-4 rounded-lg border border-red-500/20">
-                    <div className="text-red-400 text-xs uppercase font-bold">Attack</div>
-                    <div className="text-2xl font-mono">{isOpponentFaceDown ? '????' : card?.attack}</div>
-                  </div>
-                  <div className="bg-blue-900/30 p-4 rounded-lg border border-blue-500/20">
-                    <div className="text-blue-400 text-xs uppercase font-bold">Defense</div>
-                    <div className="text-2xl font-mono">{isOpponentFaceDown ? '????' : card?.defense}</div>
-                  </div>
-                </>
-              )
-            }
-          </div>
-
-          <div className="flex-grow">
-            <h3 className="text-lg font-bold mb-2 border-b border-white/10 pb-1">Description</h3>
-            <p className="text-gray-300 leading-relaxed">
-              {isOpponentFaceDown ? '????' : card?.description}
-            </p>
+          <div className="grid grid-cols-4 lg:grid-cols-1">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 lg:gap-4 mb-6 md:mb-4">
+              {
+                card?.attack !== -1 && (
+                  <>
+                    <div className="bg-red-900/30 p-2 lg:p-4 rounded-lg border border-red-500/20 w-min">
+                      <div className="text-red-400 text-xs uppercase font-bold">Attack</div>
+                      <div className="text-2xl font-mono">{isOpponentFaceDown ? '????' : card?.attack}</div>
+                    </div>
+                    <div className="bg-blue-900/30 p-2 lg:p-4 rounded-lg border border-blue-500/20 w-min">
+                      <div className="text-blue-400 text-xs uppercase font-bold">Defense</div>
+                      <div className="text-2xl font-mono">{isOpponentFaceDown ? '????' : card?.defense}</div>
+                    </div>
+                  </>
+                )
+              }
+            </div>
+            <div className="col-span-3 lg:flex-grow px-2">
+              <h3 className="text-lg font-bold lg:mb-2 border-b border-white/10 pb-1">Description</h3>
+              <p className="text-gray-300 leading-relaxed">
+                {isOpponentFaceDown ? '????' : card?.description}
+              </p>
+            </div>
           </div>
         </div>
         {/* Right Side: 3D Card Preview */}
-        <div className={`w-full flex-grow lg:w-1/2 bg-gray-800 flex items-center justify-center border-r border-white/10 relative `}>
-          <Canvas camera={{ position: [0, 0, 1.3], fov: 45 }}>
-              <ambientLight intensity={1} />
-              <pointLight position={[5, 5, 5]} intensity={2} />
-              {previewCard && (
-                <CardTilter>
-                  <YugiohCard 
-                      card={previewCard} 
-                      onSelect={() => {}} 
-                      isPreview={true}
-                  />
-                </CardTilter>
-              )}
-          </Canvas>
+        <div className="flex col-span-5">
+          <div className={`w-full flex-grow bg-gray-800 flex items-center justify-center border-r border-white/10 relative`}>
+            <Canvas camera={{ position: [0, 0, 1.3], fov: 45 }}>
+                <ambientLight intensity={1} />
+                <pointLight position={[5, 5, 5]} intensity={2} />
+                {previewCard && (
+                  <CardTilter>
+                    <YugiohCard
+                        card={previewCard}
+                        onSelect={() => {}}
+                        isPreview={true}
+                    />
+                  </CardTilter>
+                )}
+            </Canvas>
+          </div>
         </div>
       </div>
     </div>

@@ -19,10 +19,10 @@ export default function PlayerPreview() {
 
   return (
     <div 
-      className={`absolute bottom-26 right-4 w-24 h-32 lg:w-80 lg:h-96 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      className={`absolute bottom-26 md:bottom-2 right-6 w-24 h-32 lg:w-48 lg:h-64 2xl:w-64 2xl:h-80 bg-black/80 flex flex-col rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl transition-opacity duration-200 ${hasSelection ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
     >
       {/* 3D Preview */}
-      <Canvas style={{ pointerEvents: 'none' }} aria-label="Player Preview" camera={{ position: [0, 0, 2], fov: 45 }}>
+      <Canvas style={{ pointerEvents: 'none' }} aria-label="Player Preview" camera={{ position: [0, 0, 1.3], fov: 45 }}>
         <ambientLight intensity={1} />
         <pointLight position={[5, 5, 5]} intensity={2} />
         {previewPlayer && (
@@ -36,11 +36,10 @@ export default function PlayerPreview() {
       
       {/* Name and Details */}
       {player ? (
-        <div className="absolute bottom-25 w-full flex flex-col items-center space-y-2 pointer-events-auto">
-           {/* Player Name */}
-           <div className="text-white font-bold text-sm drop-shadow-md">
+        <div className="p-1 lg:p-4 bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-yellow-700">
+          <h3 className="text-sm lg:text-xl font-bold text-yellow-500 mb-1">
             {player.name}
-          </div>
+          </h3>
         </div>
       ) : null}
     </div>

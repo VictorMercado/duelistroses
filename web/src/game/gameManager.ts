@@ -367,12 +367,12 @@ class GameManager {
 
       if (isSamePos) {
         // Prevent committing if we haven't actually moved from the start
-        const isAtOriginal = Math.round(stagingState.originalPosition.x) === targetX &&
-          Math.round(stagingState.originalPosition.y) === targetY;
+        // const isAtOriginal = Math.round(stagingState.originalPosition.x) === targetX &&
+        //   Math.round(stagingState.originalPosition.y) === targetY;
 
-        if (isAtOriginal) {
-          return;
-        }
+        // if (isAtOriginal) {
+        //   return;
+        // }
 
         this.commitStagingAction(selectedTilePiece);
         return;

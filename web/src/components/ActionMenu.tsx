@@ -304,7 +304,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
   const isConfirmPhase = summoningState?.phase === 'confirm';
 
   return (
-    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 yugiohGradientBackground bg-opacity-90 w-[95%] md:w-auto p-2 rounded-lg md:rounded-xl grid grid-cols-3 md:flex gap-2 md:gap-4 h-auto backdrop-blur-sm border md:border-2 border-yellow-700 shadow-2xl z-50">
+    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 yugiohGradientBackground bg-opacity-90 w-[90%] md:max-w-xl p-2 rounded-lg md:rounded-xl grid grid-cols-3 md:flex gap-1 h-auto border md:border-2 border-yellow-700 z-50">
       {isTargetPhase && summoningTargetActions()}
       {isConfirmPhase && summoningConfirmActions()}
       {!isTargetPhase && !isConfirmPhase && handMenu && handMenuActions()}
