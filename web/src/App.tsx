@@ -25,14 +25,12 @@ extend({ BaseHolographicMaterial, GodRaysMaterial });
 import { useGameAudio } from "@/hooks/useGameAudio";
 import MusicToggle from "./components/MusicToggle";
 import FPSCounter from "./components/FPSCounter";
-import { useGameStore } from "./stores/gameStore";
 
 function App() {
   // Preload all tile textures to prevent refetching
   usePreloadTextures();
   useKeyBindings();
   const uiStore = useUIStore();
-  const gameStore = useGameStore();
   const controlsRef = useRef<any>(null);
   const isMobileLandscape = useIsMobileLandscape();
   
