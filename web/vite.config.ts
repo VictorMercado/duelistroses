@@ -8,6 +8,10 @@ import { resolve } from "path";
 export default defineConfig({
   server: {
     host: true,
+    // host: true binds every interface, so name the hosts allowed to reach the
+    // dev server. Vite permits localhost and raw IPs by default; the production
+    // domain is here so dev can also be run behind it (tunnel, staging proxy).
+    allowedHosts: ['duelistroses.netarc.app'],
     proxy: {
       // Forward websocket upgrades to the Go server (main.go listens on :8080)
       '/ws': {
@@ -20,6 +24,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  preview: {
+    allowedHosts: ['duelistroses.netarc.app'],
   },
   plugins: [
     react(),
