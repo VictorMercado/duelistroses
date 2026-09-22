@@ -25,54 +25,123 @@ type Room struct {
 	// Room State
 	GameState *GameState
 
-	// Track players vs spectators count
-	PlayersCount    int
+	// Board layout, generated once when the room is created and shared by every
+	// client that joins (read-only after construction).
+	Map *GameMap
+
+	// Spectators are capped separately; player capacity is the seat list.
 	SpectatorsCount int
-	AvailablePlayerSlots []int
 	mu              sync.Mutex
 
 	Hub *Hub
 }
 
 func NewRoom(id string, hub *Hub) *Room {
+	state := NewInitialGameState()
 	return &Room{
 		ID:         id,
 		Broadcast:  make(chan []byte),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Clients:    make(map[*Client]bool),
-		GameState:  NewInitialGameState(),
+		GameState:  state,
+		Map:        NewGameMap(state.GridSize),
 		Hub:        hub,
-		AvailablePlayerSlots: []int{0, 1, 2, 3}, // indices into GameState.Players
 	}
 }
 
-// AddClient returns true if the client can join as the requested role, and updates the counters safely.
+// TryAddClient seats the client if the room has room for its role.
 func (r *Room) TryAddClient(client *Client) bool {
+	if client.Role == RolePlayer {
+		return r.ClaimSeat(client) != nil
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.SpectatorsCount < 20 {
+		r.SpectatorsCount++
+		return true
+	}
+	return false
+}
 
-	if client.Role == RolePlayer {
-		if len(r.AvailablePlayerSlots) > 0 {
-			// pop first available slot
-			slot := r.AvailablePlayerSlots[0]
-			r.AvailablePlayerSlots = r.AvailablePlayerSlots[1:]
+// roster lists everybody currently connected. Only called from Run, which owns
+// the Clients map.
+func (r *Room) roster() []User {
+	users := make([]User, 0, len(r.Clients))
+	for client := range r.Clients {
+		users = append(users, client.Snapshot())
+	}
+	return users
+}
 
-			// Assign Player ID deterministically to avoid races
-			if slot < len(r.GameState.Players) {
-				client.ID = r.GameState.Players[slot].ID
-				client.PlayerSlot = slot
+// broadcastUser tells every subscriber that a user arrived or left, and what
+// that user is - a player or a spectator.
+func (r *Room) broadcastUser(eventType string, user User) {
+	b, err := json.Marshal(OutgoingMessage{
+		Type:    eventType,
+		Payload: UserPayload{User: user, Users: r.roster()},
+	})
+	if err != nil {
+		log.Printf("failed to marshal %s: %v", eventType, err)
+		return
+	}
+
+	for client := range r.Clients {
+		select {
+		case client.Send <- b:
+		default:
+		}
+	}
+}
+
+// usersByID indexes the connected users so seats can be shown with the name and
+// colours of whoever is sitting in them. Only called from Run, which owns the
+// Clients map.
+func (r *Room) usersByID() map[string]*User {
+	users := make(map[string]*User, len(r.Clients))
+	for client := range r.Clients {
+		users[client.ID] = client.User
+	}
+	return users
+}
+
+// stateMessageFor renders the state as this client is allowed to see it.
+func (r *Room) stateMessageFor(client *Client, eventType string) []byte {
+	users := r.usersByID()
+
+	r.GameState.mu.RLock()
+	payload := InitStatePayload{
+		GameState: r.GameState.ViewForUnsafe(client.ID, users),
+		YourID:    client.ID,
+		YourRole:  client.Role,
+		YourHand:  r.GameState.HandCardsUnsafe(client.ID),
+		You:       client.Snapshot(),
+		Users:     r.roster(),
+	}
+	r.GameState.mu.RUnlock()
+
+	b, err := json.Marshal(OutgoingMessage{Type: eventType, Payload: payload})
+	if err != nil {
+		log.Printf("failed to marshal %s: %v", eventType, err)
+		return nil
+	}
+	return b
+}
+
+// syncAllExcept pushes a fresh, per-client state to everyone in the room. Used
+// when the roster changes, since each client sees a different hand.
+func (r *Room) syncAllExcept(skip *Client) {
+	for client := range r.Clients {
+		if client == skip {
+			continue
+		}
+		if b := r.stateMessageFor(client, EventStateSync); b != nil {
+			select {
+			case client.Send <- b:
+			default:
 			}
-			r.PlayersCount++
-			return true
 		}
-		return false
-	} else {
-		if r.SpectatorsCount < 20 {
-			r.SpectatorsCount++
-			return true
-		}
-		return false
 	}
 }
 
@@ -82,40 +151,35 @@ func (r *Room) Run() {
 		case client := <-r.Register:
 			r.Clients[client] = true
 
-			// Send initial state safely
-			r.GameState.mu.RLock()
-			initState := InitStatePayload{
-				GameState: r.GameState,
-				YourID:    client.ID,
-				YourRole:  client.Role,
+			if b := r.stateMessageFor(client, EventInitState); b != nil {
+				client.Send <- b
 			}
-			b, _ := json.Marshal(OutgoingMessage{
-				Type:    EventInitState,
-				Payload: initState,
-			})
-			r.GameState.mu.RUnlock()
-
-			client.Send <- b
+			// Tell the whole room who just turned up and what they are.
+			r.broadcastUser(EventUserJoined, client.Snapshot())
+			// Everyone else needs to see the new seat fill up.
+			r.syncAllExcept(client)
 
 		case client := <-r.Unregister:
 			if _, ok := r.Clients[client]; ok {
 				delete(r.Clients, client)
 				close(client.Send)
+				departed := client.Snapshot()
 
-				r.mu.Lock()
 				if client.Role == RolePlayer {
-					r.PlayersCount--
-					// push slot back
-					r.AvailablePlayerSlots = append(r.AvailablePlayerSlots, client.PlayerSlot)
+					r.ReleaseSeat(client)
 				} else {
+					r.mu.Lock()
 					r.SpectatorsCount--
+					r.mu.Unlock()
 				}
-				r.mu.Unlock()
 
 				if len(r.Clients) == 0 {
 					r.Hub.RemoveRoom(r.ID)
 					return // stop room goroutine
 				}
+
+				r.broadcastUser(EventUserLeft, departed)
+				r.syncAllExcept(nil)
 			}
 		case message := <-r.Broadcast:
 			for client := range r.Clients {
@@ -141,9 +205,14 @@ func (r *Room) ProcessMessage(client *Client, msg IncomingMessage) {
 	case EventEndTurn:
 		r.GameState.mu.Lock()
 		activePlayer := r.GameState.GetActivePlayerUnsafe()
+		if activePlayer == nil {
+			r.GameState.mu.Unlock()
+			r.SendError(client, "The game has no active player")
+			return
+		}
 		if client.ID != activePlayer.ID {
 			r.GameState.mu.Unlock()
-			r.SendError(client, fmt.Sprintf("Not your turn. It is player %d's turn.", activePlayer.ID))
+			r.SendError(client, fmt.Sprintf("Not your turn. It is %s's turn.", activePlayer.ID))
 			return
 		}
 
@@ -160,7 +229,7 @@ func (r *Room) ProcessMessage(client *Client, msg IncomingMessage) {
 		r.GameState.mu.Unlock()
 
 		outMsg := OutgoingMessage{
-			Type:    EventEndTurn,
+			Type: EventEndTurn,
 			Payload: EndTurnPayload{
 				NextPlayerID: nextPlayer.ID,
 			},
@@ -186,7 +255,7 @@ func (r *Room) ProcessMessage(client *Client, msg IncomingMessage) {
 		activePlayer := r.GameState.GetActivePlayerUnsafe()
 		if client.ID != activePlayer.ID {
 			r.GameState.mu.Unlock()
-			r.SendError(client, fmt.Sprintf("Not your turn. It is player %d's turn.", activePlayer.ID))
+			r.SendError(client, fmt.Sprintf("Not your turn. It is %s's turn.", activePlayer.ID))
 			return
 		}
 
@@ -204,7 +273,7 @@ func (r *Room) ProcessMessage(client *Client, msg IncomingMessage) {
 
 		bounds := float64(r.GameState.GridSize / 2)
 		if payload.TargetTile.X < -bounds || payload.TargetTile.X > bounds ||
-		   payload.TargetTile.Y < -bounds || payload.TargetTile.Y > bounds {
+			payload.TargetTile.Y < -bounds || payload.TargetTile.Y > bounds {
 			r.GameState.mu.Unlock()
 			r.SendError(client, "Invalid move: target tile is out of bounds")
 			return
@@ -249,16 +318,41 @@ func (r *Room) ProcessMessage(client *Client, msg IncomingMessage) {
 		}
 	case EventCardChangedPosition:
 		var payload CardChangedPositionPayload
-		if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-			r.GameState.mu.Lock()
-			card := r.GameState.GetCardUnsafe(payload.CardID)
-			if card != nil {
-				card.IsDefenseMode = payload.IsDefenseMode
-				card.IsFaceDown = payload.IsFaceDown
-			}
-			r.GameState.mu.Unlock()
-			r.BroadcastMessage(EventCardChangedPosition, payload)
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			r.SendError(client, "Invalid payload for card position")
+			return
 		}
+
+		r.GameState.mu.Lock()
+		card := r.GameState.GetCardUnsafe(payload.CardID)
+		if card == nil {
+			r.GameState.mu.Unlock()
+			r.SendError(client, "Card not found")
+			return
+		}
+
+		// Only the side that owns a card may turn it over, otherwise a client
+		// could flip an opponent's card face up just to read it.
+		player := r.GameState.getPlayerUnsafe(client.ID)
+		if player == nil || card.Owner != player.Owner {
+			r.GameState.mu.Unlock()
+			r.SendError(client, "That card belongs to the other side")
+			return
+		}
+
+		card.IsDefenseMode = payload.IsDefenseMode
+		card.IsFaceDown = payload.IsFaceDown
+
+		// A face-up card is public knowledge, so hand the room its real data.
+		// While it stays face down the broadcast carries nothing identifying.
+		if !card.IsFaceDown {
+			revealed := *card
+			payload.Card = &revealed
+		}
+		r.GameState.mu.Unlock()
+
+		r.BroadcastMessage(EventCardChangedPosition, payload)
+
 	default:
 		log.Printf("Unknown message type: %s", msg.Type)
 	}
@@ -295,7 +389,7 @@ func (r *Room) SendError(client *Client, message string) {
 	select {
 	case client.Send <- b:
 	default:
-		log.Printf("Failed to send error message to client %d, channel might be full/closed", client.ID)
+		log.Printf("Failed to send error message to user %s, channel might be full/closed", client.ID)
 	}
 }
 
@@ -310,64 +404,14 @@ func (r *Room) BroadcastMessage(msgType string, payload interface{}) {
 	}
 }
 
+// NewInitialGameState starts a room with no players and an empty board. Seats
+// (and their cards) are built as clients join, see seats.go.
 func NewInitialGameState() *GameState {
-
-	darkMagician := &Card{
-		ID: 1, Name: "Dark Magician", Attack: 2500, Defense: 2100, Owner: PlayerOwner,
-		Position: Vector3{X: 2, Y: -5, Z: 0.11}, IsFaceDown: true, IsDefenseMode: false, HasMoved: false,
-		Rarity: "ultra", Level: 8, Type: "normal", Attribute: Attribute{Type: "dark"},
-		TemplateUrl: "/assets/textures/normalTemplate.png", TextureUrl: "/assets/cards/Dark_Magician.png", MaskUrl: "/assets/cards/Dark_Magician_Mask.png",
-		Monster: &MonsterKind{Monster: "spellcaster", StrongIn: []TerrainType{}, WeakIn: []TerrainType{}},
-	}
-
-	blueEyes := &Card{
-		ID: 2, Name: "Blue-Eyes White Dragon", Attack: 3000, Defense: 2500, Owner: OpponentOwner,
-		Position: Vector3{X: 0, Y: 4, Z: 0.12}, IsFaceDown: true, IsDefenseMode: false, HasMoved: false,
-		Rarity: "ultra", Level: 8, Type: "normal", Attribute: Attribute{Type: "light"},
-		TemplateUrl: "/assets/textures/normalTemplate.png", TextureUrl: "/assets/cards/Blue_Eyes_White_Dragon.png", MaskUrl: "/assets/cards/Blue_Eyes_White_Dragon_Mask.png",
-		Monster: &MonsterKind{Monster: "dragon", StrongIn: []TerrainType{}, WeakIn: []TerrainType{}},
-	}
-
-	dmGirl := &Card{
-		ID: 3, Name: "Dark Magician Girl", Attack: 2000, Defense: 1600, Owner: PlayerOwner,
-		Position: Vector3{X: -2, Y: -5, Z: 0.13}, IsFaceDown: true, IsDefenseMode: false, HasMoved: false,
-		Rarity: "ultra", Level: 6, Type: "effect", Attribute: Attribute{Type: "dark"},
-		TemplateUrl: "/assets/textures/effectTemplate.png", TextureUrl: "/assets/cards/Dark_Magician_Girl.png", MaskUrl: "/assets/cards/Dark_Magician_Girl_Mask.png",
-		Monster: &MonsterKind{Monster: "spellcaster", StrongIn: []TerrainType{}, WeakIn: []TerrainType{}},
-	}
-
-	redEyes := &Card{
-		ID: 4, Name: "Red-Eyes Black Dragon", Attack: 2400, Defense: 2000, Owner: OpponentOwner,
-		Position: Vector3{X: 2, Y: 5, Z: 0.14}, IsFaceDown: false, IsDefenseMode: false, HasMoved: false,
-		Rarity: "common", Level: 7, Type: "normal", Attribute: Attribute{Type: "dark"},
-		TemplateUrl: "/assets/textures/normalTemplate.png", TextureUrl: "/assets/cards/Red_Eyes_Black_Dragon.png",
-		Monster: &MonsterKind{Monster: "dragon", StrongIn: []TerrainType{}, WeakIn: []TerrainType{}},
-	}
-
-	p1 := &Player{
-		ID: 100, Name: "Player_1", Clan: "Yorkists", Owner: PlayerOwner,
-		BoardSide: "S", CardsInPlay: []int{1, 3},
-	}
-
-	p2 := &Player{
-		ID: 200, Name: "Opponent", Clan: "Lancastrians", Owner: OpponentOwner,
-		BoardSide: "N", CardsInPlay: []int{2, 4},
-	}
-
-	p3 := &Player{
-		ID: 300, Name: "Opponent_2", Clan: "Lancastrians", Owner: OpponentOwner,
-		BoardSide: "E", CardsInPlay: []int{},
-	}
-
-	p4 := &Player{
-		ID: 400, Name: "Player_2", Clan: "Yorkists", Owner: PlayerOwner,
-		BoardSide: "W", CardsInPlay: []int{},
-	}
-
 	return &GameState{
-		Players: []*Player{p1, p2, p3, p4},
-		Cards: []*Card{darkMagician, blueEyes, dmGirl, redEyes},
+		Players:         []*Player{},
+		Cards:           []*Card{},
 		PlayerTurnIndex: 0,
-		GridSize: 11, // large enough to cover coordinates -5 to +5
+		GridSize:        11, // large enough to cover coordinates -5 to +5
+		cardsByID:       make(map[int]*Card),
 	}
 }

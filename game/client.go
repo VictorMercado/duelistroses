@@ -25,23 +25,15 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type Role string
-
-const (
-	RolePlayer    Role = "player"
-	RoleSpectator Role = "spectator"
-)
-
+// Client is one websocket connection. Identity lives on the embedded User, so
+// a client is "a user with a socket": Client -> User -> (for players) a seat in
+// GameState.
 type Client struct {
+	*User
+
 	Room *Room
 	Conn *websocket.Conn
 	Send chan []byte
-
-	// User info
-	ID   int
-	Name string
-	Role Role
-	PlayerSlot int
 }
 
 func (c *Client) ReadPump() {

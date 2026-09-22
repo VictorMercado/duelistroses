@@ -18,6 +18,11 @@ func main() {
 		api.ServeWs(hub, w, r)
 	})
 
+	// REST API
+	http.HandleFunc("/api/rooms/", func(w http.ResponseWriter, r *http.Request) {
+		api.ServeRoomMap(hub, w, r)
+	})
+
 	// Define the directory to serve (relative to project root)
 	staticDir := "./web/dist"
 

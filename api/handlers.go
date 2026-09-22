@@ -2,7 +2,6 @@ package api
 
 import (
 	"log"
-	"math/rand"
 	"net/http"
 	"strings"
 
@@ -50,34 +49,29 @@ func ServeWs(hub *game.Hub, w http.ResponseWriter, r *http.Request) {
 		name = cookie.Value
 	}
 
+	// Every connection is a user first; whether that user ends up a player or a
+	// spectator is decided just below and announced to the room on register.
+	requestedRole := game.RoleSpectator
+	if roleParam == "player" {
+		requestedRole = game.RolePlayer
+	}
+
 	client := &game.Client{
+		User: game.NewUser(name, requestedRole),
 		Room: room,
 		Conn: conn,
 		Send: make(chan []byte, 256),
-		ID:   rand.Intn(1000000), // Default random ID
-		Name: name,
 	}
 
-	// Assign roles based on limits using Room's mutex
-	if roleParam == "player" {
-		client.Role = game.RolePlayer
-		if !room.TryAddClient(client) {
-			// Fallback to spectator
-			client.Role = game.RoleSpectator
-			if !room.TryAddClient(client) {
-				conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Room is full"))
-				conn.Close()
-				return
-			}
-		}
-	} else {
-		// Spectator role requested or default
+	if client.Role == game.RolePlayer && !room.TryAddClient(client) {
+		// No free seat: watch instead of being turned away.
 		client.Role = game.RoleSpectator
-		if !room.TryAddClient(client) {
-			conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Room is full"))
-			conn.Close()
-			return
-		}
+	}
+
+	if client.Role == game.RoleSpectator && !room.TryAddClient(client) {
+		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Room is full"))
+		conn.Close()
+		return
 	}
 
 	client.Room.Register <- client
