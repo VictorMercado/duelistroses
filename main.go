@@ -53,7 +53,13 @@ func main() {
 		fs.ServeHTTP(w, r)
 	})
 
-	port := "8080"
+	// The container sets PORT; fall back to 8080 so `go run .` needs no setup
+	// and keeps matching the vite dev proxy target in web/vite.config.ts.
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	log.Printf("Starting server on http://localhost:%s", port)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {

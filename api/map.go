@@ -14,9 +14,19 @@ import (
 // websocket; the map is generated once per room, so every client that joins the
 // same room renders the same board.
 func ServeRoomMap(hub *game.Hub, w http.ResponseWriter, r *http.Request) {
-	// Same policy as the websocket upgrader: allow any origin so a client served
-	// from somewhere else (vite dev server, VITE_API_URL override) can read it.
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// Same policy as the websocket upgrader (origin.go), so a client served from
+	// somewhere else - the vite dev server, or a VITE_API_URL override - can
+	// read the map. The response varies per origin, so it must not be cached
+	// under a single key.
+	origin, ok := resolveAllowedOrigin(r)
+	w.Header().Set("Vary", "Origin")
+	if !ok {
+		http.Error(w, "Origin not allowed", http.StatusForbidden)
+		return
+	}
+	if origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 
 	if r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")

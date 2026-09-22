@@ -12,9 +12,15 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	// Allow all origins for development
+	// Browsers do not apply the same-origin policy to websockets, so this is
+	// the only thing stopping another site from opening a socket against a
+	// visitor's session. See origin.go for what counts as allowed.
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		_, ok := resolveAllowedOrigin(r)
+		if !ok {
+			log.Printf("rejected websocket from origin %q", r.Header.Get("Origin"))
+		}
+		return ok
 	},
 }
 
