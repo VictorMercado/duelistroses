@@ -1,6 +1,8 @@
 import { Vector3 } from 'three';
 import { useGameStore } from '@/stores/gameStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useNetStore } from '@/stores/netStore';
+import { netManager } from '@/net/netManager';
 import { isCard, isPlayer, type Card, type StagingState, type Tile, type TilePiece } from '@/types';
 import {
   X_AXIS_NEGATIVE_MAX,
@@ -24,7 +26,39 @@ class GameManager {
   // --- HELPERS ---
   public canSummon() {
     const { stagingState } = this.gameStore;
-    return !stagingState && this.isUsersTurn();
+    // Summoning has no authoritative server representation yet (CARD_PLAYED is
+    // relayed but the room never adds the card to its GameState), so a summon
+    // online would desync the room.
+    return !stagingState && this.isUsersTurn() && !this.isOnline;
+  }
+
+  public get isOnline() {
+    return this.gameStore.isOnline;
+  }
+
+  /** Which edge of the board this client looks from (server assigned). */
+  public get boardFacing(): 'N' | 'S' | 'E' | 'W' {
+    return this.player?.facing ?? 'S';
+  }
+
+  /**
+   * Input is screen relative: a north facing seat sees the board upside down,
+   * so "up" for them walks a piece towards -Y on the board.
+   */
+  private orientDirection(direction: 'up' | 'down' | 'left' | 'right') {
+    if (this.boardFacing !== 'N') return direction;
+    switch (direction) {
+      case 'up': return 'down';
+      case 'down': return 'up';
+      case 'left': return 'right';
+      case 'right': return 'left';
+    }
+  }
+
+  /** Surfaces a rule/network message in the multiplayer panel. */
+  private notify(message: string) {
+    useNetStore.getState().setLastError(message);
+    useNetStore.getState().pushEvent(message);
   }
   public getPieceKey(piece: TilePiece) {
     return `${piece.id}`;
@@ -40,8 +74,74 @@ class GameManager {
     return turnState.playerTurnIndex === playerIndex;
   }
   public isUsersPiece(piece: TilePiece) {
-    return piece.owner === "player";
+    // Online the server hands out a seat, so ownership follows that seat's side
+    // rather than the hardcoded "player" side used in solo play.
+    const player = this.player;
+    if (!player) return false;
+    return piece.owner === player.owner;
   }
+
+  public getPieceAt(x: number, y: number): TilePiece | undefined {
+    const { cards, players } = this.gameStore;
+    return [...cards, ...players].find(
+      (p) => Math.round(p.position.x) === x && Math.round(p.position.y) === y
+    );
+  }
+
+  public destroyCard(card: Card) {
+    const { cards, players } = this.gameStore;
+
+    // Remove from board
+    const newCards = cards.filter(c => c.id !== card.id);
+    this.gameStore.updateCards(newCards);
+
+    // Add to graveyard of owner
+    const owner = players.find(p => p.owner === card.owner);
+    if (owner) { // Should always find owner
+      const updatedPlayer = {
+        ...owner,
+        cardsInPlay: owner.cardsInPlay.filter(id => id !== card.id),
+        graveyard: [...owner.graveyard, card.id]
+      };
+      this.gameStore.updatePlayer(updatedPlayer);
+    }
+  }
+
+  public resolveBattle(attacker: Card, defender: Card) {
+    console.log(`Battle: ${attacker.name} (${attacker.attack}) vs ${defender.name} (${defender.attack})`);
+
+    // Determine winner
+    if (attacker.attack > defender.attack) {
+      console.log(`${attacker.name} wins!`);
+      this.destroyCard(defender);
+      // Move attacker to defender's tile
+      const winningMove = { ...attacker, position: defender.position, isDefenseMode: false }; // Move to tile, ensure attack mode?
+      this.gameStore.updateTilePiece(winningMove);
+      this.commitStagingAction(winningMove);
+    } else if (attacker.attack < defender.attack) {
+      console.log(`${defender.name} wins!`);
+      this.destroyCard(attacker);
+      this.commitStagingAction(attacker); // Commit death? Or just clear state?
+      // If attacker dies, turn ends for that piece (it's gone)
+      this.gameStore.updateStagingState(null);
+      this.gameStore.updateSelectedTilePiece(null);
+    } else {
+      console.log("Draw! Both destroyed.");
+      this.destroyCard(attacker);
+      this.destroyCard(defender);
+      this.gameStore.updateStagingState(null);
+      this.gameStore.updateSelectedTilePiece(null);
+    }
+  }
+
+  public resolveFusion(mover: Card, resident: Card) {
+    // defined in const file eventually
+    console.log(`Fusion Check: ${mover.name} + ${resident.name}`);
+    // For now, no fusion logic implemented, so effectively a block.
+    // If we want to allow "stacking" without fusion, we'd do it here, but game rules usually forbid it.
+    console.log("Fusion not implemented or valid.");
+  }
+
   // --- GETTERS (Convenience) ---
   private get gameStore() {
     return useGameStore.getState();
@@ -95,6 +195,11 @@ class GameManager {
   private initStaging(piece: TilePiece) {
     if (!piece) return;
     if (!this.isUsersPiece(piece)) return;
+    if (this.isOnline && isPlayer(piece)) {
+      // The server only tracks cards (MOVE_CARD); leaders would desync.
+      this.notify('Leader movement is not supported by the server yet');
+      return;
+    }
     const newStagingState: StagingState = {
       pieceId: piece.id,
       originalPosition: piece.position.clone(),
@@ -112,10 +217,59 @@ class GameManager {
   }
 
   private commitStagingAction(piece: TilePiece) {
+    const { stagingState } = this.gameStore;
+
+    if (this.isOnline && stagingState) {
+      this.publishStagedAction(piece, stagingState);
+    }
+
     // Mark piece as having acted
     this.actThisTurn(piece);
     this.gameStore.updateStagingState(null);
     this.gameStore.updateSelectedTilePiece(null);
+  }
+
+  /**
+   * Sends the committed result of a staging session to the room. The move is
+   * already applied locally (optimistic); netManager reverts it if the server
+   * rejects it.
+   */
+  private publishStagedAction(piece: TilePiece, staging: StagingState) {
+    if (!isCard(piece)) return;
+
+    // Read the latest copy, the staged piece may be a stale snapshot.
+    const card = this.gameStore.cards.find(c => c.id === piece.id) ?? piece;
+
+    if (!card.position.equals(staging.originalPosition)) {
+      netManager.sendCardMove(card.id, staging.originalPosition, card.position);
+    }
+
+    const flipped = staging.originalIsFaceDown !== undefined
+      && card.isFaceDown !== staging.originalIsFaceDown;
+    const reoriented = staging.originalIsDefenseMode !== undefined
+      && card.isDefenseMode !== staging.originalIsDefenseMode;
+
+    if (flipped || reoriented) {
+      netManager.sendCardOrientation(card.id, card.isDefenseMode, card.isFaceDown);
+    }
+  }
+
+  /**
+   * Ends the local player's turn. Online the server owns the turn order and the
+   * board only advances once its END_TURN broadcast arrives.
+   */
+  public endTurn() {
+    if (!this.isUsersTurn()) return;
+
+    this.cancelStagingAction();
+    this.cancelSummoning();
+
+    if (this.isOnline) {
+      netManager.sendEndTurn();
+      return;
+    }
+
+    this.gameStore.advanceTurnLocally();
   }
 
   private cancelStagingAction() {
@@ -321,8 +475,21 @@ class GameManager {
   }
 
   public select(piece?: TilePiece, pos?: Vector3, tile?: Tile) {
+    // this function so far does:
+    // - update cursor position
+    // - update selected tile
+    // - update selected tile piece
+    // - update staging state
+    // - update summoning state
+    // - update turn state
+    // - update selected tile piece
+    // - update cursor position
+
+    // if we have a position, update cursor position
     pos && this.gameStore.setCursorPosition({ x: pos.x, y: pos.y });
 
+    // if we have a tile, update selected tile 
+    // update cursor position
     if (tile) {
       this.gameStore.updateSelectedTile(tile);
       this.gameStore.setCursorPosition({
@@ -340,7 +507,12 @@ class GameManager {
     const targetX = pos?.x ?? cursorPosition.x;
     const targetY = pos?.y ?? cursorPosition.y;
 
-    // Summoning Confirmations - Delegating to methods that now contain validation
+    // if we click on a piece that is not in staging and its not ours, cancel staging and select the piece
+    if (piece && selectedTilePiece && piece.id !== selectedTilePiece.id) {
+      this.cancelStagingAction();
+    }
+
+    // if Summoning state is active, handle summoning
     if (summoningState) {
       const { phase } = summoningState;
 
@@ -360,7 +532,8 @@ class GameManager {
       }
       return;
     }
-    // Commit Action if Staging
+
+    // Commit Action if Staging state is active and we haven't acted this turn
     if (selectedTilePiece && stagingState && !this.hasActedThisTurn(selectedTilePiece)) {
       const isSamePos = Math.round(selectedTilePiece.position.x) === targetX &&
         Math.round(selectedTilePiece.position.y) === targetY;
@@ -378,6 +551,7 @@ class GameManager {
         return;
       }
 
+      // calculate valid positions
       // Check if it's a valid move (Mouse click on yellow tile)
       const validPositions = this.gameStore.getValidMovePositions();
       const isValidMove = validPositions.some(([x, y]) => x === targetX && y === targetY);
@@ -388,9 +562,8 @@ class GameManager {
         return;
       }
     }
-    // If clicking the same piece, do nothing
-    if (piece && piece.id === selectedTilePiece?.id) return;
-    // mouse click card and not users turn just select
+
+    // mouse click card or keyboard cursor navigation and not users turn just select
     if (!this.isUsersTurn()) {
       if (piece) {
         this.selectTilePiece(piece);
@@ -405,12 +578,15 @@ class GameManager {
       return;
     }
 
+    // mouse click card and users turn, select and stage
     if (piece && !this.hasActedThisTurn(piece)) {
       this.selectTilePiece(piece);
       this.initStaging(piece);
       return;
     }
-    // Select Piece at Cursor
+
+    // keyboard cursor navigation and users turn, select and stage
+    // can probably optimize this
     const pieceAtCursor = [...cards, ...players].find(piece =>
       Math.round(piece.position.x) === cursorPosition.x &&
       Math.round(piece.position.y) === cursorPosition.y
@@ -449,7 +625,6 @@ class GameManager {
     if (this.gameStore.selectedTilePiece) {
       this.cancelStagingAction();
       this.gameStore.updateSelectedTilePiece(null);
-      this.uiStore.setShowDetails(false);
       return;
     }
   }
@@ -466,6 +641,36 @@ class GameManager {
     );
 
     if (!currentPiece) return;
+
+    const targetX = Math.round(newPosition.x);
+    const targetY = Math.round(newPosition.y);
+    const occupant = this.getPieceAt(targetX, targetY);
+
+    if (occupant && occupant.id !== currentPiece.id) {
+      if (this.isOnline) {
+        // Battles/fusions are resolved client side only; the server has no
+        // authoritative resolution for them yet, so block the move instead of
+        // letting the room drift apart.
+        this.notify('Battles are not networked yet - that tile is occupied');
+        return;
+      }
+      // Collision Logic
+      if (isCard(currentPiece) && isCard(occupant)) {
+        if (occupant.owner === currentPiece.owner) {
+          // Fusion
+          this.resolveFusion(currentPiece, occupant);
+          // Allow fall-through to "stack" pieces for now (or until fusion handles destruction)
+        } else {
+          // Battle
+          this.resolveBattle(currentPiece, occupant);
+          return; // Battle handles movement/destruction internally
+        }
+      } else {
+        // Piece vs Player or other collision types (blocking)
+        return;
+      }
+      // If we are here (Friendly collision), we proceed to update position (Stacking)
+    }
 
     if (isCard(currentPiece)) {
       // Yu-Gi-Oh rule: Move -> Attack Position
@@ -492,12 +697,13 @@ class GameManager {
     });
   }
 
-  public moveStagedPiece(direction: 'up' | 'down' | 'left' | 'right') {
+  public moveStagedPiece(inputDirection: 'up' | 'down' | 'left' | 'right') {
+    const direction = this.orientDirection(inputDirection);
     const { stagingState, selectedTilePiece } = this.gameStore;
 
     // Must have a selected piece and be in staging mode
     if (!selectedTilePiece || !stagingState) return;
-    if (selectedTilePiece.owner !== 'player') return;
+    if (!this.isUsersPiece(selectedTilePiece)) return;
 
     const freshCards = this.gameStore.cards;
     const freshPlayers = this.gameStore.players;
@@ -545,7 +751,8 @@ class GameManager {
     }
   }
 
-  public moveCursor(direction: 'up' | 'down' | 'left' | 'right') {
+  public moveCursor(inputDirection: 'up' | 'down' | 'left' | 'right') {
+    const direction = this.orientDirection(inputDirection);
     const gameStore = this.gameStore;
     const { cursorPosition } = gameStore;
 
@@ -625,19 +832,20 @@ class GameManager {
   }
 
   public toggleDetails() {
+    console.log('toggleDetails');
     const { handSelectedIndex } = this.gameStore;
     const { showHand, summoningState, selectedTilePiece } = this.gameStore;
 
     const isHandOpen = showHand || (summoningState && summoningState.phase === 'card');
 
     if (isHandOpen && handSelectedIndex >= 0) {
-      this.uiStore.setShowDetails(true);
+      this.uiStore.setShowCardDetails(true);
       return;
     }
 
     if (selectedTilePiece) {
       if (isCard(selectedTilePiece)) {
-        this.uiStore.setShowDetails(true);
+        this.uiStore.setShowCardDetails(true);
       } else if (isPlayer(selectedTilePiece)) {
         this.uiStore.setShowPlayerDetails(true);
       }

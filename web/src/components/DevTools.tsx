@@ -3,15 +3,6 @@ import { createPortal } from 'react-dom';
 import { useGameStore } from '@/stores/gameStore';
 import { useUIStore } from '@/stores/uiStore';
 
-
-declare global {
-  interface Window {
-    gameStore: any;
-    uiStore: any;
-    inputStore: any;
-  }
-}
-
 // Helper to display a collapsible store entry with Lazy Rendering
 function JsonEntry({ label, value }: { label: string, value: any }) {
   const [expanded, setExpanded] = useState(false);
@@ -140,6 +131,8 @@ function DebugContent() {
 }
 
 export default function DevTools() {
+  const showDevTools = useUIStore(state => state.showDevTools);
+
   // Keep console exposure by assigning hooks to window, but don't subscribe this component to updates!
   useEffect(() => {
     window.gameStore = useGameStore;
@@ -173,14 +166,18 @@ export default function DevTools() {
     }
   };
 
+  if (!showDevTools && !externalWindow) return null;
+
   return (
     <>
-      <button 
-        onClick={openWindow}
-        className="fixed bottom-4 right-4 z-[9999] bg-gray-800 text-green-400 px-3 py-1 rounded border border-gray-600 font-mono text-xs opacity-50 hover:opacity-100 transition-opacity"
-      >
-        {externalWindow ? 'Debugger Active' : 'Open Debugger'}
-      </button>
+      {showDevTools && (
+        <button 
+          onClick={openWindow}
+          className="fixed bottom-4 right-4 z-9999 bg-gray-800 text-green-400 px-3 py-1 rounded border border-gray-600 font-mono text-xs opacity-50 hover:opacity-100 transition-opacity"
+        >
+          {externalWindow ? 'Debugger Active' : 'Open Debugger'}
+        </button>
+      )}
       
       {externalWindow && createPortal(
         <DebugContent />,

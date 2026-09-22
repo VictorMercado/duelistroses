@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import type { Card, Player, Tile, TilePiece, TurnState, StagingState, SummoningState } from '@/types';
 import { isCard, isPlayer } from '@/types';
-import { cards, players } from '@/data';
+import type {
+  CardChangedPositionPayload,
+  InitStatePayload,
+  NetRole,
+  NetVector3,
+} from '@/net/protocol';
+import { hideCardIdentity, mergeServerCard, mergeServerPlayer, toVector3 } from '@/net/mappers';
 
 import {
   X_AXIS_NEGATIVE_MAX,
@@ -17,6 +23,13 @@ interface GameState {
   players: Player[];
   tiles: Tile[];
 
+  // Multiplayer identity. Everything above is a mirror of room state: until a
+  // room sends it, the board is empty.
+  isOnline: boolean;
+  /** Our seat, which is our own user id. Null when we hold no seat. */
+  localPlayerId: string | null;
+  netRole: NetRole | null;
+
   turnState: TurnState;
   selectedTile: Tile | null;
   selectedTilePiece: TilePiece | null;
@@ -25,8 +38,6 @@ interface GameState {
   // Hand state
   handCards: Card[];
   showHand: boolean;
-  currentPlayersCount: number;
-  currentCardsCount: number;
 
   // Input State
   cursorPosition: { x: number; y: number; };
@@ -53,6 +64,17 @@ interface GameState {
   returnToHand: () => void;
   returnToTarget: () => void;
 
+  // Multiplayer actions (driven by netManager)
+  applyServerInit: (payload: InitStatePayload) => void;
+  applyRemoteMove: (cardId: number, target: NetVector3) => void;
+  applyRemoteOrientation: (payload: CardChangedPositionPayload) => void;
+  applyRemoteDestroy: (cardId: number) => void;
+  setTurnToPlayerId: (playerId: string) => void;
+  advanceTurnLocally: () => void;
+  markPieceActed: (pieceId: string | number) => void;
+  resetNetworkState: () => void;
+  clearGameState: () => void;
+
   // Hand management
   openHand: () => void;
   closeHand: () => void;
@@ -65,34 +87,17 @@ interface GameState {
 }
 
 export const useGameStore = create<GameState>((set, get) => {
-  // INITIAL DRAW LOGIC
-  const initialPlayers = [...players];
-  const player1 = initialPlayers.find(p => p.firstMove) as Player;
-  const playerIndex = initialPlayers.indexOf(player1);
-  // Need to map IDs to card objects. Since deck cards are in player.allCards, we can find them there.
-  // Note: data.ts initializes players with empty hand. We must draw here.
-
-  let initialHandCards: Card[] = [];
-
-  if (player1) {
-    // Draw 5 cards
-    const drawIds = player1.deck.slice(0, 5);
-    player1.deck = player1.deck.slice(5); // Remove drawn
-    player1.hand = [...player1.hand, ...drawIds];
-
-    // Resolve card objects
-    initialHandCards = player1.allCards.filter(c => drawIds.includes(c.id));
-  }
-
   return {
-    // Hand state
-    playerIndex: playerIndex,
-    handCards: initialHandCards,
+    // The room is the only source of game data: no seats, no board and no hand
+    // until INIT_STATE arrives. -1 means "no seat".
+    playerIndex: -1,
+    isOnline: false,
+    localPlayerId: null,
+    netRole: null,
+    cards: [],
+    players: [],
+    handCards: [],
     showHand: false,
-    cards: cards,
-    currentCardsCount: cards.length,
-    players: initialPlayers,
-    currentPlayersCount: initialPlayers.length,
     tiles: [],
 
     // Input State
@@ -100,7 +105,7 @@ export const useGameStore = create<GameState>((set, get) => {
     handSelectedIndex: -1,
 
     turnState: {
-      playerTurnIndex: playerIndex,
+      playerTurnIndex: -1,
       actedPieceIds: []
     },
     selectedTile: null,
@@ -172,6 +177,181 @@ export const useGameStore = create<GameState>((set, get) => {
         showHand: true
       });
     },
+    // --- Multiplayer ---
+    /**
+     * Replaces the local board with the authoritative server state and records
+     * which seat this client was given. Cosmetic card data stays local, see
+     * net/mappers.ts.
+     */
+    applyServerInit: (payload) => {
+      const serverState = payload.gameState;
+
+      const nextPlayers = serverState.players.map(mergeServerPlayer);
+
+      const nextCards = serverState.cards.map((serverCard) =>
+        mergeServerCard(serverCard)
+      );
+
+      // Only ever our own hand: the server does not send anyone else's.
+      const nextHand = (payload.yourHand ?? []).map((serverCard) =>
+        mergeServerCard(serverCard)
+      );
+
+      // Spectators get an empty id, and a seat nobody holds also has an empty
+      // id, so never match the two up.
+      const localIndex = payload.yourId
+        ? nextPlayers.findIndex(p => p.id === payload.yourId)
+        : -1;
+      const activeIndex = nextPlayers.length > 0
+        ? serverState.playerTurnIndex % nextPlayers.length
+        : 0;
+
+      // Cards the server already marked as moved this turn cannot act again.
+      const actedPieceIds = serverState.cards
+        .filter(c => c.hasMoved)
+        .map(c => String(c.id));
+
+      set({
+        isOnline: true,
+        localPlayerId: payload.yourId || null,
+        netRole: payload.yourRole,
+        players: nextPlayers,
+        cards: nextCards,
+        handCards: nextHand,
+        playerIndex: localIndex,
+        turnState: { playerTurnIndex: activeIndex, actedPieceIds },
+        selectedTilePiece: null,
+        stagingState: null,
+        summoningState: null,
+        showHand: false,
+        handSelectedIndex: -1,
+      });
+    },
+
+    applyRemoteMove: (cardId, target) => {
+      set((state) => ({
+        cards: state.cards.map(c => c.id === cardId
+          ? { ...c, position: toVector3(target), isDefenseMode: false }
+          : c),
+        turnState: state.turnState.actedPieceIds.includes(String(cardId))
+          ? state.turnState
+          : {
+            ...state.turnState,
+            actedPieceIds: [...state.turnState.actedPieceIds, String(cardId)]
+          }
+      }));
+    },
+
+    applyRemoteOrientation: (payload) => {
+      set((state) => {
+        const seatOwner = state.players[state.playerIndex]?.owner ?? null;
+
+        return {
+          cards: state.cards.map((card) => {
+            if (card.id !== payload.cardId) return card;
+
+            // Turned face up: the server sends the real card with the event.
+            if (payload.card) {
+              return {
+                ...mergeServerCard(payload.card),
+                position: card.position,
+              };
+            }
+
+            const updated = {
+              ...card,
+              isDefenseMode: payload.isDefenseMode,
+              isFaceDown: payload.isFaceDown,
+            };
+
+            // Turned face down again by the other side: forget what it was.
+            if (payload.isFaceDown && seatOwner !== null && card.owner !== seatOwner) {
+              return hideCardIdentity(updated);
+            }
+            return updated;
+          })
+        };
+      });
+    },
+
+    applyRemoteDestroy: (cardId) => {
+      set((state) => ({
+        cards: state.cards.filter(c => c.id !== cardId),
+        selectedTilePiece: state.selectedTilePiece?.id === cardId ? null : state.selectedTilePiece,
+      }));
+    },
+
+    /** Turn handed over by the server (END_TURN broadcast). */
+    setTurnToPlayerId: (playerId) => {
+      if (!playerId) return;
+      const state = get();
+      const nextIndex = state.players.findIndex(p => p.id === playerId);
+      if (nextIndex === -1) return;
+
+      set({
+        turnState: { playerTurnIndex: nextIndex, actedPieceIds: [] },
+        stagingState: null,
+        selectedTilePiece: null,
+        summoningState: null,
+        showHand: false,
+        handSelectedIndex: -1,
+      });
+    },
+
+    /** Offline turn rotation, mirrors the server's PlayerTurnIndex++ */
+    advanceTurnLocally: () => {
+      const state = get();
+      if (state.players.length === 0) return;
+      const nextIndex = (state.turnState.playerTurnIndex + 1) % state.players.length;
+      set({
+        turnState: { playerTurnIndex: nextIndex, actedPieceIds: [] },
+        stagingState: null,
+        selectedTilePiece: null,
+        summoningState: null,
+        showHand: false,
+        handSelectedIndex: -1,
+      });
+    },
+
+    markPieceActed: (pieceId) => {
+      set((state) => state.turnState.actedPieceIds.includes(String(pieceId))
+        ? state
+        : {
+          turnState: {
+            ...state.turnState,
+            actedPieceIds: [...state.turnState.actedPieceIds, String(pieceId)]
+          }
+        });
+    },
+
+    /**
+     * Drops the room identity but keeps the last board on screen, so a brief
+     * reconnect does not blank the game.
+     */
+    resetNetworkState: () => {
+      set({ isOnline: false, localPlayerId: null, netRole: null });
+    },
+
+    /** Leaves the room for good: nothing local survives it. */
+    clearGameState: () => {
+      set({
+        isOnline: false,
+        localPlayerId: null,
+        netRole: null,
+        playerIndex: -1,
+        players: [],
+        cards: [],
+        handCards: [],
+        turnState: { playerTurnIndex: -1, actedPieceIds: [] },
+        selectedTilePiece: null,
+        selectedTile: null,
+        stagingState: null,
+        summoningState: null,
+        showHand: false,
+        handSelectedIndex: -1,
+      });
+    },
+
     // Hand management
     openHand: () => {
       set(() => ({ showHand: true }));
@@ -227,8 +407,8 @@ export const useGameStore = create<GameState>((set, get) => {
 
     getValidSummonPositions: () => {
       const state = get();
-      // Find player leader
-      const playerLeader = state.players.find(p => p.owner === 'player');
+      // Our own leader, i.e. the seat the server gave us.
+      const playerLeader = state.players[state.playerIndex];
       if (!playerLeader) return [];
 
       const positions: Vector3[] = [];

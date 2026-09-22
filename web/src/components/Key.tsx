@@ -19,7 +19,7 @@ export function Key({ children, size = "md" }: KeyProps) {
                  dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100
                  `}
     >
-      {children}
+      {children?.toString().toUpperCase()}
     </kbd>
   );
 }

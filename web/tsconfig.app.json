@@ -32,7 +32,6 @@
       "@/lib/*": ["src/lib/*"],
       "@/routes/*": ["src/routes/*"],
       "@/types/*": ["src/types/*"],
-      "@data/*": ["src/data/*"],
       "@game/*": ["src/game/*"],
       "@shaders/*": ["src/shaders/*"],
     }

@@ -13,7 +13,8 @@ export type InputAction =
   | 'DETAILS'
   | 'PLAY_CARD'
   | 'FLIP'
-  | 'CHANGE_POSITION';
+  | 'CHANGE_POSITION'
+  | 'END_TURN';
 
 export class InputManager {
   private static instance: InputManager;
@@ -42,8 +43,9 @@ export class InputManager {
     // 1. CANCEL
     if (keyBindings.cancel.includes(e.key)) return 'CANCEL';
 
-    const { selectedTilePiece, stagingState, turnState, playerIndex } = useGameStore.getState();
-    const isStaging = selectedTilePiece && stagingState && turnState.playerTurnIndex === playerIndex && selectedTilePiece.owner === 'player';
+    const { selectedTilePiece, stagingState } = useGameStore.getState();
+    const isStaging = !!selectedTilePiece && !!stagingState
+      && gameManager.isUsersTurn() && gameManager.isUsersPiece(selectedTilePiece);
 
     // 2. STAGING MODE SPECIFIC
     if (isStaging) {
@@ -83,6 +85,7 @@ export class InputManager {
     if (['d', 'ArrowRight', keyBindings.cursorRight].includes(e.key)) return 'MOVE_RIGHT';
 
     // 4. GENERAL ACTIONS
+    if (e.key.toLowerCase() === keyBindings.endTurn?.toLowerCase()) return 'END_TURN';
     if (e.key.toLowerCase() === keyBindings.select.toLowerCase()) return 'SELECT';
     if (e.key.toLowerCase() === keyBindings.viewDetails.toLowerCase()) return 'DETAILS';
     if (e.key.toLowerCase() === keyBindings.playCard.toLowerCase()) return 'PLAY_CARD';
@@ -94,10 +97,12 @@ export class InputManager {
     const { stagingState, selectedTilePiece } = useGameStore.getState();
 
     // We check context here to decide between moving cursor or moving piece
-    const isStagingMovement = selectedTilePiece && stagingState && selectedTilePiece.owner === 'player';
+    const isStagingMovement = !!selectedTilePiece && !!stagingState
+      && gameManager.isUsersPiece(selectedTilePiece);
 
     switch (action) {
       case 'CANCEL':
+        console.log('cancel');
         gameManager.cancel();
         break;
       case 'SELECT':
@@ -134,6 +139,9 @@ export class InputManager {
         break;
       case 'CHANGE_POSITION':
         gameManager.orientCard();
+        break;
+      case 'END_TURN':
+        gameManager.endTurn();
         break;
     }
   }

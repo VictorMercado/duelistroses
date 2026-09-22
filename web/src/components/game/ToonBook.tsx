@@ -61,8 +61,71 @@ export const ToonBook = ({ position, onClick }: ToonBookProps) => {
       </mesh>
       <mesh>
         <meshStandardMaterial map={materials.tile.map} opacity={1} side={DoubleSide}/>
-        <planeGeometry args={[TILE_SIZE, TILE_SIZE, 64, 64]} />
+        <planeGeometry args={[TILE_SIZE, TILE_SIZE, 1, 1]} />
       </mesh>
     </group>
   );
 };
+// export const ToonBook = ({ position, onClick }: ToonBookProps) => {
+//   const texture = useTexture(ASSET_URL + '/textures/toon_world_sprite.png');
+//   texture.magFilter = NearestFilter;
+//   texture.minFilter = LinearFilter;
+
+//   const materials = useMemo(() => {
+//     // Helper to crop texture and return a MATERIAL
+//     const cropTexture = (x: number, y: number, w: number, h: number, rotation?: number) => {
+//       const t = texture.clone();
+//       t.needsUpdate = true;
+      
+//       // Handle Rotation and Offsets
+//       if (!rotation) {
+//         t.repeat.set(w, h);
+//         t.offset.set(x, y);
+//       } else if (Math.abs(rotation - Math.PI) < 0.01) {
+//           t.repeat.set(-w, -h);
+//           t.offset.set(x + w, y + h);
+//       } else {
+//           t.repeat.set(w, h);
+//           t.offset.set(x, y);
+//           t.center.set(0.5, 0.5);
+//           t.rotation = rotation;
+//       }
+      
+//       // Return a material directly
+//       return new MeshStandardMaterial({ map: t, transparent: true });
+//     };
+    
+//     // Create materials for the 3D Book
+//     const topBook = cropTexture(0.0, 0.0, 0.5, 1.0);
+//     const frontBook = cropTexture(0.5, 0.75, 0.5, 0.25, Math.PI);
+//     const sideBook = cropTexture(.5, 0.13, 1.0, .25, Math.PI/2);
+//     const backBook = cropTexture(0.5, 0.75, 0.5, 0.25);
+//     const bottomBook = cropTexture(0.5, 0.0, 0.24, 0.5);
+    
+//     // Create material for the Base Tile
+//     const tile = cropTexture(0.75, 0.0, 0.25, 0.5, Math.PI);
+
+//     return { 
+//       book: [sideBook, sideBook, topBook, bottomBook, frontBook, backBook], // Order: Right, Left, Top, Bottom, Front, Back
+//       tile 
+//     };
+//   }, [texture]);
+
+//   return (
+//     <group position={position} onClick={onClick}>
+//       {/* 1. THE 3D BOOK */}
+//       {/* Uses the array of 6 cropped materials to map the box faces */}
+//       <mesh material={materials.book} position={[0, 0, 0.027]}>
+//         <boxGeometry args={[TILE_SIZE/2, TILE_SIZE/2, 0.05]} />
+//       </mesh>
+
+//       {/* 2. THE BASE TILE */}
+//       {/* Uses the specific 'tile' crop material */}
+//       <mesh material={materials.tile}> 
+//         {/* FIX: Changed 64,64 to 1,1. 
+//             This single change saves ~8,000 triangles per book. */}
+//         <planeGeometry args={[TILE_SIZE, TILE_SIZE, 1, 1]} />
+//       </mesh>
+//     </group>
+//   );
+// };

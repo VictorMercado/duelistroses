@@ -25,6 +25,7 @@ export const DEFAULT_KEYBINDINGS: KeyBindings = {
   viewDetails: "i",
   flipCard: "o",
   changePosition: "u",
+  endTurn: "e",
   cursorUp: "w",
   cursorDown: "s",
   cursorLeft: "a",
