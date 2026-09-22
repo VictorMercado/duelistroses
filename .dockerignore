@@ -1,0 +1,30 @@
+# The build context is sent to the daemon in full; keep the heavy, non-shipping
+# directories out of it. Mirrors .gitignore, plus artefacts that are rebuilt
+# inside the image anyway.
+.git
+.gitignore
+.claude
+.agent
+
+# Local media sources (GarageBand projects, wav/opus stems) - not deployed.
+assets/
+
+# Rebuilt in the image
+web/node_modules
+web/dist
+web/dev-dist
+server
+duelist-server
+
+# Host-only
+gcloud
+scripts
+README.md
+.DS_Store
+._*
+Icon*
+*.log
+.env
+.env.local
+web/.env
+web/.env.local

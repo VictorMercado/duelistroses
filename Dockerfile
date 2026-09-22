@@ -2,20 +2,26 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/web
 COPY web/package.json web/pnpm-lock.yaml ./
-# Install dependencies (using npm since pnpm might not be pre-installed, or install pnpm)
-RUN npm install -g pnpm && pnpm install
+# Pin pnpm to the major that wrote this lockfile (lockfileVersion 6.0 = pnpm 8).
+# Unpinned `npm install -g pnpm` picks up pnpm 10+, which both rejects this
+# lockfile format and fails the install outright with ERR_PNPM_IGNORED_BUILDS
+# because esbuild's postinstall script is blocked by default.
+RUN npm install -g pnpm@8 && pnpm install --frozen-lockfile
 COPY web/ .
 RUN pnpm run build
 
 # Stage 2: Build Go Backend
 FROM golang:1.24-alpine AS backend-builder
 WORKDIR /app
-COPY go.mod ./
-# COPY go.sum ./ # Uncomment if/when you have a go.sum
+COPY go.mod go.sum ./
 RUN go mod download
-COPY main.go .
+# main.go imports duelistRoses/api and duelistRoses/game, so the packages have
+# to be in the build context too - copying main.go alone does not compile.
+COPY main.go ./
+COPY api/ ./api/
+COPY game/ ./game/
 # Build the binary, statically linked
-RUN CGO_ENABLED=0 GOOS=linux go build -o server main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o server .
 
 # Stage 3: Final Image
 FROM alpine:latest
@@ -26,7 +32,8 @@ COPY --from=backend-builder /app/server .
 # Note: The server expects assets in ./web/dist relative to execution directory
 COPY --from=frontend-builder /app/web/dist ./web/dist
 
-# Expose the application port
+# Expose the application port. The server honours $PORT and falls back to 8080.
+ENV PORT=8080
 EXPOSE 8080
 
 # Run the server
