@@ -42,3 +42,10 @@ web/public/cards/
 gcloud
 
 
+
+# Local media/source assets (large binaries, not for the repo)
+/assets/
+
+# macOS custom-folder-icon marker at the repo root. The name ends in a
+# multi-byte character, so a single-byte "?" glob does not match it.
+/Icon*

@@ -14,7 +14,12 @@ export default function ActionMenu({ }: ActionMenuProps) {
   const uiStore = useUIStore();
   const selectedTilePiece = useGameStore((state)=> state.selectedTilePiece);
   const showHand = useGameStore((state)=> state.showHand);
+  const turnState = useGameStore((state) => state.turnState);
+  const players = useGameStore((state) => state.players);
   const {keyBindings} = useKeyBindings();
+
+  const isUsersTurn = gameManager.isUsersTurn();
+  const activePlayer = players[turnState.playerTurnIndex];
 
   let card: Card | null = null;
   let player: Player | null = null;
@@ -34,17 +39,6 @@ export default function ActionMenu({ }: ActionMenuProps) {
     canAct = !gameManager.hasActedThisTurn(selectedTilePiece);
     isUsersPiece = gameManager.isUsersPiece(selectedTilePiece);
   }
-  
-  const viewDetailsHandler = () => {
-    if (card) {
-      uiStore.setShowDetails(true);
-      return;
-    }
-    if (player) {
-      uiStore.setShowPlayerDetails(true);
-      return;
-    }
-  }
 
   const wasOriginallyFaceUp = gameManager.stagingState?.originalIsFaceDown === false;
   const hasChangedMode = gameManager.stagingState?.hasChangedPosition || false
@@ -61,7 +55,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
     return (
       <>
         <button
-          onClick={() => gameManager.closeHand()}
+          onClick={() => gameManager.cancel()}
           className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-red-600 bg-red-700 hover:bg-red-600 text-white rounded-md text-xs font-bold transition-colors"
           title="Cancel and revert changes (Esc)"
         >
@@ -85,7 +79,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
           Select
         </button>
         <button
-          onClick={() => viewDetailsHandler()}
+          onClick={() => gameManager.toggleDetails()}
           className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-yellow-700 hover:border-yellow-300 rounded-md text-xs font-bold transition-colors"
         >
           {uiStore.showKeyBindings && <Key>{keyBindings.viewDetails}</Key>} 
@@ -156,7 +150,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
   }
   const playerActions = () => {
     if (!player) return null;
-    if (player.owner === 'player') {
+    if (gameManager.isUsersPiece(player)) {
       return (
         <>
           {/* Commit Action Button - Green, prominent */}
@@ -219,7 +213,7 @@ export default function ActionMenu({ }: ActionMenuProps) {
         {isUsersPiece && canAct && card && cardActions()}
         {isUsersPiece && canAct && player && playerActions()}
         <button
-          onClick={viewDetailsHandler}
+          onClick={() => gameManager.toggleDetails()}
           className="flex items-center justify-center gap-x-1 px-2 py-1 border-2 border-yellow-700 hover:border-yellow-300 rounded-md text-xs font-bold transition-colors"
         >
           {uiStore.showKeyBindings && <Key>{keyBindings.viewDetails}</Key>} 
@@ -231,6 +225,19 @@ export default function ActionMenu({ }: ActionMenuProps) {
   const defaultMenuActions = () => {
     return (
       <>
+        <button
+          onClick={() => gameManager.endTurn()}
+          disabled={!isUsersTurn}
+          className={`flex items-center justify-center gap-x-1 px-2 py-1 border-2 rounded-md text-xs font-bold transition-colors ${
+            isUsersTurn
+              ? 'border-blue-600 bg-blue-700 hover:bg-blue-600 text-white'
+              : 'border-gray-600 bg-gray-700 text-gray-400 cursor-not-allowed'
+          }`}
+          title={isUsersTurn ? "End your turn" : `Waiting for ${activePlayer?.name ?? 'the other player'}`}
+        >
+          {uiStore.showKeyBindings && <Key>{keyBindings.endTurn}</Key>}
+          End Turn
+        </button>
         <button
           onClick={() => gameManager.startSummoning()}
           disabled={!gameManager.canSummon()}

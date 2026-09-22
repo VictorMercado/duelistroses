@@ -8,6 +8,25 @@ import { resolve } from "path";
 export default defineConfig({
   server: {
     host: true,
+    // host: true binds every interface, so name the hosts allowed to reach the
+    // dev server. Vite permits localhost and raw IPs by default; the production
+    // domain is here so dev can also be run behind it (tunnel, staging proxy).
+    allowedHosts: ['duelistroses.netarc.app'],
+    proxy: {
+      // Forward websocket upgrades to the Go server (main.go listens on :8080)
+      '/ws': {
+        target: 'ws://localhost:8080',
+        ws: true,
+      },
+      // Room map endpoint lives on the Go server too
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    allowedHosts: ['duelistroses.netarc.app'],
   },
   plugins: [
     react(),
@@ -49,10 +68,10 @@ export default defineConfig({
       "@/stores": resolve(__dirname, "src", "stores"),
       "@/types": resolve(__dirname, "src", "types"),
       "@/lib/utils": resolve(__dirname, "src", "lib", "utils"),
-      "@/data": resolve(__dirname, "src", "data"),
       "@/shaders": resolve(__dirname, "src", "shaders"),
       "@/const": resolve(__dirname, "src", "const"),
       "@/game": resolve(__dirname, "src", "game"),
+      "@/net": resolve(__dirname, "src", "net"),
     },
   },
 });

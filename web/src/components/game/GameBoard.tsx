@@ -1,6 +1,5 @@
-import { DoubleSide, Group, Vector3, PlaneGeometry } from "three";
+import { DoubleSide, Group } from "three";
 import { useEffect, useMemo, useRef } from "react";
-import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import YugiohCard from "./YugiohCard";
 import PlayerEmblem from "./PlayerEmblem";
@@ -10,21 +9,16 @@ import { useUIStore } from "@/stores/uiStore";
 import type { Tile } from "@/types";
 import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { useBoardTiles } from "@/hooks/useBoardTiles";
-import { 
-  TILE_SIZE, 
-  X_AXIS_NEGATIVE_MAX, 
-  X_AXIS_POSITIVE_MAX, 
-  Y_AXIS_NEGATIVE_MAX, 
+import {
+  TILE_SIZE,
+  X_AXIS_NEGATIVE_MAX,
+  X_AXIS_POSITIVE_MAX,
+  Y_AXIS_NEGATIVE_MAX,
   Y_AXIS_POSITIVE_MAX,
-  NORTH_BOARD_START,
-  SOUTH_BOARD_START,
-  EAST_BOARD_START,
-  WEST_BOARD_START,
- } from "@/const";
-import { ToonBook } from "./ToonBook";
-import SummonCardPreview from "./SummonCardPreview";
+} from "@/const";
 import { InputManager } from "@/game/InputManager";
 import { gameManager } from "@/game/gameManager";
+import { MemoizedTile } from "../Tile";
 
 // const VALID_PLAY_COLOR = '#00ccff';
 const GUIDE_LINE_COLOR = '#d2d2d2';
@@ -35,7 +29,7 @@ export default function GameBoard() {
   const uiStore = useUIStore();
   const tiles = useBoardTiles();
   useKeyboardHandler();
-  
+
   const playerRefs = useRef<Record<string, Group | null>>({});
   const timeElapsed = useRef(0);
   const finishedPlayers = useRef<Set<string>>(new Set());
@@ -57,23 +51,8 @@ export default function GameBoard() {
 
       const ref = playerRefs.current[String(player.id)];
       if (ref) {
-        let targetPosition = new Vector3(0, 0, 0);
-        
-        // Determine target position based on board side
-        switch(player.boardSide) {
-          case 'N':
-            targetPosition = new Vector3(NORTH_BOARD_START.x, NORTH_BOARD_START.y, NORTH_BOARD_START.z);
-            break;
-          case 'S':
-            targetPosition = new Vector3(SOUTH_BOARD_START.x, SOUTH_BOARD_START.y, SOUTH_BOARD_START.z);
-            break;
-          case 'E':
-            targetPosition = new Vector3(EAST_BOARD_START.x, EAST_BOARD_START.y, EAST_BOARD_START.z);
-            break;
-          case 'W':
-            targetPosition = new Vector3(WEST_BOARD_START.x, WEST_BOARD_START.y, WEST_BOARD_START.z);
-            break;
-        }
+        // The server decides where each leader stands.
+        const targetPosition = player.position.clone();
 
         // Smoothly interpolate towards target
         ref.position.lerp(targetPosition, delta * 5);
@@ -82,7 +61,7 @@ export default function GameBoard() {
         if (ref.position.distanceTo(targetPosition) < 0.01) {
           ref.position.copy(targetPosition);
           finishedPlayers.current.add(String(player.id));
-          
+
           // Update store with final position
           // We need to be careful not to trigger re-renders that reset the animation loop unnecessarily
           // But since we check finishedPlayers, it should be fine.
@@ -97,7 +76,7 @@ export default function GameBoard() {
   const guideLinePositions = useMemo(() => {
     const selectedTilePiece = gameManager.selectedTilePiece;
     if (!selectedTilePiece) return [];
-    if (selectedTilePiece.owner === 'opponent') {
+    if (!gameManager.isUsersPiece(selectedTilePiece)) {
       return [];
     }
 
@@ -124,73 +103,27 @@ export default function GameBoard() {
 
   // Get valid move positions from gameStore (cardinal directions only)
   const validMovePositions = gameManager.selectedTilePiece && gameManager.isUsersPiece(gameManager.selectedTilePiece) ? gameStore.getValidMovePositions() : [];
-  
+
   // Get valid summon positions if in summoning mode OR hand is open
   const isSummoning = gameStore.summoningState;
   const validSummonPositions = isSummoning ? gameStore.getValidSummonPositions() : [];
+  const zBoardPosition = 1;
 
-
-  // Shared Geometries
-  const flatGeometry = useMemo(() => new PlaneGeometry(TILE_SIZE, TILE_SIZE, 1, 1), []);
-  const highPolyGeometry = useMemo(() => new PlaneGeometry(TILE_SIZE, TILE_SIZE, 64, 64), []);
+  // The server tells each seat which edge it looks from; north seats see the
+  // board turned around so their own side is nearest to them.
+  const boardRotation = gameManager.boardFacing === 'N' ? Math.PI : 0;
 
   return (
-    <group position={[0, 0, -2]} rotation={[-Math.PI / 2, 0, 0]}>
+    <group position={[0, 0, zBoardPosition]} rotation={[0, 0, boardRotation]}>
       {/* <ToonBook position={[0, 0, 0]} /> */}
       <BoardCursor position={gameStore.cursorPosition} visible={true} />
       {uiStore.showTiles && tiles.map((tile: Tile, index: number) => {
         // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-        return(
-          <group key={index}>
-            {
-              uiStore.showTilePositions && (        
-                <Text
-                  key={`pos-${index}`}
-                  position={[tile.position.x, tile.position.y, tile.position.z + 0.09]}
-                  rotation={[0, 0, 0]}
-                  fontSize={0.15}
-                  color="white"
-                  anchorX="center"
-                  anchorY="middle"
-                  outlineWidth={0.02}
-                  outlineColor="black"
-                >
-                  {`(${Math.round(tile.position.x)}, ${Math.round(tile.position.y)}, ${Math.round(tile.position.z * 100) / 100})`}
-                </Text>
-              )
-            }
-            {
-              tile.terrain.type === 'toon' ? (
-                <ToonBook 
-                  position={tile.position} 
-                  onClick={() => {
-                      InputManager.getInstance().handleInteraction('SELECT', { tile, pos: tile.position });
-                    }} 
-                />
-              ) : (
-                <mesh
-                  position={tile.position}
-                  geometry={tile.displacementTexture ? highPolyGeometry : flatGeometry}
-                  onClick={() => {
-                    InputManager.getInstance().handleInteraction('SELECT', { tile, pos: tile.position });
-                  }}
-                >
-                  <meshStandardMaterial
-                    map={tile.texture}
-                    displacementMap={tile.displacementTexture}
-                    displacementScale={tile.displacementTexture ? 0.05 : 0}
-                    displacementBias={tile.displacementTexture ? 0 : 0} // Shift down to center the displacement
-                    roughness={0.5} // Matte look for terrain
-                    opacity={1}
-                    side={DoubleSide}
-                  />
-                </mesh>
-              )
-            }
-          </group>
-        )})
-      }
-      
+        return (
+          <MemoizedTile key={index} tile={tile} />
+        );
+      })}
+
       {/* Render movement guide lines */}
       {guideLinePositions.map((pos, index) => (
         <mesh key={`guide-${index}`} position={pos} rotation={[0, 0, 0]}>
@@ -201,32 +134,32 @@ export default function GameBoard() {
 
       {/* Render valid move positions (surrounding squares) */}
       {validMovePositions.map((pos, index) => (
-        <mesh key={`valid-move-${index}`} 
-          position={pos} 
-          rotation={[0, 0, 0]}           
+        <mesh key={`valid-move-${index}`}
+          position={pos}
+          rotation={[0, 0, 0]}
           onClick={(e) => {
-              // Stop propagation so we don't click the tile underneath
-              e.stopPropagation();
-              InputManager.getInstance().handleInteraction('SELECT', { pos });
-              // Check if we have a card selected from hand (via inputStore)
-              // if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece)) {
-              //   const cardInHand = gameStore.handCards.find(c => c.id === inputStore.selectedTilePiece?.id);
-              //   if (cardInHand) {
-              //     gameStore.summonCard(cardInHand, pos);
-              //     // Clear selection after summoning
-              //     inputStore.selectTilePiece(null);
-              //   }
-              // }
-            }}>
+            // Stop propagation so we don't click the tile underneath
+            e.stopPropagation();
+            InputManager.getInstance().handleInteraction('SELECT', { pos });
+            // Check if we have a card selected from hand (via inputStore)
+            // if (inputStore.selectedTilePiece && isCard(inputStore.selectedTilePiece)) {
+            //   const cardInHand = gameStore.handCards.find(c => c.id === inputStore.selectedTilePiece?.id);
+            //   if (cardInHand) {
+            //     gameStore.summonCard(cardInHand, pos);
+            //     // Clear selection after summoning
+            //     inputStore.selectTilePiece(null);
+            //   }
+            // }
+          }}>
           <planeGeometry args={[TILE_SIZE, TILE_SIZE]} />
           <meshBasicMaterial color={VALID_MOVE_COLOR} transparent opacity={0.6} side={DoubleSide} />
         </mesh>
       ))}
 
       {validSummonPositions.map((pos, index) => (
-        <mesh 
-          key={`valid-summon-${index}`} 
-          position={pos} 
+        <mesh
+          key={`valid-summon-${index}`}
+          position={pos}
           rotation={[0, 0, 0]}
           onClick={(e) => {
             // Stop propagation so we don't click the tile underneath
@@ -247,7 +180,7 @@ export default function GameBoard() {
           <meshBasicMaterial color="#0055ff" transparent opacity={0.5} side={DoubleSide} />
         </mesh>
       ))}
-      
+
       {/* Render cards */}
       {uiStore.showCards && gameStore.cards.map((card) => {
         return (
@@ -261,7 +194,7 @@ export default function GameBoard() {
           />
         );
       })}
-      
+
       {/* Render player emblems */}
       {uiStore.showPlayers && gameStore.players.map((player) => {
         return (
@@ -273,10 +206,6 @@ export default function GameBoard() {
           />
         );
       })}
-      
-      <group rotation={[Math.PI / 2, 0, 0]}>
-         <SummonCardPreview />
-      </group>
     </group>
   );
 }

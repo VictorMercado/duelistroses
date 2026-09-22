@@ -2,32 +2,40 @@ import { useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { isPlayer, type Player } from "@/types";
 import { gameManager } from "@/game/gameManager";
+import { useKeyBindings } from "@/hooks/useKeyBindings";
+import { isViewersPiece } from "@/game/visibility";
 
 export default function PlayerDetailView() {
-  const setShowPlayerDetails = useUIStore((state) => state.setShowPlayerDetails);
   const selectedTilePiece = gameManager.selectedTilePiece;
-  
+  const setShowPlayerDetails = useUIStore((state) => state.setShowPlayerDetails);
   const hasSelection = selectedTilePiece && isPlayer(selectedTilePiece);
   const player = hasSelection ? (selectedTilePiece as Player) : null;
+  const { keyBindings } = useKeyBindings();
+  const isOpen = !!player;
 
-  const handleClose = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      setShowPlayerDetails(false);
-    }
-  };
-
+  // Runs on every render, before any early return: hooks may not be skipped
+  // when nothing is selected, or React sees the hook order change.
   useEffect(() => {
-    document.addEventListener('keydown', handleClose);
-    return () => {
-      document.removeEventListener('keydown', handleClose);
+    if (!isOpen) return;
+
+    const handleCloseDetailView = (event: KeyboardEvent) => {
+      if (keyBindings.cancel.includes(event.key)) {
+        event.preventDefault();
+        event.stopPropagation();
+        setShowPlayerDetails(false);
+      }
     };
-  }, []);
+
+    document.addEventListener('keydown', handleCloseDetailView);
+    return () => {
+      document.removeEventListener('keydown', handleCloseDetailView);
+    };
+  }, [isOpen, keyBindings, setShowPlayerDetails]);
 
   if (!player) return null;
 
-  // Placeholder stats for now
-  const isOpponent = player.owner === 'opponent';
+  // Placeholder stats for now - relative to whoever is looking.
+  const isOpponent = !isViewersPiece(player);
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 w-full animate-in fade-in duration-200">

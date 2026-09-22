@@ -1,8 +1,8 @@
 import { useUIStore } from '@/stores/uiStore';
 import { useEffect, useState } from 'react';
-import MusicToggle from "@/components/MusicToggle";
+import MusicToggle from "@/components/ui/MusicToggle";
 import { useGameStore } from '@/stores/gameStore';
-import FPSCounter from './FPSCounter';
+import FPSCounter from '@/components/ui/FPSCounter';
 import { useKeyBindings } from "@/hooks/useKeyBindings";
 import { DEFAULT_KEYBINDINGS } from "@/const";
 import type { KeyBindings } from "@/types";
@@ -32,7 +32,7 @@ export default function ControlPanel({
     azimuthAngle: 0,
     panOffset: { x: 0, y: 0, z: 0 },
   });
-  
+
   // Store Hooks
   const uiStore = useUIStore();
   const gameStore = useGameStore();
@@ -48,7 +48,7 @@ export default function ControlPanel({
       controlsRef.current.reset();
     }
   };
-  
+
   // --- Handlers: Settings ---
   // Sync temp bindings when store changes (e.g. initial load)
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function ControlPanel({
         const distance = controls.object.position.length();
         const polarAngle = controls.getPolarAngle();
         const azimuthAngle = controls.getAzimuthalAngle();
-        
+
         setCameraStats({
           distance: Math.round(distance * 100) / 100,
           polarAngle: Math.round((polarAngle * 180 / Math.PI) * 10) / 10,
@@ -108,7 +108,7 @@ export default function ControlPanel({
     };
 
     const interval = setInterval(updateStats, 500);
-    updateStats(); 
+    updateStats();
 
     return () => clearInterval(interval);
   }, [controlsRef]);
@@ -120,10 +120,10 @@ export default function ControlPanel({
       <div className="text-sm text-gray-400 p-2 bg-black/40 rounded border border-white/10">
         <p>Use W, A, S, D to move board cursor</p>
       </div>
-      
-      {uiStore.showFPS && <FPSCounter style="minimal"/>}
-      
-      <MusicToggle 
+
+      {uiStore.showFPS && <FPSCounter style="minimal" />}
+
+      <MusicToggle
         isPlaying={isPlaying}
         volume={volume}
         toggleMusic={toggleMusic}
@@ -145,8 +145,8 @@ export default function ControlPanel({
           <p className="text-xs text-gray-400 mb-2 font-bold uppercase">Game</p>
           <div className="text-xs space-y-1">
             <p><span className="text-blue-400">Board:</span> {uiStore.boardSize}x{uiStore.boardSize}</p>
-            <p><span className="text-blue-400">Players:</span> {gameStore.currentPlayersCount}</p>
-            <p><span className="text-blue-400">Cards:</span> {gameStore.currentCardsCount}</p>
+            <p><span className="text-blue-400">Players:</span> {gameStore.players.length}</p>
+            <p><span className="text-blue-400">Cards:</span> {gameStore.cards.length}</p>
           </div>
         </div>
       </div>
@@ -161,11 +161,14 @@ export default function ControlPanel({
           { id: 'tiles', label: 'Show Tiles', checked: uiStore.showTiles, set: uiStore.setShowTiles },
           { id: 'coords', label: 'Show Coordinates', checked: uiStore.showTilePositions, set: uiStore.setShowTilePositions },
           { id: 'fps', label: 'Show FPS', checked: uiStore.showFPS, set: uiStore.setShowFPS },
+          { id: 'devtools', label: 'Show DevTools', checked: uiStore.showDevTools, set: uiStore.setShowDevTools },
           { id: 'cards', label: 'Show Cards', checked: uiStore.showCards, set: uiStore.setShowCards },
           { id: 'players', label: 'Show Players', checked: uiStore.showPlayers, set: uiStore.setShowPlayers },
-          // { id: 'keys', label: 'Show Bindings Overlay', checked: uiStore.showKeyBindings, set: uiStore.setShowKeyBindings },
+          { id: 'keys', label: 'Show Bindings', checked: uiStore.showKeyBindings, set: uiStore.setShowKeyBindings },
+          { id: 'stats', label: 'Show 3JS Stats', checked: uiStore.show3jsStats, set: uiStore.setShow3jsStats },
+          { id: 'axis', label: 'Static Axis Helper', checked: uiStore.showStaticAxisHelper, set: uiStore.setShowStaticAxisHelper },
         ].map(toggle => (
-           <div key={toggle.id} className="flex items-center justify-between">
+          <div key={toggle.id} className="flex items-center justify-between">
             <label htmlFor={toggle.id} className="cursor-pointer select-none text-sm text-gray-300 hover:text-white">
               {toggle.label}
             </label>
@@ -193,7 +196,7 @@ export default function ControlPanel({
     <div className="space-y-6">
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-yellow-500 uppercase tracking-wider border-b border-white/10 pb-1">Key Bindings</h3>
-        
+
         {/* Helper to render a binding row */}
         {([
           { key: 'select', label: 'Select Piece' },
@@ -207,14 +210,13 @@ export default function ControlPanel({
             <button
               onClick={(e) => {
                 e.currentTarget.focus();
-                setEditingKey(key)
+                setEditingKey(key);
               }}
               onKeyDown={(e) => editingKey === key && handleKeyPress(e, key)}
-              className={`px-3 py-1 rounded text-xs min-w-[60px] border transition-colors ${
-                editingKey === key 
-                  ? 'bg-yellow-900 border-yellow-500 text-yellow-200 animate-pulse' 
-                  : 'bg-gray-800 border-gray-600 text-gray-200 hover:border-gray-500'
-              }`}
+              className={`px-3 py-1 rounded text-xs min-w-[60px] border transition-colors ${editingKey === key
+                ? 'bg-yellow-900 border-yellow-500 text-yellow-200 animate-pulse'
+                : 'bg-gray-800 border-gray-600 text-gray-200 hover:border-gray-500'
+                }`}
             >
               {editingKey === key ? 'Press key...' : (tempBindings[key] as string).toUpperCase()}
             </button>
@@ -241,19 +243,18 @@ export default function ControlPanel({
               ))}
             </div>
             <button
-                onClick={(e) => {
-                  e.currentTarget.focus();
-                  setEditingKey('cancel')
-                }}
-                onKeyDown={(e) => editingKey === 'cancel' && handleKeyPress(e, 'cancel')}
-                className={`px-2 py-1 rounded text-xs border ${
-                  editingKey === 'cancel'
-                  ? 'bg-yellow-900 border-yellow-500 text-yellow-200' 
-                  : 'bg-gray-800 border-dashed border-gray-600 text-gray-400 hover:text-gray-200'
+              onClick={(e) => {
+                e.currentTarget.focus();
+                setEditingKey('cancel');
+              }}
+              onKeyDown={(e) => editingKey === 'cancel' && handleKeyPress(e, 'cancel')}
+              className={`px-2 py-1 rounded text-xs border ${editingKey === 'cancel'
+                ? 'bg-yellow-900 border-yellow-500 text-yellow-200'
+                : 'bg-gray-800 border-dashed border-gray-600 text-gray-400 hover:text-gray-200'
                 }`}
-              >
-                {editingKey === 'cancel' ? 'Press key...' : '+ Add Key'}
-              </button>
+            >
+              {editingKey === 'cancel' ? 'Press key...' : '+ Add Key'}
+            </button>
           </div>
         </div>
 
@@ -267,19 +268,18 @@ export default function ControlPanel({
               { key: 'cursorLeft', label: 'Left' },
               { key: 'cursorRight', label: 'Right' },
             ].map(({ key, label }) => (
-               <div key={key} className="flex justify-between items-center">
+              <div key={key} className="flex justify-between items-center">
                 <span className="text-xs text-gray-400">{label}</span>
                 <button
                   onClick={(e) => {
                     e.currentTarget.focus();
-                    setEditingKey(key)
+                    setEditingKey(key);
                   }}
                   onKeyDown={(e) => editingKey === key && handleKeyPress(e, key as any)}
-                  className={`px-2 py-1 rounded text-xs min-w-[50px] border ${
-                    editingKey === key 
-                      ? 'bg-yellow-900 border-yellow-500 text-yellow-200' 
-                      : 'bg-gray-800 border-gray-600 text-gray-300'
-                  }`}
+                  className={`px-2 py-1 rounded text-xs min-w-[50px] border ${editingKey === key
+                    ? 'bg-yellow-900 border-yellow-500 text-yellow-200'
+                    : 'bg-gray-800 border-gray-600 text-gray-300'
+                    }`}
                 >
                   {editingKey === key ? '...' : (tempBindings[key as keyof KeyBindings] as string).toUpperCase()}
                 </button>
@@ -307,41 +307,37 @@ export default function ControlPanel({
   );
 
   return (
-    <div className="
-      flex flex-col bg-black/95 text-white backdrop-blur-md shadow-2xl
-      fixed z-50 transition-all duration-300 ease-in-out border-l border-white/10 md:w-96 md:h-screen
-      w-screen h-screen md:w-96">
+    <div className="flex flex-col bg-black/90 text-white backdrop-blur-md shadow-2xl
+      fixed z-50 transition-all duration-300 ease-in-out border-l border-white/10 w-full md:w-96 h-full pointer-events-auto">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/40 shrink-0">
         <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold bg-gradient-to-r from-yellow-500 to-yellow-200 bg-clip-text text-transparent">
+          <h3 className="text-lg font-bold bg-linear-to-r from-yellow-500 to-yellow-200 bg-clip-text text-transparent">
             Control Panel
-            </h3>
+          </h3>
         </div>
-            <button 
-                onClick={() => uiStore.setShowControlPanel(false)}
-                className="md:hidden p-2 text-gray-400 hover:text-white"
-            >
-                ✕
-            </button>
+        <button
+          onClick={() => uiStore.setShowControlPanel(false)}
+          className="md:hidden p-2 text-gray-400 hover:text-white"
+        >
+          ✕
+        </button>
       </div>
 
       {/* Tabs */}
       <div className="flex border-b border-white/10 shrink-0">
         <button
           onClick={() => setActiveTab('controls')}
-          className={`flex-1 py-3 text-sm font-bold tracking-wide transition-colors relative ${
-            activeTab === 'controls' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-          }`}
+          className={`flex-1 py-3 text-sm font-bold tracking-wide transition-colors relative ${activeTab === 'controls' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+            }`}
         >
           CONTROLS
           {activeTab === 'controls' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-yellow-500" />}
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`flex-1 py-3 text-sm font-bold tracking-wide transition-colors relative ${
-            activeTab === 'settings' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-          }`}
+          className={`flex-1 py-3 text-sm font-bold tracking-wide transition-colors relative ${activeTab === 'settings' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+            }`}
         >
           SETTINGS
           {activeTab === 'settings' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-yellow-500" />}

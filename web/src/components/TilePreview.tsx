@@ -1,4 +1,3 @@
-import { getCachedTexture } from "@/hooks/usePreloadTextures";
 import { useMemo } from "react";
 import { useGameStore } from "@/stores/gameStore";
 
@@ -18,39 +17,30 @@ export default function TilePreview({ }: TilePreviewProps) {
     return tileAtCursor || selectedTile;
   }, [cursorPosition, tiles, selectedTile]);
 
-  // Get cached image or fall back to direct URL
-  const imageUrl = useMemo(() => {
-    if (!displayTile) return '';
-    
-    const cachedImg = getCachedTexture(displayTile.terrain.type);
-    if (cachedImg && cachedImg.complete) {
-      // Use the cached image's src (it's already loaded)
-      return cachedImg.src;
-    }
-    
-    // Fallback to direct URL if not cached yet
-    return `/textures/${displayTile.terrain.type}.png`;
-  }, [displayTile]);
+  // The terrain carries the only correct URL: it is ASSET_URL aware, so it
+  // points at public/ in dev and at the asset bucket in production.
+  const imageUrl = displayTile?.terrain.textureUrl ?? '';
 
   if (!displayTile) return null;
 
   return (
-    <div className="absolute bottom-26 md:bottom-2 left-6 w-24 h-32 lg:w-48 lg:h-64 2xl:w-64 2xl:h-80 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl">
+    <div className="absolute bottom-26 md:bottom-2 left-6 w-24 h-32 lg:w-48 lg:h-64 3xl:w-64 3xl:h-80 bg-black/80 rounded-xl border-2 border-yellow-700 overflow-hidden shadow-2xl">
         <div className="h-full flex flex-col">
           {/* 3D Texture Preview */}
           <div className="flex-1 bg-gray-900 flex items-center justify-center relative">
-            <img 
-              key={displayTile.terrain.type}
+            <img
               src={imageUrl}
               alt={displayTile.terrain.name}
+              /* Same CORS mode as the three.js loader, otherwise the browser
+                 keeps a second cache entry and re-downloads every texture. */
+              crossOrigin="anonymous"
               className="w-full h-full object-cover"
-              loading="eager"
               decoding="async"
             />
           </div>
           
           {/* Tile Info */}
-          <div className="p-1 lg:p-4 bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-yellow-700">
+          <div className="p-1 lg:p-4 bg-linear-to-b from-gray-800 to-gray-900 border-t-2 border-yellow-700">
             <h3 className="text-sm lg:text-xl font-bold text-yellow-500 mb-1">{displayTile.terrain.name}</h3>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Vector3, Group, DoubleSide, Mesh } from "three";
 import { type Card } from "@/types";
 import { ASSET_URL, getGlowColor } from "@/const"
 import { useGameStore } from "@/stores/gameStore";
+import { isCardAnonymous, useViewerOwner } from "@/game/visibility";
 
 type CardPropType = {
   card: Card;
@@ -14,6 +15,7 @@ type CardPropType = {
 };
 
 export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }: CardPropType) {
+  const viewerSide = useViewerOwner();
   const outerGroup = useRef<Group>(null);
   const innerGroup = useRef<Group>(null);
   const glowRef = useRef<Mesh>(null);
@@ -26,7 +28,7 @@ export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }
   const shineTexture = useTexture(ASSET_URL + "/textures/shine_mask_2.png"); 
   
   const maskTexture = useTexture(card.maskUrl || ASSET_URL + "/textures/blank_mask.png");
-  const attributeTexture = useTexture(card.attribute.attributeUrl);
+  const attributeTexture = useTexture(card.attribute?.attributeUrl || ASSET_URL + "/textures/blank_mask.png");
   const cardTemplate = useTexture(card.templateUrl);
   const levelStarTexture = useTexture(ASSET_URL + "/textures/levelStar.png");
   const mysteryCardTexture = useTexture(ASSET_URL + "/cards/mysteryCard.png");
@@ -35,8 +37,14 @@ export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }
   // though 512x512 fits the card well by default.
   // shineTexture.wrapS = shineTexture.wrapT = THREE.RepeatWrapping;
 
+  // Table orientation: cards belonging to the north side always sit turned
+  // around, whoever is looking at them.
   const defaultCardRotation = card.owner === 'opponent' 
   ? (isPreview ? 0 : Math.PI) : 0; 
+
+  // Anonymity is relative to the viewer, not to a fixed side.
+  const isAnonymous = isCardAnonymous(card, viewerSide);
+  const isEnemyCard = viewerSide !== null && card.owner !== viewerSide;
   
   const BASE_CARD_Z = 0.001;
   const MID_CARD_Z = 0.002;
@@ -107,7 +115,7 @@ export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }
     }
   });
   
-  if (card.owner === 'opponent' && card.isFaceDown && isPreview)  {
+  if (isAnonymous && isPreview)  {
     return(
       <group rotation={[0, 0, 0]}>
         <mesh position={[0, 0, BASE_CARD_Z]}>
@@ -123,7 +131,7 @@ export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }
       e.stopPropagation();
       onSelect();
     }}>
-      {card.owner === 'opponent' && !isPreview && (
+      {isEnemyCard && !isPreview && (
         <mesh position={[0, 0, OPP_CARD_Z]}>
           <planeGeometry args={[0.85, 1.25]} />
           <meshStandardMaterial transparent opacity={0.6} color="#b45672" />
@@ -174,8 +182,8 @@ export default function YugiohCard({ card, isHandSelected, isPreview, onSelect }
         </group>
 
         {/* Front Face Logic */}
-        {card.owner === 'opponent' && card.isFaceDown ? (
-          // mystery opponent card
+        {isAnonymous ? (
+          // face-down card belonging to somebody else
           <group rotation={[0, 0, 0]}>
             <mesh position={[0, 0, BASE_CARD_Z]}>
               <planeGeometry args={[0.68, 0.98]} />

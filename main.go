@@ -5,9 +5,24 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"duelistRoses/api"
+	"duelistRoses/game"
 )
 
 func main() {
+	hub := game.NewHub()
+
+	// WebSocket handler
+	http.HandleFunc("/ws/", func(w http.ResponseWriter, r *http.Request) {
+		api.ServeWs(hub, w, r)
+	})
+
+	// REST API
+	http.HandleFunc("/api/rooms/", func(w http.ResponseWriter, r *http.Request) {
+		api.ServeRoomMap(hub, w, r)
+	})
+
 	// Define the directory to serve (relative to project root)
 	staticDir := "./web/dist"
 
@@ -20,16 +35,16 @@ func main() {
 	fs := http.FileServer(http.Dir(staticDir))
 
 	// Serve content
-	// We wrap it to handle SPA routing (rewriting 404s to index.html) if needed,
-	// but for now simple file server.
-	// For SPA, we usually serve index.html for unknown routes.
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ws/" || len(r.URL.Path) > 4 && r.URL.Path[:4] == "/ws/" {
+			// handled by ws route
+			return
+		}
+
 		path := filepath.Join(staticDir, r.URL.Path)
 		_, err := os.Stat(path)
 
 		// If path doesn't exist or is a directory, serve index.html (SPA logic)
-		// But strictly for static assets, usually we check if file exists.
-		// Standard SPA pattern:
 		if os.IsNotExist(err) || (err == nil && isDir(path)) {
 			http.ServeFile(w, r, filepath.Join(staticDir, "index.html"))
 			return
@@ -38,11 +53,13 @@ func main() {
 		fs.ServeHTTP(w, r)
 	})
 
-	// http.HandleFunc("deploy", func(w http.ResponseWriter, r *http.Request) {
-		
-	// })
+	// The container sets PORT; fall back to 8080 so `go run .` needs no setup
+	// and keeps matching the vite dev proxy target in web/vite.config.ts.
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	port := "8080"
 	log.Printf("Starting server on http://localhost:%s", port)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
