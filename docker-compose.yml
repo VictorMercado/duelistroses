@@ -32,8 +32,9 @@ services:
       - duelist-data:/srv/data
 
   # --- monitoring (see monitoring/README.md) ---------------------------------
-  # Prometheus and Grafana listen on 127.0.0.1 only: reach them through an SSH
-  # tunnel (ssh -L 3000:localhost:3000 server) rather than opening them up.
+  # Grafana (3000) is open to the local network: it has its own login. The
+  # server sits behind NAT and Traefik does not route to it. Prometheus has no
+  # login, so it stays on 127.0.0.1: reach it with ssh -L 9090:localhost:9090.
 
   prometheus:
     image: prom/prometheus:v3.5.0
@@ -67,7 +68,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     depends_on:
       - prometheus
 
