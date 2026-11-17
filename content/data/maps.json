@@ -1,0 +1,251 @@
+{
+  "maps": [
+    {
+      "id": "example",
+      "name": "Example Field",
+      "rows": [
+        "N N F F F N N",
+        "N M M N W W N",
+        "S N N U N N S",
+        "S Y U U U Y S",
+        "S N N U N N S",
+        "N W W N M M N",
+        "N N F F F N N"
+      ]
+    },
+    {
+      "id": "Seto Kaiba",
+      "name": "Seto Kaiba Field",
+      "rows": [
+        "F S S S S S F",
+        "S S L N L S S",
+        "S L N N N L S",
+        "S N N N N N S",
+        "S L N N N L S",
+        "S S L N L S S",
+        "F S S S S S F"
+      ]
+    },
+    {
+      "id": "Pegasus",
+      "name": "Pegasus Field",
+      "rows": [
+        "T T T T T T T",
+        "T T T T T T T",
+        "T N T T T N T",
+        "L N L L L N L",
+        "U N U U U N U",
+        "S S S S S S S",
+        "S S S S S S S"
+      ]
+    },
+    {
+      "id": "Weevil",
+      "name": "Weevil Field",
+      "rows": [
+        "F F F F F F F",
+        "F F F F F F F",
+        "F F F F F F F",
+        "F F F F F F W",
+        "F F F F F F F",
+        "F W F F W F F",
+        "F F F F F F F"
+      ]
+    },
+    {
+      "id": "labyrinth-ruler",
+      "name": "Labyrinth Ruler Field",
+      "rows": [
+        "N N N N N N N",
+        "C L L L L L Y",
+        "F S S U W W Y",
+        "F L L L L L C",
+        "F S S U W W Y",
+        "C L L L L L Y",
+        "N N N N N N N"
+      ]
+    },
+    {
+      "id": "ishtar",
+      "name": "Ishtar Field",
+      "rows": [
+        "W C U U U U U",
+        "C C U C C C U",
+        "U U U C W C U",
+        "U C C C C C U",
+        "U C W C U U U",
+        "U C C C U C C",
+        "U U U U U C W"
+      ]
+    },
+    {
+      "id": "keith",
+      "name": "Keith Field",
+      "rows": [
+        "W W W W W W W",
+        "W L L W L L W",
+        "W L W W W L W",
+        "W W W L W W W",
+        "W L W W W L W",
+        "W L L W L L W",
+        "W W W W W W W"
+      ]
+    },
+    {
+      "id": "darkness-ruler",
+      "name": "Darkness-Ruler Field",
+      "rows": [
+        "Y Y Y Y Y F F",
+        "Y Y Y Y Y F F",
+        "Y Y Y Y Y Y Y",
+        "Y Y Y Y Y Y Y",
+        "Y Y Y Y Y Y Y",
+        "F F Y Y Y Y Y",
+        "F F Y Y Y Y Y"
+      ]
+    },
+    {
+      "id": "rex-raptor",
+      "name": "Rex Raptor Field",
+      "rows": [
+        "W W W W W W W",
+        "W L W L W L W",
+        "W L W L W L W",
+        "W L W L W L W",
+        "W L W L W L W",
+        "W L W L W L W",
+        "W W W W W W W"
+      ]
+    },
+    {
+      "id": "necromancer",
+      "name": "Necromancer Field",
+      "rows": [
+        "W W W W W W W",
+        "W W W W S S W",
+        "W W W W W S W",
+        "U W U U U S U",
+        "S W S S S S S",
+        "S W W S S S S",
+        "S S S S S S S"
+      ]
+    },
+    {
+      "id": "tea",
+      "name": "Tea Field",
+      "rows": [
+        "N N N M N N N",
+        "M N N N N S N",
+        "N N S N N N N",
+        "N N N N M N N",
+        "N M N N N N S",
+        "N N N S N N N",
+        "S N N N M N N"
+      ]
+    },
+    {
+      "id": "tristan",
+      "name": "Tristan Field",
+      "rows": [
+        "N N N N N N N",
+        "Y Y Y Y Y Y Y",
+        "W W W W W W W",
+        "U U U U U U U",
+        "F F F F F F F",
+        "S S S S S S S",
+        "N N N N N N N"
+      ]
+    },
+    {
+      "id": "mai",
+      "name": "Mai Field",
+      "rows": [
+        "W M M M M M W",
+        "W M M M M M W",
+        "W M M M M M W",
+        "W M M M M M W",
+        "W M M M M M W",
+        "W M M M M M W",
+        "W M M M M M W"
+      ]
+    },
+    {
+      "id": "mako",
+      "name": "Mako Field",
+      "rows": [
+        "S S S U U U U",
+        "S S U U U U U",
+        "S S U U U U U",
+        "U U U U U U U",
+        "U U U U U U U",
+        "U U U U U U S",
+        "U U U U U S S"
+      ]
+    },
+    {
+      "id": "joey",
+      "name": "Joey Field",
+      "rows": [
+        "U S F M W Y T",
+        "U S F M W Y T",
+        "U S F M W Y T",
+        "U S F M W Y T",
+        "U S F M W Y T",
+        "U S F M W Y T",
+        "U S F M W Y T"
+      ]
+    },
+    {
+      "id": "shadi",
+      "name": "Shadi Field",
+      "rows": [
+        "F F F C W W W",
+        "F F F C W W W",
+        "F F F C W W W",
+        "C C C C C C C",
+        "Y Y Y C U U U",
+        "Y Y Y C U U U",
+        "Y Y Y C U U U"
+      ]
+    },
+    {
+      "id": "jasper",
+      "name": "Jasper Field",
+      "rows": [
+        "M M W W W M M",
+        "M L L Y L L M",
+        "U L Y Y Y L U",
+        "U L Y Y Y L Y",
+        "U L L L L L U",
+        "S S S S S S S",
+        "S S S S S S S"
+      ]
+    },
+    {
+      "id": "bakura",
+      "name": "Bakura Field",
+      "rows": [
+        "C F F F F F C",
+        "F C C F C C F",
+        "F C C F C C F",
+        "F F F C F F F",
+        "F C C F C C F",
+        "F C C F C C F",
+        "C F F F F F C"
+      ]
+    },
+    {
+      "id": "yugi",
+      "name": "Yugi Field",
+      "rows": [
+        "W M F S U L C",
+        "S U L C T N Y",
+        "C T N Y W M F",
+        "Y W M F S U L",
+        "F S U L C T N",
+        "L C T N Y W M",
+        "N Y W M F S U"
+      ]
+    }
+  ]
+}

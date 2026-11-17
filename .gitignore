@@ -49,7 +49,7 @@ content/assets/
 
 
 # Signing key and accounts (never commit)
-data/
+/data/
 
 # Local art and downloader dumps (4+ GB); never commit
 /assets/
