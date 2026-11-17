@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --breakpoint-3xl: 1700px;
+  --breakpoint-3xl: 120rem;
 }
 
 :root {
@@ -19,15 +19,101 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * Where the duel HUD starts and ends. The top keeps clear of the notch with a
+ * little extra room; the bottom bar tucks into part of the home-indicator
+ * area instead of leaving the whole inset empty.
+ */
+:root {
+  --hud-top: max(0.75rem, calc(env(safe-area-inset-top) + 0.5rem));
+  --hud-bottom: max(0.25rem, calc(env(safe-area-inset-bottom) - 1.25rem));
+}
+
+/* Height of the action bar at the bottom of a duel; panels that sit above it use it. */
+:root { --bar-h: 4rem; }
+@media (pointer: coarse) { :root { --bar-h: 4.25rem; } }
+/* Phones: the bar is two rows. */
+@media (max-width: 639px) { :root { --bar-h: 6rem; } }
+
+html, body {
+  /* Same black as the board, so nothing shows through behind it. */
+  background-color: #000;
+}
+
 html {
   overflow: hidden;
+  /* No double-tap zoom (and no 300 ms tap delay); pinch stays on the board. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   overflow: hidden;
+  /* No pull-to-refresh or rubber-banding behind the game. */
+  overscroll-behavior: none;
+  /* A long press on a game UI should not select text or pop up "save image". */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input, textarea, select, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* iOS would zoom into any field with text under 16px; maximum-scale=1 in index.html stops that. */
+
+/* The board handles its own gestures (pan, pinch). */
+.canvas {
+  touch-action: none;
 }
 
 .yugiohGradientBackground {
   background: linear-gradient(to bottom, #15312a 10%, #25574b 30%, #327d6c 50%, #25574b 70%, #15312a 90%);
 }
   
+
+/* Life points lost: a red number pops over the LP total, hangs, then rises away. */
+@keyframes lp-hit {
+  0% { opacity: 0; transform: translateY(6px) scale(0.6); }
+  12% { opacity: 1; transform: translateY(0) scale(1.25); }
+  22% { transform: translateY(0) scale(1); }
+  70% { opacity: 1; transform: translateY(-4px); }
+  100% { opacity: 0; transform: translateY(-18px); }
+}
+.lp-hit { animation: lp-hit 1.4s ease-out forwards; }
+@keyframes destiny-banner {
+  0% { opacity: 0; transform: scale(0.7); }
+  10% { opacity: 1; transform: scale(1.08); }
+  18% { transform: scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.destiny-banner { animation: destiny-banner 2.6s ease-out forwards; }
+@keyframes activation-flash {
+  0% { opacity: 0; transform: scale(0.6); }
+  15% { opacity: 1; transform: scale(1.06); }
+  25% { transform: scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.activation-flash { animation: activation-flash 1.2s ease-out forwards; }
+@keyframes destroyed-flash {
+  0% { opacity: 0; transform: scale(1.15); }
+  12% { opacity: 1; transform: scale(1) translateX(0); }
+  18% { transform: translateX(-6px); }
+  24% { transform: translateX(6px); }
+  30% { transform: translateX(-3px); }
+  36% { transform: translateX(0); }
+  75% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.85) translateY(12px); }
+}
+.destroyed-flash { animation: destroyed-flash 1.3s ease-in forwards; }
+@keyframes lp-hit-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .lp-hit { animation-name: lp-hit-fade; }
+  .destiny-banner { animation-name: lp-hit-fade; }
+  .activation-flash, .destroyed-flash { animation-name: lp-hit-fade; }
+}

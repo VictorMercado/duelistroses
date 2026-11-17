@@ -1,0 +1,20 @@
+# Keep secrets and local state out of the build context (and the image).
+.env
+.env.*
+**/.env
+**/.env.*
+
+.git
+.claude
+.dev
+data
+/assets
+gcloud
+*.log
+.DS_Store
+
+web/node_modules
+web/dist
+web/dev-dist
+deckbuilder
+monitoring

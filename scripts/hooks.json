@@ -1,0 +1,38 @@
+[
+  {
+    "id": "deploy-duelistroses",
+    "execute-command": "/opt/duelistroses/scripts/deploy.sh",
+    "command-working-directory": "/opt/duelistroses",
+    "response-message": "Deploy started",
+    "pass-environment-to-command": [
+      { "source": "payload", "name": "pusher.name", "envname": "DEPLOY_BY" },
+      { "source": "payload", "name": "head_commit.message", "envname": "DEPLOY_MESSAGE" }
+    ],
+    "trigger-rule-mismatch-http-response-code": 400,
+    "trigger-rule": {
+      "and": [
+        {
+          "match": {
+            "type": "payload-hmac-sha256",
+            "secret": "{{ getenv \"WEBHOOK_SECRET\" | js }}",
+            "parameter": { "source": "header", "name": "X-Hub-Signature-256" }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "push",
+            "parameter": { "source": "header", "name": "X-GitHub-Event" }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "refs/heads/main",
+            "parameter": { "source": "payload", "name": "ref" }
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,27 @@
+# Scrapes the game server's metrics (METRICS_ADDR, :9091 on the compose
+# network) and cAdvisor, which measures each container's CPU and real network
+# traffic from the outside.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: duelist
+    static_configs:
+      - targets: ["app:9091"]
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      # Keep only what the dashboard uses; cAdvisor exports a lot.
+      - source_labels: [__name__]
+        regex: container_(cpu_usage_seconds_total|memory_working_set_bytes|network_(receive|transmit)_bytes_total|spec_cpu_quota|spec_cpu_period)
+        action: keep
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

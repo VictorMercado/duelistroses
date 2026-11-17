@@ -5,7 +5,9 @@ import type { KeyBindings } from '@/types';
 export const useKeyBindings = () => {
   const [keyBindings, setKeyBindings] = useState(() => {
       const saved = localStorage.getItem('keyBindings');
-      return saved ? JSON.parse(saved) : DEFAULT_KEYBINDINGS;
+      // Merge over the defaults so bindings added after a user saved theirs
+      // (e.g. endTurn) are still populated.
+      return saved ? { ...DEFAULT_KEYBINDINGS, ...JSON.parse(saved) } : DEFAULT_KEYBINDINGS;
   });
   const updateKeyBindings = (bindings: KeyBindings) => {
     setKeyBindings(bindings);

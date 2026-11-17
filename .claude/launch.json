@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "web", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "game-server",
+      "runtimeExecutable": "go",
+      "runtimeArgs": ["run", "."],
+      "port": 8080
+    },
+    {
+      "name": "content-service",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "deckbuilder/api"],
+      "port": 5080
+    },
+    {
+      "name": "deckbuilder-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "deckbuilder/web", "dev"],
+      "port": 5174
+    }
+  ]
+}

@@ -1,11 +1,16 @@
 import type { KeyBindings, Terrain, Attribute, Rarity, MonsterKind, Monster, Spell, Trap } from "@/types";
 import { Vector3 } from "three";
 
-// if prod do https://storage.googleapis.com/duelistassets
-// if dev do /public
-export const ASSET_URL = import.meta.env.DEV ? "" : "https://storage.googleapis.com/duelistassets";
+/** Where the game server is. Same origin unless VITE_API_URL says otherwise. */
+export const SERVER_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? window.location.origin).replace(/\/+$/, "");
+// Every asset (card art, terrain, templates, audio, fonts) is served by the
+// game server at /assets, never bundled with the client.
+export const ASSET_URL = SERVER_URL + "/assets";
 
 export const PLAYER_BASE_Z = 0.1;
+
+/** Each seat's colour: its cursor, the badge on its cards, and the swatch by its name in the HUD. */
+export const SEAT_COLORS = ["#ff6b6b", "#74c0fc", "#ffd43b", "#b197fc"];
 export const BOARD_SIZE = 11;
 export const TILE_SIZE = 1;
 export const X_AXIS_NEGATIVE_MAX = -(BOARD_SIZE - 1) / 2;
@@ -25,6 +30,7 @@ export const DEFAULT_KEYBINDINGS: KeyBindings = {
   viewDetails: "i",
   flipCard: "o",
   changePosition: "u",
+  endTurn: "e",
   cursorUp: "w",
   cursorDown: "s",
   cursorLeft: "a",
@@ -171,13 +177,13 @@ export const AQUA: MonsterKind = {
     "umi"
   ],
   weakIn: [
-    "toon"
+    "toon",
+    "wasteland"
   ]
 };
 export const BEAST: MonsterKind = {
   monster: "beast",
   strongIn: [
-    "sogen",
     "forest"
   ],
   weakIn: [
@@ -291,9 +297,7 @@ export const PYRO: MonsterKind = {
 };
 export const REPTILE: MonsterKind = {
   monster: "reptile",
-  strongIn: [
-    "wasteland"
-  ],
+  strongIn: [],
   weakIn: [
     "toon"
   ]
@@ -313,7 +317,8 @@ export const SEA_SERPENT: MonsterKind = {
     "umi"
   ],
   weakIn: [
-    "toon"
+    "toon",
+    "wasteland"
   ]
 };
 export const SPELLCASTER: MonsterKind = {
@@ -374,6 +379,12 @@ export const ZOMBIE: MonsterKind = {
     "toon"
   ]
 };
+/** Every monster type with the terrains it is strong and weak on. The game
+ * server applies the same table (game/engine/game.go); keep the two in step. */
+export const MONSTER_KINDS: MonsterKind[] = [
+  AQUA, BEAST, BEAST_WARRIOR, DINOSAUR, DRAGON, FAIRY, FISH, FIEND, IMMORTAL, INSECT, MACHINE, PLANT, PYRO, REPTILE, ROCK, SEA_SERPENT, SPELLCASTER, TOON, THUNDER, WARRIOR, WINGED_BEAST, ZOMBIE,
+];
+
 export const NORMALMONSTER: Monster = "normal";
 export const EFFECTMONSTER: Monster = "effect";
 export const FUSIONMONSTER: Monster = "fusion";

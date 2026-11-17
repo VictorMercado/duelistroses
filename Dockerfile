@@ -1,33 +1,45 @@
-# Stage 1: Build React Frontend
-FROM node:20-alpine AS frontend-builder
+# Game server image: the Go server (with the card catalog built in), the built
+# game client, and the asset files served at /assets.
+
+FROM node:22-alpine AS client
 WORKDIR /app/web
+RUN npm install -g pnpm
 COPY web/package.json web/pnpm-lock.yaml ./
-# Install dependencies (using npm since pnpm might not be pre-installed, or install pnpm)
-RUN npm install -g pnpm && pnpm install
+RUN pnpm install --frozen-lockfile
 COPY web/ .
+# The commit client error reports name (there is no .git in the build context).
+ARG BUILD_SHA=""
+ENV BUILD_SHA=$BUILD_SHA
 RUN pnpm run build
 
-# Stage 2: Build Go Backend
-FROM golang:1.24-alpine AS backend-builder
+FROM golang:1.26-alpine AS server
 WORKDIR /app
-COPY go.mod ./
-# COPY go.sum ./ # Uncomment if/when you have a go.sum
+COPY go.mod go.sum ./
 RUN go mod download
-COPY main.go .
-# Build the binary, statically linked
-RUN CGO_ENABLED=0 GOOS=linux go build -o server main.go
+COPY main.go ./
+COPY api ./api
+COPY auth ./auth
+COPY bot ./bot
+COPY cardlab ./cardlab
+COPY content/*.go ./content/
+COPY content/data ./content/data
+COPY db ./db
+COPY game ./game
+COPY metrics ./metrics
+COPY profile ./profile
+COPY reports ./reports
+RUN CGO_ENABLED=0 go build -o server .
 
-# Stage 3: Final Image
 FROM alpine:latest
-WORKDIR /root/
-# Copy the compiled binary from backend builder
-COPY --from=backend-builder /app/server .
-# Copy the built frontend assets from frontend builder
-# Note: The server expects assets in ./web/dist relative to execution directory
-COPY --from=frontend-builder /app/web/dist ./web/dist
-
-# Expose the application port
+RUN apk add --no-cache ca-certificates
+WORKDIR /srv
+COPY --from=server /app/server .
+COPY --from=client /app/web/dist ./web/dist
+# Card art, textures, sounds and fonts (see scripts/content/import_assets.sh).
+COPY content/assets ./content/assets
+# Mount a volume here: it holds the signing key, accounts, decks and maps.
+VOLUME /srv/data
 EXPOSE 8080
-
-# Run the server
+# Prometheus metrics (METRICS_ADDR); keep it off the public internet.
+EXPOSE 9091
 CMD ["./server"]

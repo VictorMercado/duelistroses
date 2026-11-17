@@ -1,0 +1,9 @@
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+node_modules/
+web/dist/
+# Imported with tools/import_assets.sh, and the deck builder's production build.
+api/wwwroot/

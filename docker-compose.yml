@@ -1,8 +1,96 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        # Shown in client error reports: BUILD_SHA=$(git rev-parse --short HEAD) docker compose build
+        BUILD_SHA: ${BUILD_SHA:-}
     image: duelistroses:latest
     container_name: duelistroses
     ports:
       - "8080:8080"
+    # Prometheus scrapes :9091 over the compose network; it is not published.
+    expose:
+      - "9091"
     restart: always
+    # Secrets and settings (ANTHROPIC_API_KEY, ADMIN_PASSWORD, PUBLIC_URL...)
+    # come from .env at run time; they are never baked into the image.
+    # Copy .env.example to .env. Paths (DATA_DIR, ASSET_DIR, STATIC_DIR) are
+    # pinned below to the image layout so a local .env cannot break them.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATA_DIR: /srv/data
+      ASSET_DIR: /srv/content/assets
+      STATIC_DIR: /srv/web/dist
+      METRICS_ADDR: ":9091"
+    volumes:
+      # The signing key, accounts, decks and maps. Without a named volume they
+      # live in the container, and a rebuild creates a new key: every saved
+      # sign-in stops working (and accounts are lost).
+      - duelist-data:/srv/data
+
+  # --- monitoring (see monitoring/README.md) ---------------------------------
+  # Prometheus and Grafana listen on 127.0.0.1 only: reach them through an SSH
+  # tunnel (ssh -L 3000:localhost:3000 server) rather than opening them up.
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: duelist-prometheus
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: duelist-grafana
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/duelist.json
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+
+  # Each container's CPU, memory and real network traffic, measured from outside.
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: duelist-cadvisor
+    restart: always
+    privileged: true
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=15s
+      - --disable_metrics=disk,diskIO,tcp,udp,percpu,sched,process,hugetlb,referenced_memory,cpu_topology,resctrl
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+
+volumes:
+  duelist-data:
+  prometheus-data:
+  grafana-data:

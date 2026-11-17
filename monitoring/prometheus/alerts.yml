@@ -1,0 +1,66 @@
+# Shown as firing in Prometheus (Alerts tab) and in Grafana. To be told
+# about them, add a contact point in Grafana (Alerting) or run Alertmanager.
+groups:
+  - name: duelist
+    rules:
+      - alert: RoomsFallingBehind
+        # Work waits in room queues: actions feel laggy to players.
+        expr: histogram_quantile(0.95, sum by (le) (rate(duelist_room_queue_wait_seconds_bucket[5m]))) > 0.1
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "95% of room work waits up to {{ $value | humanizeDuration }} before it runs"
+
+      - alert: SlowRoomWork
+        expr: histogram_quantile(0.99, sum by (le) (rate(duelist_room_task_seconds_bucket[5m]))) > 0.25
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "1% of room tasks take over {{ $value | humanizeDuration }}"
+
+      - alert: SlowWebsocketClients
+        # Clients dropped because their queue filled: the server (or their link) cannot keep up.
+        expr: increase(duelist_ws_slow_client_drops_total[10m]) > 5
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value | printf \"%.0f\" }} websocket clients dropped for falling behind in 10 minutes"
+
+      - alert: HighCPU
+        # Cores the server process uses, against the cores the Go runtime may use.
+        expr: rate(process_cpu_seconds_total{job="duelist"}[5m]) / on() group_left go_sched_gomaxprocs_threads{job="duelist"} > 0.8
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "The game server uses {{ $value | humanizePercentage }} of its CPU"
+
+      - alert: ServerErrors
+        expr: sum(rate(duelist_http_requests_total{code=~"5.."}[5m])) > 0.1
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "The server answers {{ $value | printf \"%.2f\" }} requests a second with 5xx"
+
+      - alert: ClientErrorSpike
+        expr: sum(increase(duelist_client_errors_total[15m])) > 20
+        labels: { severity: info }
+        annotations:
+          summary: "{{ $value | printf \"%.0f\" }} client error reports in 15 minutes (GET /api/admin/client-errors/groups)"
+
+      - alert: AssetBandwidthHigh
+        # Asset files are over 80% of what the server sends: a sign to move them to a bucket/CDN.
+        expr: |
+          sum(rate(duelist_http_response_bytes_total{route=~"assets/.*"}[1h]))
+            / (sum(rate(duelist_http_response_bytes_total[1h])) + sum(rate(duelist_ws_bytes_total{dir="out"}[1h])))
+          > 0.8
+          and sum(rate(duelist_http_response_bytes_total{route=~"assets/.*"}[1h])) > 1e6
+        for: 1h
+        labels: { severity: info }
+        annotations:
+          summary: "Asset files are {{ $value | humanizePercentage }} of the server's outgoing traffic"
+
+      - alert: GameServerDown
+        expr: up{job="duelist"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Prometheus cannot reach the game server's metrics"

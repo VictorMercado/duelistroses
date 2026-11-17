@@ -6,8 +6,10 @@ duelist-server
 *.dll
 *.so
 *.dylib
+# Secrets: .env holds ANTHROPIC_API_KEY and admin credentials
 .env
-.env.local
+.env.*
+!.env.example
 # Logs
 *.log
 
@@ -41,4 +43,16 @@ web/public/cards/
 
 gcloud
 
+# Asset files served at /assets (see scripts/content/import_assets.sh)
+content/assets/
 
+
+
+# Signing key and accounts (never commit)
+data/
+
+# Local art and downloader dumps (4+ GB); never commit
+/assets/
+./assets
+# dev.sh pids and logs
+.dev/

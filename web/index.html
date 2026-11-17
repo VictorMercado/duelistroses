@@ -2,8 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <!-- viewport-fit=cover lets the app use the whole screen; the UI keeps clear of notches with safe-area insets. -->
+    <!-- maximum-scale=1 stops iOS zooming into small text fields on focus (pinch zoom still works there). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- A solid status bar: iOS puts the app below it. "black-translucent" draws the app under the
+         clock but then sizes it a status bar short, leaving a black strip at the bottom. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="theme-color" content="#000000" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Duelist City</title>

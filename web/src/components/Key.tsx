@@ -14,12 +14,12 @@ export function Key({ children, size = "md" }: KeyProps) {
   return (
     <kbd
       aria-hidden="false"
-      className={`rounded-md border shadow-sm select-none align-middle inline-flex items-center justify-center 
-                 border-gray-300 bg-gray-100 text-gray-800 font-medium ${sizeMap[size]}
-                 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100
-                 `}
+      className={`border shadow-sm select-none align-middle inline-flex items-center justify-center 
+ border-gray-300 bg-gray-100 text-gray-800 font-medium ${sizeMap[size]}
+ dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100
+ `}
     >
-      {children}
+      {children?.toString().toUpperCase()}
     </kbd>
   );
 }
