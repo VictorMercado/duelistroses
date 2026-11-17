@@ -3,7 +3,8 @@
 
 FROM node:22-alpine AS client
 WORKDIR /app/web
-RUN npm install -g pnpm
+# Pinned: a newer pnpm can drop support for this lockfile format and break the build.
+RUN npm install -g pnpm@10.33.0
 COPY web/package.json web/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY web/ .
