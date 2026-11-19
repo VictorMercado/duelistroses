@@ -111,6 +111,41 @@ func TestSandbox(t *testing.T) {
 		}
 	})
 	drain(t, admin)
+
+	// A map the board's size is laid under the duel as it stands.
+	same := library.RandomMap("a", 7)
+	if same == nil {
+		t.Fatal("no 7×7 preset map to test with")
+	}
+	var before *engine.Game
+	on(room, func() { before = room.game })
+	on(room, func() { room.adminTool(admin, incoming{T: "admin", Op: "map", Map: same.ID}) })
+	on(room, func() {
+		if room.game != before {
+			t.Error("a map the same size dealt a new duel")
+		}
+		if want := same.TileMap(); room.game.Tiles[engine.Pos{X: 0, Y: 0}] != want[engine.Pos{X: 0, Y: 0}] || room.opts.Map == nil || room.opts.Map.ID != same.ID {
+			t.Error("the terrain did not change to the chosen map")
+		}
+	})
+	drain(t, admin)
+	// A freshly generated one, the same way.
+	on(room, func() { room.adminTool(admin, incoming{T: "admin", Op: "map"}) })
+	on(room, func() {
+		if room.game != before || room.opts.Map != nil {
+			t.Error("a generated map did not replace the terrain in place")
+		}
+	})
+	// Another size deals a new duel on it.
+	if other := library.RandomMap("a", 9); other != nil {
+		on(room, func() { room.adminTool(admin, incoming{T: "admin", Op: "map", Map: other.ID}) })
+		on(room, func() {
+			if room.game == before || room.game.Cfg.Size != 9 {
+				t.Error("a map of another size did not deal a new duel on it")
+			}
+		})
+	}
+	drain(t, admin)
 }
 
 func TestEndBotsDuel(t *testing.T) {

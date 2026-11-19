@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Before a push to main reaches GitHub (which deploys it, see scripts/deploy.sh),
+# gets the production server ready for it (scripts/server/prepare.sh): sets the
+# server up if anything is missing, then copies the secrets and content/assets,
+# which only this machine holds. If that fails, the push is cancelled and
+# nothing deploys. Pushes to other branches are left alone.
+#
+# Settings: see scripts/server/prepare.sh. duelist.assetsDelete=true also
+# deletes server assets that are gone here.
+#
+# Skip once:  SKIP_ASSET_SYNC=1 git push     (or git push --no-verify, which skips every hook)
+# Install:    sh scripts/install-hooks.sh
+set -euo pipefail
+
+remote="$1"
+ROOT="$(git rev-parse --show-toplevel)"
+
+# Which refs are being pushed: one "<local ref> <local sha> <remote ref> <remote sha>" line each.
+to_main=0
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+  # Deleting the branch sends nothing to deploy.
+  if [[ "$remote_ref" == "refs/heads/main" && "$local_sha" != 0000000000000000000000000000000000000000 ]]; then
+    to_main=1
+  fi
+done
+[[ "$remote" == "origin" && $to_main -eq 1 ]] || exit 0
+
+if [[ -n "${SKIP_ASSET_SYNC:-}" ]]; then
+  echo "pre-push: SKIP_ASSET_SYNC is set, not copying assets to the server" >&2
+  exit 0
+fi
+
+fail() {
+  echo "" >&2
+  echo "pre-push: $*" >&2
+  echo "pre-push: the push was cancelled, so nothing deploys. Fix it and push again," >&2
+  echo "pre-push: or push without the assets: SKIP_ASSET_SYNC=1 git push" >&2
+  exit 1
+}
+
+echo "pre-push: getting the server ready before main deploys..." >&2
+start=$SECONDS
+delete=""
+[[ "$(git config --get --type=bool duelist.assetsDelete || echo false)" == true ]] && delete=1
+DELETE="$delete" "$ROOT/scripts/server/prepare.sh" || fail "the server could not be prepared (see above)"
+echo "pre-push: the server is ready ($((SECONDS - start))s); pushing." >&2

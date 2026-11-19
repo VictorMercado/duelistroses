@@ -237,9 +237,9 @@ func (g *Game) actSummon(s *Seat, a Action) error {
 	if cost > s.Stars && !g.Unlimited {
 		return RuleError("Not enough summoning power")
 	}
-	if err := g.roomFor(s.Index, running.IsMonster(), occupant); err != nil {
-		return err
-	}
+	// A card with no room on the field may still be played: it lands, and is
+	// destroyed on the spot (see overflow). The play and its stars are spent.
+	overflow := g.roomFor(s.Index, running.IsMonster(), occupant) != nil
 
 	// --- validated, now commit ---
 	if !g.Unlimited {
@@ -275,6 +275,14 @@ func (g *Game) actSummon(s *Seat, a Action) error {
 	if result != nil && result.Owner != s.Index {
 		// Power-ups given to an ally's monster: it stays where it is, theirs.
 		g.place(result, target)
+		return nil
+	}
+	if result != nil && overflow {
+		g.place(result, target)
+		g.emit(Event{Type: "summon", Seat: s.Index, CardID: result.ID, X: target.X, Y: target.Y, Num: publicNum(result)})
+		// Shown to everyone as it goes, the way a crushed monster is.
+		result.FaceDown = false
+		g.bury(result, "overflow", noOne)
 		return nil
 	}
 	if result != nil {

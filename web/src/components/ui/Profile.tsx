@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { loadProfile, type DeckSummary, type DuelStats, type MatchSummary, type NamedTally, type Profile, type Tally } from "@/net/api";
+import { watchReplay } from "@/net/replay";
 import { useMenuStore } from "@/stores/menuStore";
 import { useSessionStore } from "@/stores/sessionStore";
 
@@ -340,6 +341,7 @@ function MatchRow({ match: m }: { match: MatchSummary; }) {
         <span className={`px-1.5 text-xs font-bold ${result.tone}`}>{result.label}{m.conceded && " · conceded"}</span>
         <span className="min-w-0">vs {people(m.opponents)}{m.allies.length > 0 && <span className="text-white/50"> · with {people(m.allies)}</span>}</span>
         <span className="ml-auto text-xs text-white/40">{ago(m.at)}</span>
+        {m.replay && <button className="border border-white/25 px-2 py-0.5 text-xs hover:border-yellow-400 pointer-coarse:py-2" onClick={() => watchReplay(m.replay!)}>▶ Replay</button>}
       </div>
       <p className="text-[11px] text-white/50">
         {m.mode} · {m.map}{m.deck && ` · ${m.deck}`} · {m.turns} turns · {duration(m.seconds)} · {n(m.lp)} LP left

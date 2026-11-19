@@ -1,6 +1,6 @@
 # Binaries
-server
-duelist-server
+/server
+/duelist-server
 *.exe
 *.exe~
 *.dll
@@ -34,17 +34,23 @@ web/dist
 web/dev-dist/
 web/.env
 web/.env.local
+# Game assets never live in web/public: the Go server serves them all from
+# content/assets at /assets. Kept ignored so a stray copy is never committed
+# (vite would also copy it into every build).
 web/public/attributes/
 web/public/audio/
 web/public/terrains/
 web/public/models/
 web/public/textures/
 web/public/cards/
+web/public/fonts/
 
 gcloud
 
-# Asset files served at /assets (see scripts/content/import_assets.sh)
-content/assets/
+# Asset files served at /assets (see scripts/content/import_assets.sh). Too big
+# for git, except the card font, which is small and has no other source.
+content/assets/*
+!content/assets/fonts/
 
 
 

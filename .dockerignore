@@ -9,6 +9,8 @@
 .dev
 data
 /assets
+# Old art kept for reference; the game never loads it.
+content/assets/legacy
 gcloud
 *.log
 .DS_Store

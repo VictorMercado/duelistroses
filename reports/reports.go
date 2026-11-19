@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"net"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -75,6 +74,7 @@ type Summary struct {
 	UserName    string    `json:"userName,omitempty"`
 	RoomID      string    `json:"roomId,omitempty"`
 	Build       string    `json:"build,omitempty"`
+	IP          string    `json:"ip,omitempty"`
 }
 
 // Group is every report of one bug.
@@ -130,8 +130,8 @@ func (s *Store) Register(mux *http.ServeMux) {
 		var raw string
 		var sum Summary
 		var at string
-		err := s.db.QueryRow(`SELECT id, received_at, kind, message, fingerprint, user_id, user_name, room_id, build, report FROM client_errors WHERE id = ?`, id).
-			Scan(&sum.ID, &at, &sum.Kind, &sum.Message, &sum.Fingerprint, &sum.UserID, &sum.UserName, &sum.RoomID, &sum.Build, &raw)
+		err := s.db.QueryRow(`SELECT id, received_at, kind, message, fingerprint, user_id, user_name, room_id, build, ip, report FROM client_errors WHERE id = ?`, id).
+			Scan(&sum.ID, &at, &sum.Kind, &sum.Message, &sum.Fingerprint, &sum.UserID, &sum.UserName, &sum.RoomID, &sum.Build, &sum.IP, &raw)
 		if errors.Is(err, sql.ErrNoRows) {
 			fail(w, http.StatusNotFound, "no such report")
 			return
@@ -161,7 +161,8 @@ func (s *Store) Register(mux *http.ServeMux) {
 }
 
 func (s *Store) receive(w http.ResponseWriter, r *http.Request) {
-	if !s.allow(clientIP(r)) {
+	ip := ClientIP(r)
+	if !s.allow(ip) {
 		fail(w, http.StatusTooManyRequests, "too many reports")
 		return
 	}
@@ -200,8 +201,8 @@ func (s *Store) receive(w http.ResponseWriter, r *http.Request) {
 	build := clip(strings.Trim(rep.Build.Version+" "+rep.Build.Commit, " "), 64)
 	fp := Fingerprint(rep.Kind, rep.Message, rep.Stack)
 
-	_, err := s.db.Exec(`INSERT OR IGNORE INTO client_errors (report_id, received_at, kind, message, fingerprint, user_id, user_name, room_id, build, report) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		rep.ID, db.Time(time.Now()), rep.Kind, rep.Message, fp, user.ID, user.Name, room, build, string(raw))
+	_, err := s.db.Exec(`INSERT OR IGNORE INTO client_errors (report_id, received_at, kind, message, fingerprint, user_id, user_name, room_id, build, ip, report) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		rep.ID, db.Time(time.Now()), rep.Kind, rep.Message, fp, user.ID, user.Name, room, build, ip, string(raw))
 	if err != nil {
 		log.Printf("client error report: %v", err)
 		fail(w, http.StatusInternalServerError, "could not save the report")
@@ -212,7 +213,7 @@ func (s *Store) receive(w http.ResponseWriter, r *http.Request) {
 	if who == "" {
 		who = "signed out"
 	}
-	log.Printf("client error [%s] %s (%s, fingerprint %s): %s", rep.Kind, who, build, fp, clip(rep.Message, 200))
+	log.Printf("client error [%s] %s from %s (%s, fingerprint %s): %s", rep.Kind, who, ip, build, fp, clip(rep.Message, 200))
 	s.prune()
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -236,7 +237,7 @@ func (s *Store) List(limit int, before int64, fingerprint string) ([]Summary, er
 	if before <= 0 {
 		before = 1 << 62
 	}
-	rows, err := s.db.Query(`SELECT id, received_at, kind, message, fingerprint, user_id, user_name, room_id, build FROM client_errors
+	rows, err := s.db.Query(`SELECT id, received_at, kind, message, fingerprint, user_id, user_name, room_id, build, ip FROM client_errors
 		WHERE id < ? AND (? = '' OR fingerprint = ?) ORDER BY id DESC LIMIT ?`, before, fingerprint, fingerprint, limit)
 	if err != nil {
 		return nil, err
@@ -246,7 +247,7 @@ func (s *Store) List(limit int, before int64, fingerprint string) ([]Summary, er
 	for rows.Next() {
 		var sum Summary
 		var at string
-		if err := rows.Scan(&sum.ID, &at, &sum.Kind, &sum.Message, &sum.Fingerprint, &sum.UserID, &sum.UserName, &sum.RoomID, &sum.Build); err != nil {
+		if err := rows.Scan(&sum.ID, &at, &sum.Kind, &sum.Message, &sum.Fingerprint, &sum.UserID, &sum.UserName, &sum.RoomID, &sum.Build, &sum.IP); err != nil {
 			return nil, err
 		}
 		sum.ReceivedAt = db.ParseTime(at)
@@ -345,14 +346,6 @@ func (s *Store) allow(ip string) bool {
 	return b.take(now, 20, 10) && s.global.take(now, 600, 100)
 }
 
-func clientIP(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return host
-}
-
 // --- helpers -----------------------------------------------------------------
 
 func (s *Store) admin(next http.HandlerFunc) http.HandlerFunc {
@@ -389,4 +382,96 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func fail(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+// --- internal (Grafana) ------------------------------------------------------
+
+// IPSummary is every report from one address.
+type IPSummary struct {
+	IP          string    `json:"ip"`
+	Reports     int       `json:"reports"`
+	Bugs        int       `json:"bugs"`
+	Users       string    `json:"users"`
+	FirstSeen   time.Time `json:"firstSeen"`
+	LastSeen    time.Time `json:"lastSeen"`
+	LastKind    string    `json:"lastKind"`
+	LastMessage string    `json:"lastMessage"`
+}
+
+// RegisterInternal adds the endpoints Grafana reads to the metrics address
+// (internal only: they need no token). Both take ?from=&to= in Unix
+// milliseconds (Grafana's ${__from} and ${__to}), the last 24 hours by default.
+//
+//	GET /internal/client-errors        the newest reports (?limit=, 500 at most; &ip= for one address)
+//	GET /internal/client-errors/ips    reports grouped by address, most first
+func (s *Store) RegisterInternal(handle func(string, http.Handler)) {
+	handle("GET /internal/client-errors", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		from, to := timeRange(r)
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		if limit <= 0 || limit > 500 {
+			limit = 500
+		}
+		ip := r.URL.Query().Get("ip")
+		rows, err := s.db.Query(`SELECT id, received_at, kind, message, fingerprint, user_id, user_name, room_id, build, ip FROM client_errors
+			WHERE received_at >= ? AND received_at <= ? AND (? = '' OR ip = ?) ORDER BY id DESC LIMIT ?`, from, to, ip, ip, limit)
+		if err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer rows.Close()
+		list := []Summary{}
+		for rows.Next() {
+			var sum Summary
+			var at string
+			if err := rows.Scan(&sum.ID, &at, &sum.Kind, &sum.Message, &sum.Fingerprint, &sum.UserID, &sum.UserName, &sum.RoomID, &sum.Build, &sum.IP); err != nil {
+				fail(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			sum.ReceivedAt = db.ParseTime(at)
+			list = append(list, sum)
+		}
+		writeJSON(w, http.StatusOK, list)
+	}))
+	handle("GET /internal/client-errors/ips", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		from, to := timeRange(r)
+		rows, err := s.db.Query(`SELECT c.ip, g.n, g.bugs, g.users, g.first, c.received_at, c.kind, c.message
+			FROM (SELECT ip, COUNT(*) n, COUNT(DISTINCT fingerprint) bugs, COALESCE(GROUP_CONCAT(DISTINCT NULLIF(user_name, '')), '') users,
+			             MIN(received_at) first, MAX(id) last
+			      FROM client_errors WHERE received_at >= ? AND received_at <= ? GROUP BY ip) g
+			JOIN client_errors c ON c.id = g.last
+			ORDER BY g.n DESC LIMIT 500`, from, to)
+		if err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer rows.Close()
+		list := []IPSummary{}
+		for rows.Next() {
+			var g IPSummary
+			var first, last string
+			if err := rows.Scan(&g.IP, &g.Reports, &g.Bugs, &g.Users, &first, &last, &g.LastKind, &g.LastMessage); err != nil {
+				fail(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if g.IP == "" {
+				g.IP = "(before IPs were kept)"
+			}
+			g.FirstSeen, g.LastSeen = db.ParseTime(first), db.ParseTime(last)
+			list = append(list, g)
+		}
+		writeJSON(w, http.StatusOK, list)
+	}))
+}
+
+// timeRange reads ?from= and ?to= (Unix milliseconds) as stored timestamps.
+func timeRange(r *http.Request) (string, string) {
+	to := time.Now()
+	from := to.Add(-24 * time.Hour)
+	if ms, err := strconv.ParseInt(r.URL.Query().Get("from"), 10, 64); err == nil {
+		from = time.UnixMilli(ms)
+	}
+	if ms, err := strconv.ParseInt(r.URL.Query().Get("to"), 10, 64); err == nil {
+		to = time.UnixMilli(ms)
+	}
+	return db.Time(from), db.Time(to)
 }

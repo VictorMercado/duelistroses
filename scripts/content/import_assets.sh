@@ -1,5 +1,7 @@
 #!/bin/sh
 # Copies game assets into content/assets, which the server serves at /assets.
+# content/assets is the only home for them: the client loads every image,
+# sound and font from the server, never from web/public.
 #
 #   sh scripts/content/import_assets.sh [path-to-source-repo]
 #
@@ -9,6 +11,8 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GAME="${1:-$ROOT}"
 DEST="$ROOT/content/assets"
 SPRITES="$GAME/assets/yugiohAssets/game assets/PlayStation 2 - Yu-Gi-Oh! The Duelists of the Roses - Miscellaneous - Cards"
+# An older checkout kept terrains, textures, attributes and audio in
+# web/public; they are copied over when found there.
 PUBLIC="$GAME/web/public"
 
 mkdir -p "$DEST/cards"
@@ -23,7 +27,9 @@ fi
 
 # The back of a face-down card. Card art is drawn from the numbered sprites
 # (upscaled by upscale_cards.py, masked by build_masks.py): no HD folder.
-[ -f "$PUBLIC/cards/mysteryCard.png" ] && cp "$PUBLIC/cards/mysteryCard.png" "$DEST/cards/"
+if [ -f "$PUBLIC/cards/mysteryCard.png" ] && [ "$PUBLIC" != "$ROOT/web/public" ]; then
+  cp "$PUBLIC/cards/mysteryCard.png" "$DEST/cards/"
+fi
 
 for dir in terrains textures attributes audio fonts; do
   if [ -d "$PUBLIC/$dir" ]; then

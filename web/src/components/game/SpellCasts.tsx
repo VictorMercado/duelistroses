@@ -2,7 +2,8 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { AdditiveBlending, Group, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from "three";
 import YugiohCard from "./YugiohCard";
-import { previewRenderCard } from "@/game/catalog";
+import { isRitualCast } from "@/stores/ritualStore";
+import { cardName, previewRenderCard } from "@/game/catalog";
 import { useGameStore } from "@/stores/gameStore";
 
 // The card's face, in board units (see YugiohCard).
@@ -105,8 +106,10 @@ export default function SpellCasts({ facingFor, isEnemy }: { facingFor: (seat: n
   useEffect(() => useGameStore.subscribe((state, previous) => {
     if (state.eventSeq === previous.eventSeq) return;
     const fresh = state.lastEvents
-      // A deck leader winning by its passive (Exodia) glows on the leader the same way.
-      .filter((e) => (e.type === "spell" || e.type === "trap" || e.type === "leaderWin") && e.num !== undefined)
+      // A deck leader winning by its passive glows on the leader the same way (Exodia has its own show: see Exodia).
+      .filter((e) => (e.type === "spell" || e.type === "trap" || (e.type === "leaderWin" && !cardName(e.num).includes("Exodia"))) && e.num !== undefined)
+      // A ritual card goes off in its rite instead (see RitualRites).
+      .filter((e) => !isRitualCast(e, state.lastEvents))
       .map((e, i) => ({ key: `${state.eventSeq}:${i}`, num: e.num!, x: e.x, y: e.y, seat: e.seat, trap: e.type === "trap" }));
     if (fresh.length) setCasts((current) => [...current, ...fresh]);
   }), []);

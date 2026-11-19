@@ -42,6 +42,8 @@ type Match struct {
 	WinnerTeam int
 	StartLP    int
 	Seats      []Seat
+	// Replay is the id of the duel's recording, empty if there is none.
+	Replay string
 }
 
 const (
@@ -88,6 +90,8 @@ type Summary struct {
 	Allies    []Seat       `json:"allies"`
 	Opponents []Seat       `json:"opponents"`
 	Stats     engine.Stats `json:"stats"`
+	// Replay is the id of the duel's recording (see package replay).
+	Replay string `json:"replay,omitempty"`
 }
 
 // Record is everything kept about one duelist.
@@ -315,7 +319,7 @@ func (r *Record) add(m Match, me Seat) {
 
 	summary := Summary{
 		At: m.Ended, Room: m.Room, Mode: m.Mode, Map: m.Map, Result: result, Conceded: me.Conceded,
-		Deck: me.Deck, LP: me.LP, Turns: m.Turns, Seconds: seconds, Stats: me.Stats,
+		Deck: me.Deck, LP: me.LP, Turns: m.Turns, Seconds: seconds, Stats: me.Stats, Replay: m.Replay,
 		Allies: []Seat{}, Opponents: []Seat{},
 	}
 	humans := false

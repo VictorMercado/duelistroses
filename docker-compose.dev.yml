@@ -1,0 +1,15 @@
+# Local dev overlay for the monitoring stack (used by ./dev.sh).
+#
+# In dev the game server runs on the host (go run .), not in the `app`
+# container, so point the name `app` at the host: Prometheus then scrapes
+# host:9091 and Grafana's Infinity datasource reads host:9091 unchanged.
+# Started with --no-deps, so the app container is never built or run.
+services:
+  prometheus:
+    restart: "no"
+    extra_hosts:
+      - "app:host-gateway"
+  grafana:
+    restart: "no"
+    extra_hosts:
+      - "app:host-gateway"

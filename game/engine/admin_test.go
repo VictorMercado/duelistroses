@@ -114,3 +114,50 @@ func TestUnlimited(t *testing.T) {
 		t.Error("the sandbox view does not show every hand")
 	}
 }
+
+func TestSandboxFusionHints(t *testing.T) {
+	g := duel(t, 1, 2)
+	drake := put(g, 2, 0, 0, -2, false)
+	put(g, 2, 1, 0, 2, false) // the opponent's: never a hint
+	hints := g.ViewSandbox(0).FusionHints
+	pairs, onto := 0, 0
+	for _, h := range hints {
+		if h.Result != 9 {
+			t.Fatalf("hint %+v: want Grunt + Drake = card 9", h)
+		}
+		if h.OnField {
+			onto++
+			if h.X != drake.Pos.X || h.Y != drake.Pos.Y {
+				t.Fatalf("hint %+v is not onto our Drake", h)
+			}
+		} else {
+			pairs++
+		}
+	}
+	// The hand is Grunt, Drake, Grunt, Drake, Grunt: 3 × 2 pairs, and 3 Grunts onto the Drake.
+	if pairs != 6 || onto != 3 {
+		t.Fatalf("%d pairs and %d onto the field, want 6 and 3", pairs, onto)
+	}
+	if g.view(0, false).FusionHints != nil {
+		t.Fatal("a player's own view has fusion hints")
+	}
+}
+
+func TestAdminSetTerrain(t *testing.T) {
+	g := duel(t)
+	tiles := map[Pos]string{}
+	for x := -3; x <= 3; x++ {
+		for y := -3; y <= 3; y++ {
+			tiles[Pos{x, y}] = TerrainForest
+		}
+	}
+	if err := g.AdminSetTerrain(0, map[Pos]string{{0, 0}: TerrainForest}); err == nil {
+		t.Fatal("a map that does not cover the board was laid")
+	}
+	if err := g.AdminSetTerrain(0, tiles); err != nil {
+		t.Fatal(err)
+	}
+	if g.Tiles[Pos{2, 2}] != TerrainForest {
+		t.Fatal("the terrain did not change")
+	}
+}

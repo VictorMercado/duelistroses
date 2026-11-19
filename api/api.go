@@ -20,6 +20,7 @@ import (
 	"duelistRoses/content"
 	"duelistRoses/game"
 	"duelistRoses/profile"
+	"duelistRoses/replay"
 )
 
 type Server struct {
@@ -30,6 +31,8 @@ type Server struct {
 	LLMDefault  string
 	DefaultTurn int
 	Profiles    *profile.Store
+	// Replays holds recorded duels; nil serves none.
+	Replays *replay.Store
 	// Arena runs administrators' test games between computer players.
 	Arena *game.Arena
 	// CardLab is the Claude conversation that designs cards.
@@ -99,6 +102,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	s.registerFriends(mux)
 	s.registerAdmin(mux)
 	s.registerProfiles(mux)
+	s.registerReplays(mux)
 }
 
 // Map choices that are not a map id.

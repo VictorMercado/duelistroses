@@ -63,6 +63,8 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/duelist.json
+      # Infinity reads the game server's client error reports (with IPs) from app:9091.
+      GF_PLUGINS_PREINSTALL_SYNC: yesoreyeram-infinity-datasource
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro

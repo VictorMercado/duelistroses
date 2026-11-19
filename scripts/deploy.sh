@@ -122,6 +122,18 @@ else
   echo "warning: no $SECRETS_FILE; using .env as it is" >&2
 fi
 
+# --- 1c. Assets -------------------------------------------------------------
+# Card art, textures, sounds and music are not in git: the pre-push hook copies
+# them here before the push (scripts/server/prepare.sh). Building without them
+# would ship a game with no cards, so stop instead.
+STAGE="checking content/assets"
+cards=$(find content/assets/cards -maxdepth 1 -name '*.png' 2>/dev/null | wc -l)
+[[ "$cards" -ge 100 ]] \
+  || die "content/assets has $cards card images: push from a clone with the assets and the pre-push hook installed (sh scripts/install-hooks.sh), which copies them here first"
+[[ -d content/assets/audio && -d content/assets/textures && -d content/assets/terrains ]] \
+  || die "content/assets is missing audio, textures or terrains: push again from a clone with the assets"
+echo "assets: $cards card images"
+
 # --- 2. Build (old container keeps serving meanwhile) -----------------------
 if docker image inspect "$IMAGE" >/dev/null 2>&1; then
   docker tag "$IMAGE" "$PREVIOUS"

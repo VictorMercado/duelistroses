@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { VoiceButton, VoicePanel } from "./Voice";
 import { create } from "zustand";
 import { selectCanPause, selectPerspective, useGameStore } from "@/stores/gameStore";
 import { useSessionStore } from "@/stores/sessionStore";
@@ -7,10 +8,13 @@ import { closeTilePreview, commitPicked, graveyardOf, handOwner, visibleHand, in
 import { GLYPHS } from "@/input/actions";
 import { keyFor } from "@/input/keyboard";
 import { session } from "@/net/session";
+import { useReplaying } from "@/net/replay";
 import CardFace from "./CardFace";
 import { buttonColor, hintsFor, terrainOf, trackBarHeight, type Hint } from "@/game/hints";
 import { ASSET_URL, MONSTER_KINDS, NEGATIVE_TERRAIN, POSITIVE_TERRAIN } from "@/const";
 import type { TerrainType } from "@/types";
+import ExodiaOverlay from "./ExodiaOverlay";
+import { useExodiaStore } from "@/stores/exodiaStore";
 
 // What each terrain does, worked out from the type table in const.ts so the
 // panel can never disagree with it.
@@ -190,7 +194,9 @@ export function ActionBar() {
   const busy = useInteraction((s) => s.busy);
   const view = useGameStore((s) => s.view);
   const seat = useGameStore((s) => s.seat);
-  if (!view || view.phase !== "playing") return null;
+  // A replay keeps the bar on its last step too, to look through the hands and graveyards.
+  const replaying = useReplaying();
+  if (!view || (view.phase !== "playing" && !replaying)) return null;
 
   // Knocked out of a team game: no more orders, just the rest of the duel to watch.
   if (seat >= 0 && view.seats[seat] && !view.seats[seat].alive) {
@@ -209,6 +215,8 @@ export function ActionBar() {
   // A choice the server asks of me (e.g. a trap response) can come on the opponent's turn.
   const enemyTurn = seat >= 0 && !myTurn && !choosing;
   const label = (action: Hint[0]) => (action === "COMMIT" ? "" : device === "gamepad" ? GLYPHS.gamepad[action] : keyFor(action).toUpperCase());
+  // Watching with every hand in view, Hand opens the hand of the deck leader last tapped
+  // (or under the cursor), else of whoever's turn it is; the hand view says whose.
   const hints = hintsFor(mode, choosing, stagedDefense(view, mode), myTurn);
   const staged = mode.kind === "card" && (mode.flip || mode.switchPosition);
   // Phones show every action at once in (at most) two rows: no scrolling.
@@ -267,15 +275,18 @@ export function TurnRow() {
   const busy = useInteraction((s) => s.busy);
   const myTurn = useGameStore((s) => !!s.view && s.view.phase === "playing" && s.seat >= 0 && s.view.turn === s.seat && !s.view.pending);
   const logOpen = useLogOpen((s) => s.open);
+  const replaying = useReplaying();
   return (
     <div className="pointer-events-none absolute bottom-[calc(var(--bar-h)+0.5rem+var(--hud-bottom))] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2">
       <button
         onClick={() => useLogOpen.setState({ open: !logOpen })}
         className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center border border-white/20 bg-black/80 text-base sm:hidden"
-        aria-label={logOpen ? "Hide the log and chat" : "Show the log and chat"}
+        aria-label={logOpen ? (replaying ? "Hide the log" : "Hide the log and chat") : (replaying ? "Show the log" : "Show the log and chat")}
       >
-        {logOpen ? "✕" : "💬"}
+        {logOpen ? "✕" : replaying ? "📜" : "💬"}
       </button>
+      {/* A replay has nobody to talk to. */}
+      {!replaying && <VoiceButton className="pointer-events-auto" />}
       {myTurn && (
         <button
           onClick={() => press("END_TURN")}
@@ -307,6 +318,19 @@ export function HandView() {
   const seatView = view.seats[owner];
   const watching = seat < 0;
   const ownerName = players[owner]?.name || `Seat ${owner + 1}`;
+  // The sandbox tells which cards fuse: with the card in focus, and every recipe in reach.
+  const hints = owner === seat ? view.fusionHints ?? [] : [];
+  const focused = hand[handIndex]?.id;
+  const partners = new Map<number, number>();
+  const fusable = new Set<number>();
+  for (const h of hints) {
+    fusable.add(h.a);
+    if (h.onField) continue;
+    fusable.add(h.b);
+    if (h.a === focused) partners.set(h.b, h.result);
+    if (h.b === focused) partners.set(h.a, h.result);
+  }
+  const nameOf = (id: number) => catalogCard(hand.find((c) => c.id === id)?.num ?? HIDDEN_NUM)?.name ?? "?";
 
   return (
     <div className="absolute inset-x-0 bottom-[calc(var(--bar-h)+var(--hud-bottom))] z-40 flex flex-col items-center gap-2 bg-gradient-to-t from-black via-black/90 to-transparent px-2 pb-3 pt-6 font-mono text-xs text-white [@media(max-height:500px)]:pt-4">
@@ -321,13 +345,28 @@ export function HandView() {
               onClick={() => pointHand(index)}
               className={`relative min-w-0 max-w-36 flex-1 basis-0 transition-transform [@media(max-height:500px)]:max-w-20 ${index === handIndex ? "-translate-y-4" : "opacity-80"}`}
             >
-              <CardFace num={card.num} className={`w-full ${index === handIndex ? "ring-4 ring-yellow-400" : ""} ${picked ? "ring-4 ring-emerald-400" : ""} ${tooCostly ? "grayscale" : ""}`} />
+              <CardFace num={card.num} className={`w-full ${index === handIndex ? "ring-4 ring-yellow-400" : partners.has(card.id) ? "ring-4 ring-fuchsia-400" : ""} ${picked ? "ring-4 ring-emerald-400" : ""} ${tooCostly ? "grayscale" : ""}`} />
               {picked && <span className="absolute -top-2 right-0 bg-emerald-500 px-1 text-[10px] font-bold text-black">FUSE {mode.picked.indexOf(card.id) + 1}</span>}
               {tooCostly && <span className="absolute inset-x-0 bottom-1 mx-auto w-fit bg-black/80 px-1 text-[10px] text-red-300">needs ★{def?.level}</span>}
+              {fusable.has(card.id) && !picked && <span className="absolute -top-2 left-0 bg-fuchsia-500 px-1 text-[10px] font-bold text-black" title="Fuses with something in reach">⚗</span>}
+              {partners.has(card.id) && (
+                <span className="absolute inset-x-0 top-1/3 mx-auto w-fit max-w-full truncate bg-fuchsia-950/90 px-1 text-[10px] text-fuchsia-100 ring-1 ring-fuchsia-400">
+                  ⚗ → {catalogCard(partners.get(card.id)!)?.name ?? "?"}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
+      {hints.length > 0 && (
+        <ul className="flex max-h-16 w-full max-w-3xl flex-wrap justify-center gap-x-3 overflow-y-auto text-[11px] text-fuchsia-200">
+          {hints.map((h, i) => (
+            <li key={i}>
+              ⚗ {nameOf(h.a)} + {h.onField ? `${catalogCard(view.cards.find((c) => c.x === h.x && c.y === h.y)?.num ?? HIDDEN_NUM)?.name ?? "your monster"} (${h.x}, ${h.y})` : nameOf(h.b)} → <span className="font-bold">{catalogCard(h.result)?.name ?? `#${h.result}`}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {watching && view.reveal && <p className="text-sky-200">{ownerName}'s hand. Tap another deck leader to see theirs.</p>}
       {watching && !view.reveal && <p className="text-sky-200">You are watching: this is the hand of the duelist you are spectating.</p>}
       <p className="text-white/50">★ {seatView?.stars} summoning stars · {seatView?.playsLeft ? "1 card may be played this turn" : "no card play left this turn"}</p>
@@ -482,6 +521,9 @@ export function EventLog() {
 
   const player = seat >= 0;
   const silenced = !player && muted;
+  // Watching a replay: the log is there to read, with no chat or voice (there is no room to reach).
+  const replaying = useReplaying();
+  const what = replaying ? "the log" : "the log and chat";
   return (
     <>
       {/* Phones: the log opens over the board from the chat button (TurnRow); larger screens show it until it is closed. */}
@@ -489,10 +531,10 @@ export function EventLog() {
         <button
           onClick={() => setWideOpen(true)}
           className="absolute bottom-[calc(var(--bar-h)+0.5rem+var(--hud-bottom))] left-[max(0.5rem,env(safe-area-inset-left))] z-30 hidden h-10 w-10 items-center justify-center border border-white/20 bg-black/80 text-base hover:border-white/50 sm:flex lg:bottom-[calc(var(--hud-bottom)+10.5rem)]"
-          aria-label="Show the log and chat"
-          title="Show the log and chat"
+          aria-label={`Show ${what}`}
+          title={`Show ${what}`}
         >
-          💬
+          {replaying ? "📜" : "💬"}
           {unread && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 bg-yellow-300" />}
         </button>
       )}
@@ -500,8 +542,8 @@ export function EventLog() {
       <button
         onClick={() => setWideOpen(false)}
         className="absolute right-1 top-1 z-10 hidden h-5 w-5 items-center justify-center text-white/50 hover:bg-white/10 hover:text-white sm:flex"
-        aria-label="Hide the log and chat"
-        title="Hide the log and chat"
+        aria-label={`Hide ${what}`}
+        title={`Hide ${what}`}
       >
         ✕
       </button>
@@ -509,7 +551,8 @@ export function EventLog() {
         {log.slice(-30).map((entry) => <p key={entry.id} className={TONES[entry.tone]}>{entry.text}</p>)}
         <div ref={end} />
       </div>
-      <form
+      {!replaying && <VoicePanel />}
+      {!replaying && <form
         className="mt-1 flex gap-1 border-t border-white/10 pt-1"
         onSubmit={(e) => { e.preventDefault(); if (text.trim()) { session.chat(text); setText(""); } }}
       >
@@ -533,7 +576,7 @@ export function EventLog() {
             {muted ? "Spectators muted" : "Mute spectators"}
           </button>
         )}
-      </form>
+      </form>}
     </div>
     </>
   );
@@ -646,6 +689,9 @@ export function GameOver({ onLeave }: { onLeave: () => void; }) {
   const perspective = useGameStore(selectPerspective);
   const room = useGameStore((s) => s.room);
   const user = useSessionStore((s) => s.user);
+  // Exodia's win plays out on the board first.
+  const exodia = useExodiaStore((s) => s.stage !== "idle");
+  if (exodia) return <ExodiaOverlay />;
   if (!view || view.phase !== "finished") return null;
   // A duel between computer players is restarted by whoever set it up.
   const canRematch = seat >= 0 || (!!room && !!user && room.seats.every((s) => s.kind === "bot") && (room.hostId === user.id || !!user.admin));

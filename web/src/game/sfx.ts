@@ -6,7 +6,7 @@ const FILES = {
   move: 'movement.wav', select: 'select.wav', blip: 'blip.wav', cant: 'youcant.wav', cancel: 'cancel.wav', infoUp: 'infoup.wav',
   destroyed: 'destroyed.wav', spell: 'magic1.wav', trap: 'trap.wav', powerup: 'powerup.wav',
   bind: 'paralyzepotion.wav', terrain: 'alterTerrain.wav',
-  cleanboard: 'cleanboard.wav', endTurn: 'endturn.wav', cardIn: 'cardin.wav', bonk: 'cardbonk.wav', flip: 'flip.wav',
+  endTurn: 'endturn.wav', cardIn: 'cardin.wav', bonk: 'cardbonk.wav', flip: 'flip.wav',
   lifePoints: 'lifepoints.wav', lifeAttack: 'fireInflictLifePoints.wav', hurt: 'hurt.wav',
 } as const;
 
@@ -30,7 +30,7 @@ export type SfxChannel = 'field' | 'hand';
 
 const CHANNEL: Record<Sfx, SfxChannel> = {
   move: 'field', destroyed: 'field', spell: 'field', trap: 'field', powerup: 'field', bind: 'field',
-  terrain: 'field', cleanboard: 'field', endTurn: 'field', cardIn: 'field', bonk: 'field',
+  terrain: 'field', endTurn: 'field', cardIn: 'field', bonk: 'field',
   lifePoints: 'field', lifeAttack: 'field', hurt: 'field',
   select: 'hand', blip: 'hand', cant: 'hand', cancel: 'hand', infoUp: 'hand', flip: 'hand',
 };
@@ -178,9 +178,9 @@ function playElement(name: Sfx, volume: number) {
 
 /** Sounds that accompany almost every update, and give way to anything more telling. */
 const ROUTINE: Sfx[] = ['blip', 'move'];
-/** A sound that covers others in the same update: a board wipe is one sound, not a pile of destructions. */
+/** A sound that covers others in the same update. */
 // Gaining or losing life points arrives with the spell that caused it: the life point sound says more.
-const COVERS: Partial<Record<Sfx, Sfx[]>> = { cleanboard: ['destroyed', 'spell'], lifePoints: ['spell'], lifeAttack: ['spell'] };
+const COVERS: Partial<Record<Sfx, Sfx[]>> = { lifePoints: ['spell'], lifeAttack: ['spell'] };
 
 /**
  * Plays the sounds one server update produced. Events in an update happen at

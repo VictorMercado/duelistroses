@@ -16,6 +16,8 @@ import ProfileModal, { AvatarButton } from "./ProfileModal";
 import { poll, POLL } from "@/net/poll";
 import { ensureCatalog, mainMonsterType } from "@/game/catalog";
 import { preloadCards } from "@/game/preload";
+import { ReplayList } from "./Replays";
+import { watchReplay } from "@/net/replay";
 
 // Map choices the server understands besides a map id. The picker's empty value means RANDOM_MAP.
 const RANDOM_MAP = "random";
@@ -404,6 +406,12 @@ export default function Lobby() {
     setBackdrop(map ? { size: map.size, tiles: map.tiles } : null);
   }, [token, maps, mapId, setMapId, setBackdrop]);
 
+  // Opening the page with ?replay=id plays that recorded duel; anyone may, signed in or not.
+  useEffect(() => {
+    const replay = new URLSearchParams(window.location.search).get("replay");
+    if (replay) watchReplay(replay);
+  }, []);
+
   // Opening the page with ?room=name joins that room straight away.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -615,6 +623,8 @@ export default function Lobby() {
           {rooms.length === 0 && <p className="text-sm text-white/50">No public games right now. Start one!</p>}
           {!signedIn && rooms.length > 0 && <p className="text-xs text-white/50">Sign in to join or watch.</p>}
           {rooms.map((room) => <GameRow key={room.id} room={room} signedIn={signedIn} admin={!!user?.admin} />)}
+          <p className="mt-4 font-bold text-yellow-200">Recent duels</p>
+          <ReplayList />
         </div>
         <div className={shownOn("friends")}>
           {signedIn ? <Friends inRoom={false} /> : <p className="text-sm text-white/50 lg:hidden">Sign in to add friends and invite them to a duel.</p>}

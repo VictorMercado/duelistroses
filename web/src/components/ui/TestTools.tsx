@@ -1,13 +1,18 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { allCards, catalogCard } from "@/game/catalog";
 import { useInteraction } from "@/game/interaction";
 import { session } from "@/net/session";
 import { useGameStore } from "@/stores/gameStore";
+import { useSessionStore } from "@/stores/sessionStore";
+import { listMaps, type MapSummary } from "@/net/api";
 import CardFace from "@/components/ui/CardFace";
 import { ThoughtList } from "@/components/ui/GameOverlays";
+import { ANIMATIONS, canPreview, playAll, playPreview, stopPreview, usePreviewStore } from "@/game/animationPreview";
 
 const button = " border border-white/20 px-2 py-1 hover:border-fuchsia-300 disabled:opacity-40 pointer-coarse:py-2";
 const KINDS = ["all", "monster", "spell", "trap", "ritual"] as const;
+/** Cards listed per page in the card browser. */
+const PAGE_SIZE = 50;
 
 /**
  * An administrator's test tools while playing: any card into the hand or
@@ -26,12 +31,17 @@ export default function TestTools({ inHud = false }: { inHud?: boolean }) {
   const [toggled, setOpen] = useState<boolean | null>(null);
   const open = toggled ?? sandbox;
   const thoughts = useGameStore((s) => s.thoughts.length);
-  const [chosen, setTab] = useState<"cards" | "deck" | "thinking">("cards");
+  const [chosen, setTab] = useState<"cards" | "deck" | "thinking" | "animations">("cards");
   if (!tools || !playing) return null;
   // The thinking tab is there only while a Claude player has thought something.
-  const tab = chosen === "thinking" && thoughts === 0 ? "cards" : chosen;
-  const tabs = thoughts > 0 ? (["cards", "deck", "thinking"] as const) : (["cards", "deck"] as const);
-  const label = { cards: "Any card", deck: "My deck", thinking: `🧠 Thinking (${thoughts})` };
+  const tab = (chosen === "thinking" && thoughts === 0) || (chosen === "animations" && !sandbox) ? "cards" : chosen;
+  // The animation tester is the sandbox's: it plays on the board, for nobody else.
+  const tabs = [
+    "cards", "deck",
+    ...(sandbox ? ["animations"] as const : []),
+    ...(thoughts > 0 ? ["thinking"] as const : []),
+  ] as const;
+  const label = { cards: "Any card", deck: "My deck", animations: "🎬 Animations", thinking: `🧠 Thinking (${thoughts})` };
 
   return (
     <div className={`font-mono text-[11px] text-white ${inHud ? "relative lg:hidden" : "absolute left-2 top-24 z-30 max-lg:hidden"}`}>
@@ -52,11 +62,55 @@ export default function TestTools({ inHud = false }: { inHud?: boolean }) {
               ⟳ Refresh turn
             </button>
           </div>
-          {tab === "cards" ? <CardBrowser /> : tab === "deck" ? <DeckEditor /> : (
+          {tab === "cards" ? <CardBrowser /> : tab === "deck" ? <DeckEditor /> : tab === "animations" ? <AnimationTester /> : (
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain"><ThoughtList /></div>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Every animation the board plays, each a button away (see game/animationPreview).
+ * They play here only: the duel is not touched, and the board goes back to how
+ * it was when one ends. Ones marked ◎ play on the card under the board cursor.
+ */
+function AnimationTester() {
+  const playing = usePreviewStore((s) => s.playing);
+  const cursor = useInteraction((s) => s.cursor);
+  // Re-rendered with the board, so the buttons know whether a card is under the cursor.
+  useGameStore((s) => s.serverView);
+  return (
+    <div className="flex min-h-0 flex-col gap-1">
+      <p className="text-white/60">
+        Plays on the square under the board cursor ({cursor.x}, {cursor.y}): point at a card to use it, or at an empty square for a stand-in.
+      </p>
+      <div className="flex gap-1">
+        <button className={button} disabled={!!playing} onClick={() => void playAll()}>▶ Play all</button>
+        <button className={button} disabled={!playing} onClick={stopPreview}>■ Stop</button>
+      </div>
+      <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {ANIMATIONS.map((a) => {
+          const ready = canPreview(a);
+          return (
+            <li key={a.id} className={`flex items-start gap-2 border-t border-white/10 py-1.5 ${playing === a.id ? "bg-fuchsia-900/40" : ""}`}>
+              <button
+                className={`${button} shrink-0`}
+                disabled={!ready}
+                title={ready ? "Play it" : "Point the board cursor at a card first"}
+                onClick={() => void playPreview(a)}
+              >
+                {playing === a.id ? "…" : "▶"}
+              </button>
+              <span className="min-w-0">
+                <span className="font-bold text-fuchsia-100">{a.label}{a.needsTarget && <span className="text-white/50" title="Plays on the card under the board cursor"> ◎</span>}</span>
+                <span className="block text-white/55">{a.note}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -95,6 +149,57 @@ function SandboxControls() {
         <input type="checkbox" checked={sandbox.unlimited} onChange={(e) => session.adminTool({ op: "unlimited", on: e.target.checked })} />
         Free play (no star cost, unlimited plays and field slots)
       </label>
+      <MapPicker />
+    </div>
+  );
+}
+
+/**
+ * The sandbox's map: any saved map we may use, or freshly generated terrain.
+ * One the board's size is laid under the duel as it stands; another size deals
+ * a new duel on it, so that asks first.
+ */
+function MapPicker() {
+  const token = useSessionStore((s) => s.token);
+  const current = useGameStore((s) => s.room?.mapName);
+  const size = useGameStore((s) => s.view?.size ?? 7);
+  const [maps, setMaps] = useState<MapSummary[] | null>(null);
+  const [chosen, setChosen] = useState("");
+
+  useEffect(() => {
+    let live = true;
+    listMaps(token).then((list) => live && setMaps(list)).catch(() => live && setMaps([]));
+    return () => { live = false; };
+  }, [token]);
+
+  const sorted = useMemo(() => [...(maps ?? [])].sort((a, b) => a.size - b.size || a.name.localeCompare(b.name)), [maps]);
+  const map = sorted.find((m) => m.id === chosen);
+  const apply = () => {
+    if (map && map.size !== size && !window.confirm(`${map.name} is ${map.size}×${map.size}, this board is ${size}×${size}: a new duel starts on it. Continue?`)) return;
+    session.adminTool({ op: "map", map: chosen });
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <span className="text-white/60" title="The map in play">Map: <span className="text-fuchsia-100">{current ?? "?"}</span></span>
+      <div className="flex w-full gap-1">
+        <select
+          className="min-w-0 flex-1 border border-white/20 bg-black/60 px-1 py-1"
+          value={chosen}
+          onChange={(e) => setChosen(e.target.value)}
+          disabled={!maps}
+        >
+          <option value="">{maps ? "🎲 Freshly generated terrain" : "Loading maps…"}</option>
+          {sorted.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name} · {m.size}×{m.size}{m.size !== size ? " (new duel)" : ""}{m.preset ? "" : ` · ${m.ownerName}`}
+            </option>
+          ))}
+        </select>
+        <button className={button} onClick={apply} title={chosen ? "Lay this map's terrain under the duel" : "Generate new terrain for this board"}>
+          {chosen ? "Use map" : "Regenerate"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -139,6 +244,7 @@ function CardBrowser() {
   const [faceUp, setFaceUp] = useState(false);
   const [kind, setKind] = useState<(typeof KINDS)[number]>("all");
   const [picked, setPicked] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
   const cursor = useInteraction((s) => s.cursor);
   const search = useDeferredValue(query.trim().toLowerCase());
 
@@ -147,8 +253,11 @@ function CardBrowser() {
     return allCards()
       .filter((c) => kind === "all" || c.kind === kind)
       .filter((c) => !search || c.num === byNum || c.name.toLowerCase().includes(search) || c.type?.includes(search))
-      .slice(0, 100);
+      .sort((a, b) => a.num - b.num);
   }, [search, kind]);
+  const pages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+  const shown = Math.min(page, pages - 1);
+  const pageCards = matches.slice(shown * PAGE_SIZE, (shown + 1) * PAGE_SIZE);
 
   const card = picked !== null ? catalogCard(picked) : undefined;
   return (
@@ -158,9 +267,9 @@ function CardBrowser() {
           className="min-w-0 flex-1 border border-white/20 bg-black/60 px-2 py-1 text-[12px] outline-none focus:border-fuchsia-300"
           placeholder="Search name, number or type"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setPage(0); }}
         />
-        <select className="border border-white/20 bg-black/60 px-1" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+        <select className="border border-white/20 bg-black/60 px-1" value={kind} onChange={(e) => { setKind(e.target.value as typeof kind); setPage(0); }}>
           {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
         </select>
       </div>
@@ -189,14 +298,24 @@ function CardBrowser() {
         </div>
       )}
 
+      <div className="flex items-center gap-1 text-white/60">
+        <button className={button} disabled={shown === 0} onClick={() => setPage(0)} title="First page">«</button>
+        <button className={button} disabled={shown === 0} onClick={() => setPage(shown - 1)} title="Previous page">‹</button>
+        <span className="flex-1 text-center">
+          {matches.length ? `${shown * PAGE_SIZE + 1}–${shown * PAGE_SIZE + pageCards.length} of ${matches.length}` : "0 cards"} · page {shown + 1}/{pages}
+        </span>
+        <button className={button} disabled={shown >= pages - 1} onClick={() => setPage(shown + 1)} title="Next page">›</button>
+        <button className={button} disabled={shown >= pages - 1} onClick={() => setPage(pages - 1)} title="Last page">»</button>
+      </div>
+
       <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {matches.map((c) => (
+        {pageCards.map((c) => (
           <li key={c.num}>
             <button
               className={`flex w-full justify-between gap-2 px-1 py-0.5 text-left hover:bg-white/10 pointer-coarse:py-1.5 ${c.num === picked ? "bg-fuchsia-900/50" : ""}`}
               onClick={() => setPicked(c.num)}
             >
-              <span className="truncate">{c.name}</span>
+              <span className="truncate"><span className="text-white/40">#{c.num}</span> {c.name}</span>
               <span className="shrink-0 text-white/50">{c.kind === "monster" ? `${c.atk}/${c.def}` : c.kind}</span>
             </button>
           </li>

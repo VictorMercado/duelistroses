@@ -136,6 +136,8 @@ type View struct {
 	// Deck is the viewer's own remaining deck, top card first. Only an
 	// administrator playing a duel gets it, for the test tools.
 	Deck []int `json:"deck,omitempty"`
+	// FusionHints is the fusions the viewer's hand can make, in the sandbox only.
+	FusionHints []FusionHint `json:"fusionHints,omitempty"`
 	// Peek is the opponents' hands, for the turn the viewer cast The Eye of Truth.
 	Peek []PeekView `json:"peek,omitempty"`
 }

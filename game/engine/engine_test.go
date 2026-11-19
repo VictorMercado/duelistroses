@@ -178,7 +178,32 @@ func TestFieldLimit(t *testing.T) {
 		put(g, 1, 0, x, -1, true)
 		_ = i
 	}
-	refuse(t, g, 0, Action{Type: ActSummon, CardID: g.Seats[0].Hand[0].ID, X: 0, Y: -2})
+	s := g.Seats[0]
+	card := s.Hand[0]
+	stars := s.Stars
+	// A full field does not stop the play: the card lands and is destroyed at once.
+	must(t, g, 0, Action{Type: ActSummon, CardID: card.ID, X: 0, Y: -2})
+	if card.OnBoard || g.Board[Pos{0, -2}] != nil {
+		t.Fatal("a monster played onto a full field is destroyed on arrival")
+	}
+	if len(s.Graveyard) != 1 || s.Graveyard[0] != card.Def.Num {
+		t.Fatalf("graveyard %v, want the overflowing card", s.Graveyard)
+	}
+	if s.PlaysLeft != 0 || s.Stars != stars-card.Def.Level {
+		t.Fatalf("plays left %d, stars %d: the play is spent", s.PlaysLeft, s.Stars)
+	}
+	if g.countOnBoard(0, true) != 5 {
+		t.Fatalf("%d monsters on the field, want 5", g.countOnBoard(0, true))
+	}
+	destroyed := false
+	for _, e := range g.events {
+		if e.Type == "destroyed" && e.CardID == card.ID && e.Text == "overflow" {
+			destroyed = true
+		}
+	}
+	if !destroyed {
+		t.Fatal("no overflow destroyed event")
+	}
 }
 
 func TestBattleAttackVersusAttack(t *testing.T) {

@@ -90,6 +90,9 @@ func (g *Game) AdminRemove(seat, id int) error {
 func (g *Game) ViewSandbox(seat int) View {
 	v := g.view(seat, true)
 	v.Reveal = g.ViewAll().Reveal
+	if s := g.seat(seat); s != nil {
+		v.FusionHints = g.fusionHints(s)
+	}
 	return v
 }
 
@@ -154,4 +157,62 @@ func (g *Game) DeckOf(seat int) []int {
 		return append([]int{}, s.Deck...)
 	}
 	return nil
+}
+
+// AdminSetTerrain lays a new map's terrain under the duel as it stands. The
+// map must cover this board exactly; the cards and leaders stay where they are.
+func (g *Game) AdminSetTerrain(seat int, tiles map[Pos]string) error {
+	if g.Phase != PhasePlaying {
+		return RuleError("The duel is over")
+	}
+	if len(tiles) != g.Cfg.Size*g.Cfg.Size {
+		return RuleError("That map does not fit this board")
+	}
+	for p := range tiles {
+		if !g.InBounds(p) {
+			return RuleError("That map does not fit this board")
+		}
+	}
+	g.Tiles = make(map[Pos]string, len(tiles))
+	for p, t := range tiles {
+		g.Tiles[p] = t
+	}
+	g.emit(Event{Type: "adminTool", Seat: seat, Text: "used the test tools to change the map"})
+	return nil
+}
+
+// FusionHint is a fusion recipe within reach of a seat's hand, for the
+// sandbox: hand card A with hand card B, or A played onto the seat's monster
+// on the field at (X, Y) when OnField.
+type FusionHint struct {
+	A       int  `json:"a"`
+	B       int  `json:"b"`
+	OnField bool `json:"onField,omitempty"`
+	X       int  `json:"x"`
+	Y       int  `json:"y"`
+	Result  int  `json:"result"`
+}
+
+// fusionHints lists the real fusions (a recipe, not one monster knocking out
+// another) a seat's hand can make, among its own cards or onto its monsters.
+func (g *Game) fusionHints(s *Seat) []FusionHint {
+	out := []FusionHint{}
+	for i, a := range s.Hand {
+		for _, b := range s.Hand[i+1:] {
+			if f := g.Cat.Fuse(a.Def, b.Def); f != nil {
+				out = append(out, FusionHint{A: a.ID, B: b.ID, Result: f.Num})
+			}
+		}
+	}
+	for _, c := range g.boardCards() {
+		if c.Owner != s.Index || c.Borrowed || !c.Def.IsMonster() {
+			continue
+		}
+		for _, a := range s.Hand {
+			if f := g.Cat.Fuse(c.Def, a.Def); f != nil {
+				out = append(out, FusionHint{A: a.ID, OnField: true, X: c.Pos.X, Y: c.Pos.Y, Result: f.Num})
+			}
+		}
+	}
+	return out
 }

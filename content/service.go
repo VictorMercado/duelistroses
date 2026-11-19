@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand/v2"
 	"net/http"
 	"os"
@@ -231,18 +232,45 @@ func (s *Service) Register(mux *http.ServeMux) {
 }
 
 // Track is one piece of duel music. A track with an intro plays it once, then
-// repeats loop; otherwise loop repeats from the start.
+// repeats loop; otherwise loop repeats from the start, or, when it has loop
+// points, plays from the start and then repeats LoopStart..LoopEnd (seconds
+// into the file) for ever.
 type Track struct {
 	Name  string `json:"name"`
 	Intro string `json:"intro,omitempty"`
 	Loop  string `json:"loop"`
+
+	LoopStart float64 `json:"loopStart,omitempty"`
+	LoopEnd   float64 `json:"loopEnd,omitempty"`
+}
+
+// loopPoints reads a track's loop points from the sidecar file next to it,
+// X.loop.json for X.mp3: {"loopStart": 15.309, "loopEnd": 74.069}, in seconds.
+// One file with loop points joins seamlessly where two files cut mid-sound
+// cannot: a lossy file's first and last moments never decode exactly.
+func loopPoints(dir, base string) (start, end float64, ok bool) {
+	data, err := os.ReadFile(filepath.Join(dir, base+".loop.json"))
+	if err != nil {
+		return 0, 0, false
+	}
+	var p struct {
+		LoopStart float64 `json:"loopStart"`
+		LoopEnd   float64 `json:"loopEnd"`
+	}
+	if json.Unmarshal(data, &p) != nil || p.LoopStart < 0 || p.LoopEnd <= p.LoopStart {
+		log.Printf("music: %s.loop.json is not {\"loopStart\": seconds, \"loopEnd\": seconds} with start before end", base)
+		return 0, 0, false
+	}
+	return p.LoopStart, p.LoopEnd, true
 }
 
 // Music lists the duel music: every audio file in the asset folder whose name
 // starts with "VS". A pair named X_Starter and X_Loop is one track with an
-// intro. The folder is read each time, so a new file is picked up at once.
+// intro; a single file X can instead have loop points (see loopPoints). The
+// folder is read each time, so a new file is picked up at once.
 func (s *Service) Music() []Track {
-	entries, err := os.ReadDir(filepath.Join(s.assetDir, "audio"))
+	dir := filepath.Join(s.assetDir, "audio")
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return []Track{}
 	}
@@ -271,7 +299,11 @@ func (s *Service) Music() []Track {
 			}
 			tracks = append(tracks, t)
 		default:
-			tracks = append(tracks, Track{Name: base, Loop: "audio/" + name})
+			t := Track{Name: base, Loop: "audio/" + name}
+			if start, end, ok := loopPoints(dir, base); ok {
+				t.LoopStart, t.LoopEnd = start, end
+			}
+			tracks = append(tracks, t)
 		}
 	}
 	slices.SortFunc(tracks, func(a, b Track) int { return strings.Compare(a.Name, b.Name) })

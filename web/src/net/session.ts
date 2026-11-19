@@ -1,7 +1,7 @@
 import { selectRole, useGameStore } from '@/stores/gameStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useMenuStore } from '@/stores/menuStore';
-import { cardName, catalogCard, ensureCatalog } from '@/game/catalog';
+import { cardName, ensureCatalog } from '@/game/catalog';
 import { playSfx, playSfxBatch, preloadSfx, type Sfx } from '@/game/sfx';
 import { readyCards } from '@/game/preload';
 
@@ -9,8 +9,9 @@ import { useFusionStore } from '@/stores/fusionStore';
 import { showDestiny } from '@/stores/destinyStore';
 import { showFlash, type FlashCard } from '@/stores/activationStore';
 import { wsUrl } from './api';
+import { voice } from './voice';
 import { crumb, reportError } from './errorReport';
-import type { Action, AdminTool, GameEvent, LobbyMessage, Selection, ServerMessage } from './protocol';
+import type { Action, AdminTool, GameEvent, GameView, LobbyMessage, RoomInfo, Selection, ServerMessage } from './protocol';
 
 /** How long a duel's first state may wait for its cards' art before it is shown anyway. */
 const FIRST_STATE_WAIT_MS = 3000;
@@ -19,8 +20,10 @@ type Listener = (ackId: number | undefined, error?: string) => void;
 
 const MAX_RECONNECTS = 6;
 
-/** Spell effects that destroy every card of a kind on the field, not just some. */
-export const BOARD_WIPES = new Set(['destroyAll', 'destroySpells']);
+/** Spell effects that strike down the caster's row and column: Raigeki's lightning (see components/game/Lightning). */
+export const CROSS_STRIKES = new Set(['destroyCross', 'destroySpellsCross']);
+/** Spells that swallow the whole field into a black hole (Dark Hole): see components/game/DarkHole. */
+export const VOIDS = new Set(['destroyAll']);
 
 /**
  * The connection to a room. It sends intents, and feeds what the server
@@ -59,6 +62,7 @@ class Session {
       window.addEventListener('online', wake);
       document.addEventListener('visibilitychange', wake);
     }
+    voice.setSender((message) => { if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(message)); });
   }
 
   /** The room we are in, or were in when the connection dropped. */
@@ -94,6 +98,7 @@ class Session {
 
   disconnect() {
     this.wanted = false;
+    voice.leave(false);
     if (this.retry) clearTimeout(this.retry);
     if (this.pinger) clearInterval(this.pinger);
     this.retry = this.pinger = null;
@@ -105,6 +110,7 @@ class Session {
     useGameStore.getState().reset();
     useFusionStore.getState().clear();
     this.predicted.clear();
+    this.served = null;
   }
 
   /**
@@ -113,6 +119,33 @@ class Session {
    * out of it, so they are not heard twice. A refusal just forgets them.
    */
   private predicted = new Map<number, Sfx[]>();
+
+  /**
+   * Starts playing back a recorded duel (see net/replay): there is no
+   * connection, the replay player feeds the states in with playback. We
+   * watch through nobody, with nothing hidden, as an administrator would.
+   */
+  startPlayback(room: RoomInfo) {
+    preloadSfx();
+    this.disconnect();
+    this.dealt = false;
+    const store = useGameStore.getState();
+    store.setRoom(room, -1, -1, false, false, null, false);
+    store.setStatus('open');
+  }
+
+  /** The last state the server sent, untouched by previews (see game/animationPreview). */
+  private served: GameView | null = null;
+  get lastServed() { return this.served; }
+
+  /**
+   * One state of a replay, as if the server had sent it. Without events it
+   * lands as is, with no animation or sound: a jump, not a step.
+   */
+  playback(seq: number, state: GameView, events: GameEvent[] = []) {
+    if (!events.length) useFusionStore.getState().clear();
+    this.handle({ t: 'state', seq, state, events });
+  }
 
   /**
    * Sends an action; returns its id, or 0 when there is no connection.
@@ -207,6 +240,22 @@ class Session {
     this.ws?.send(JSON.stringify({ t: 'pause', on }));
   }
 
+  /**
+   * As a spectator watching through one side, watches through `seat` instead
+   * (see Room.rewatch). A reconnect then comes back watching that seat.
+   */
+  watchSeat(seat: number) {
+    if (this.ws?.readyState !== WebSocket.OPEN) return false;
+    this.ws.send(JSON.stringify({ t: 'watch', seat }));
+    // Watching a team stays watching a team; a player or a seat becomes that seat.
+    if (!this.watch?.startsWith('team:')) this.watch = `seat:${seat}`;
+    else {
+      const team = useGameStore.getState().room?.seats[seat]?.team;
+      if (team !== undefined) this.watch = `team:${team}`;
+    }
+    return true;
+  }
+
   rematch() {
     this.ws?.send(JSON.stringify({ t: 'rematch' }));
   }
@@ -235,6 +284,7 @@ class Session {
     ws.onmessage = (event) => {
       let message: ServerMessage;
       try { message = JSON.parse(event.data as string); } catch { return; }
+      if (message.t === 'state') this.served = message.state;
       this.handle(message);
     };
 
@@ -280,6 +330,13 @@ class Session {
     switch (message.t) {
       case 'welcome':
         store.setRoom(message.room, message.you.seat, message.you.watch, !!message.you.admin, !!message.you.tools, message.you.sandbox ?? null, !!message.you.display);
+        voice.rejoin(); // a new connection starts out of voice
+        break;
+      case 'voice':
+        voice.onRoster(message.cid, message.peers ?? [], message.ice);
+        break;
+      case 'rtc':
+        void voice.onSignal(message.cid, message.data as Parameters<typeof voice.onSignal>[1]);
         break;
       case 'room':
         store.setRoom(message.room);
@@ -378,6 +435,7 @@ class Session {
     }
     const cards = [...activated, ...gone];
     if (!cards.length) return;
+    // Raigeki's lightning and Dark Hole's vortex hold the popup until they have played (see holdFlash).
     if (!afterFusion || !useFusionStore.getState().queue.length) { showFlash(cards); return; }
     const stop = useFusionStore.subscribe((s) => {
       if (s.queue.length) return;
@@ -457,6 +515,9 @@ class Session {
         } else if (event.text === 'shield') {
           store.pushLog(`${cardName(event.num)} was destroyed in place of the monster that absorbed it.`);
           sound('destroyed');
+        } else if (event.text === 'overflow') {
+          store.pushLog(`${cardName(event.num)} had no room on the field and was destroyed.`, mine ? 'bad' : 'info');
+          sound('destroyed');
         } else if (event.text === 'battle' || event.text === 'trap' || event.text === 'spell' || event.text === 'crushed' || event.text === 'trampled' || event.text === 'blast' || event.text === 'ability' || event.text === 'banished') {
           store.pushLog(`${cardName(event.num)} was destroyed (${event.text}).`);
           sound('destroyed');
@@ -485,8 +546,7 @@ class Session {
       case 'equip': store.pushLog(hidden ? `${who} powered up a monster (+${event.amount}).` : `${who} powered up a monster with ${cardName(event.num)} (+${event.amount}).`); sound('powerup'); break;
       case 'spell':
         store.pushLog(`${who} activated ${event.text}.`);
-        // Spells that sweep the whole field (Dark Hole, Heavy Storm) get their own sound.
-        sound(BOARD_WIPES.has(catalogCard(event.num ?? 0)?.effect?.op ?? '') ? 'cleanboard' : 'spell');
+        sound('spell');
         break;
       case 'trap': store.pushLog(`${who}'s trap ${event.text} sprang!`, 'bad'); sound('trap'); break;
       case 'spellbound': sound('bind'); break;
@@ -514,7 +574,7 @@ const ACTIVATIONS = new Set(['spell', 'trap', 'ability', 'flipBoost', 'blast']);
 /** Reasons a destroyed event gives when the card did not go to a graveyard: back to the deck, or into a monster. */
 const NOT_TO_GRAVEYARD = new Set(['returned', 'absorbed']);
 /** Reasons that mean a card was destroyed (by battle, an effect, being trampled or eaten); the rest just went to the graveyard. */
-const DESTROYING = new Set(['battle', 'spell', 'trap', 'ability', 'blast', 'crushed', 'negated', 'trampled', 'eaten', 'shield']);
+const DESTROYING = new Set(['battle', 'spell', 'trap', 'ability', 'blast', 'crushed', 'negated', 'trampled', 'eaten', 'shield', 'overflow']);
 const goneLabel = (reason: string) => (reason === 'banished' ? 'BANISHED' : DESTROYING.has(reason) ? 'DESTROYED' : 'TO GRAVEYARD');
 
 export const session = new Session();

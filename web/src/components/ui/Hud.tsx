@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { selectCanPause, selectHomeTeam, selectPerspective, useGameStore } from "@/stores/gameStore";
+import { selectCanPause, selectPerspective, useGameStore } from "@/stores/gameStore";
 import { session } from "@/net/session";
+import { useReplaying } from "@/net/replay";
 import { useUIStore } from "@/stores/uiStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import TestTools from "@/components/ui/TestTools";
 import { SEAT_COLORS } from "@/const";
-import { inspectLeader, pointGraveyard } from "@/game/interaction";
+import { canWatchFrom, inspectLeader, pointGraveyard, watchFrom } from "@/game/interaction";
 import { cardArt, catalogCard } from "@/game/catalog";
 import { GRADIENT_ENEMY, GRADIENT_MINE } from "./GameOverlays";
 
@@ -58,6 +59,14 @@ function useLifePoints(lp: number) {
   return { shown, hits, done, counting: shown !== lp };
 }
 
+/**
+ * The team on the left of the top bar, in green; the other is on the right, in
+ * red. A player's own team. Watching (a spectator, a replay), always the first
+ * seat's: switching whose side we watch from turns the board, never the bar.
+ */
+const selectLeftTeam = (s: ReturnType<typeof useGameStore.getState>) =>
+  s.view?.seats[s.seat >= 0 ? s.seat : 0]?.team;
+
 type SeatView = NonNullable<ReturnType<typeof useGameStore.getState>["view"]>["seats"][number];
 
 /** One duelist: deck leader, name, life points, stars, cards. The panel of whoever is playing glows and says so. */
@@ -66,7 +75,7 @@ function SeatPanel({ s, align }: { s: SeatView; align: "left" | "right"; }) {
   const room = useGameStore((st) => st.room)!;
   const seat = useGameStore((st) => st.seat);
   const perspective = useGameStore(selectPerspective);
-  const homeTeam = useGameStore(selectHomeTeam);
+  const homeTeam = useGameStore(selectLeftTeam);
   const info = room.seats[s.index];
   const active = view.turn === s.index && view.phase === "playing";
   const friendly = s.team === homeTeam;
@@ -75,10 +84,21 @@ function SeatPanel({ s, align }: { s: SeatView; align: "left" | "right"; }) {
   const onField = view.cards.reduce((n, c) => n + (c.owner === s.index ? 1 : 0), 0);
   const leader = s.leaderNum >= 0 ? catalogCard(s.leaderNum) : undefined;
   const right = align === "right";
+  // Watching: tap a duelist's panel to watch from their side (see watchFrom).
+  // Its own buttons (deck leader, graveyard) keep their taps.
+  useGameStore((st) => st.watch); // re-render when the side we watch from changes
+  const switchable = canWatchFrom(s.index);
+  const name = info?.name || `Seat ${s.index + 1}`;
 
   return (
     <div
-      className={`flex min-w-0 items-center gap-1.5 border max-sm:flex-1 px-1.5 py-1 sm:w-44 lg:w-60 ${right ? "flex-row-reverse text-right" : ""} ${friendly ? GRADIENT_MINE : GRADIENT_ENEMY} ${!s.alive ? "border-white/10 opacity-40" : active ? "border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.35)]" : "border-yellow-600/80"}`}
+      onClick={switchable ? (e) => { if (!(e.target as HTMLElement).closest("button")) watchFrom(s.index); } : undefined}
+      role={switchable ? "button" : undefined}
+      tabIndex={switchable ? 0 : undefined}
+      onKeyDown={switchable ? (e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); watchFrom(s.index); } } : undefined}
+      title={switchable ? `Watch from ${name}'s side` : undefined}
+      aria-label={switchable ? `Watch from ${name}'s side` : undefined}
+      className={`flex min-w-0 items-center gap-1.5 border max-sm:flex-1 px-1.5 py-1 sm:w-44 lg:w-60 ${switchable ? "cursor-pointer hover:brightness-125 active:brightness-150" : ""} ${right ? "flex-row-reverse text-right" : ""} ${friendly ? GRADIENT_MINE : GRADIENT_ENEMY} ${!s.alive ? "border-white/10 opacity-40" : active ? "border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.35)]" : "border-yellow-600/80"}`}
     >
       {/* The deck leader: its rank, then its portrait (tap it for the full card). */}
       {leader && (
@@ -152,13 +172,14 @@ export default function Hud() {
   const deadline = useGameStore((s) => s.deadline);
   const latency = useGameStore((s) => s.latency);
   const status = useGameStore((s) => s.status);
-  const perspective = useGameStore(selectPerspective);
-  const myTeam = useGameStore(selectHomeTeam);
+  const myTeam = useGameStore(selectLeftTeam);
   const user = useSessionStore((s) => s.user);
-  const canPause = useGameStore((s) => selectCanPause(s, user));
+  // A replay is only watched: no pausing, ending or reconnecting (there is no room behind it).
+  const replaying = useReplaying();
+  const canPause = useGameStore((s) => selectCanPause(s, user)) && !replaying;
   if (!view || !room) return null;
   // A duel nobody plays can be ended by whoever set it up, or an administrator (see Room.endBotsDuel).
-  const canEnd = seat < 0 && room.seats.every((s) => s.kind === "bot") && !!user && (room.hostId === user.id || !!user.admin);
+  const canEnd = !replaying && seat < 0 && room.seats.every((s) => s.kind === "bot") && !!user && (room.hostId === user.id || !!user.admin);
 
   // Our team on the left of the clock, theirs on the right (2v2 stacks two per side).
   // Spectators see the team of the seat they watch through on the left. With more
@@ -168,10 +189,11 @@ export default function Hud() {
   const [left, right] = teams.size === 2 && myTeam !== undefined
     ? [view.seats.filter((s) => s.team === myTeam), view.seats.filter((s) => s.team !== myTeam)]
     : [view.seats.slice(0, half), view.seats.slice(half)];
-  const offline = status === "closed" || status === "reconnecting";
+  const offline = !replaying && (status === "closed" || status === "reconnecting");
   // On phones and tablets the settings gear sits in the row under your own side (the one you
   // watch from, when spectating). Desktops have room for it in the screen's top-right corner (App).
-  const own = seat >= 0 ? seat : perspective;
+  // Watching, the gear stays on the left with the green side, whoever we watch from.
+  const own = seat >= 0 ? seat : left[0]?.index;
   const ownLeft = left.some((s) => s.index === own);
   const ownRight = right.some((s) => s.index === own);
   const gear = (

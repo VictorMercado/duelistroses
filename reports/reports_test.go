@@ -57,7 +57,7 @@ func TestReports(t *testing.T) {
 	w = call("GET", "/api/admin/client-errors", login.Token, "")
 	var list []Summary
 	json.Unmarshal(w.Body.Bytes(), &list)
-	if len(list) != 1 || list[0].RoomID != "r1" || list[0].Build != "1.0 deadbee" {
+	if len(list) != 1 || list[0].RoomID != "r1" || list[0].Build != "1.0 deadbee" || list[0].IP != "10.0.0.1" {
 		t.Fatalf("list: %s", w.Body)
 	}
 	w = call("GET", "/api/admin/client-errors/groups", login.Token, "")
@@ -103,3 +103,54 @@ func TestRateLimit(t *testing.T) {
 }
 
 func jsonInt(n int64) string { b, _ := json.Marshal(n); return string(b) }
+
+func TestInternalEndpoints(t *testing.T) {
+	database := db.OpenTemp(t)
+	accounts, err := auth.New(t.TempDir(), database, "http://test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := New(database, accounts)
+	public, internal := http.NewServeMux(), http.NewServeMux()
+	store.Register(public)
+	store.RegisterInternal(internal.Handle)
+
+	send := func(id, xff string) {
+		r := httptest.NewRequest("POST", "/api/client-errors", strings.NewReader(`{"id":"`+id+`","kind":"exception","message":"boom `+id+`"}`))
+		r.RemoteAddr = "172.18.0.2:1234"
+		r.Header.Set("X-Forwarded-For", xff)
+		w := httptest.NewRecorder()
+		public.ServeHTTP(w, r)
+		if w.Code != http.StatusNoContent {
+			t.Fatalf("report: %d %s", w.Code, w.Body)
+		}
+	}
+	send("a", "198.51.100.9")
+	send("b", "198.51.100.9")
+	send("c", "203.0.113.5")
+
+	get := func(path string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		internal.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+		return w
+	}
+	var list []Summary
+	json.Unmarshal(get("/internal/client-errors").Body.Bytes(), &list)
+	if len(list) != 3 || list[0].IP != "203.0.113.5" {
+		t.Fatalf("list: %+v", list)
+	}
+	json.Unmarshal(get("/internal/client-errors?ip=198.51.100.9").Body.Bytes(), &list)
+	if len(list) != 2 {
+		t.Fatalf("one ip: %+v", list)
+	}
+	var ips []IPSummary
+	json.Unmarshal(get("/internal/client-errors/ips").Body.Bytes(), &ips)
+	if len(ips) != 2 || ips[0].IP != "198.51.100.9" || ips[0].Reports != 2 || ips[0].LastMessage != "boom b" {
+		t.Fatalf("ips: %+v", ips)
+	}
+	// A range before the reports holds none.
+	json.Unmarshal(get("/internal/client-errors?from=0&to=1000").Body.Bytes(), &list)
+	if len(list) != 0 {
+		t.Fatalf("old range: %+v", list)
+	}
+}

@@ -96,6 +96,8 @@ export interface GameView {
   reveal?: { hands: HandCardView[][]; decks: number[][]; };
   /** An administrator playing a duel: their own remaining deck, top card first. */
   deck?: number[];
+  /** Sandbox only: the fusions our hand can make. */
+  fusionHints?: FusionHint[];
   /** The opponents' hands, during the turn we cast The Eye of Truth. */
   peek?: { seat: number; cards: number[]; }[];
 }
@@ -198,7 +200,12 @@ export type AdminTool =
   // The sandbox's own controls (Options.Sandbox in game/room.go).
   | { op: 'control'; seat: number; }
   | { op: 'follow'; on: boolean; }
-  | { op: 'unlimited'; on: boolean; };
+  | { op: 'unlimited'; on: boolean; }
+  /** A saved map's id, or '' for a freshly generated one. Another size deals a new duel. */
+  | { op: 'map'; map: string; };
+
+/** A fusion recipe within reach of the hand (sandbox only): hand card a with hand card b, or a onto our monster at (x, y). */
+export interface FusionHint { a: number; b: number; onField?: boolean; x: number; y: number; result: number; }
 
 /** An administrator's sandbox: they play every seat. */
 export interface SandboxInfo {
@@ -230,4 +237,12 @@ export type ServerMessage =
   | { t: 'say'; seat: number; message: string; }
   /** An LLM bot's reasoning and the move it led to; sent to administrators only. */
   | { t: 'thought'; seat: number; name: string; message: string; action?: string; }
-  | { t: 'pong'; ts: number; };
+  | { t: 'pong'; ts: number; }
+  /** Voice chat: whom we are linked to (see net/voice.ts); cid is our own connection's id. */
+  | { t: 'voice'; cid: number; peers?: VoicePeer[]; ice?: ICEServer[]; }
+  /** A voice call setup message from another connection. */
+  | { t: 'rtc'; cid: number; data: unknown; };
+
+/** Someone we are linked to in voice chat: speak, they hear us; hear, we hear them. */
+export type VoicePeer = { cid: number; name: string; seat: number; spectator?: boolean; speak: boolean; hear: boolean; };
+export type ICEServer = { urls: string[]; username?: string; credential?: string; };

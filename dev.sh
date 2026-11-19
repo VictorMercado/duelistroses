@@ -7,6 +7,10 @@
 #   ./dev.sh status    show what is running
 #   ./dev.sh logs      tail both logs (Ctrl-C to quit)
 #
+# It also starts Prometheus (localhost:9090) and Grafana (localhost:3000) in
+# Docker, scraping the local Go server's :9091 (see docker-compose.dev.yml).
+# Set NO_MONITORING=1 to skip them; `./dev.sh stop` stops them too.
+#
 # Environment variables come from .env (see .env.example). Both servers run in
 # the background; their output goes to .dev/go.log and .dev/web.log.
 set -euo pipefail
@@ -54,6 +58,52 @@ stop_one() {
   pids="$(lsof -ti tcp:"$port" -sTCP:LISTEN 2>/dev/null || true)"
   [[ -n "$pids" ]] && kill -KILL $pids 2>/dev/null || true
   echo "stopped $name (forced)"
+}
+
+COMPOSE=(docker compose -f "$ROOT/docker-compose.yml" -f "$ROOT/docker-compose.dev.yml")
+
+# Make sure the Docker daemon answers, launching Docker Desktop if needed.
+ensure_docker() {
+  command -v docker >/dev/null 2>&1 || { echo "warning: docker not installed; skipping monitoring" >&2; return 1; }
+  docker info >/dev/null 2>&1 && return 0
+  if [[ "$(uname)" == Darwin ]]; then
+    echo "starting Docker Desktop..."
+    open -a Docker || true
+  fi
+  for _ in {1..90}; do
+    docker info >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  echo "warning: Docker daemon not reachable; skipping monitoring" >&2
+  return 1
+}
+
+start_monitoring() {
+  [[ -n "${NO_MONITORING:-}" ]] && return 0
+  ensure_docker || return 0
+  # --no-deps: the game server runs on the host, never the app container.
+  "${COMPOSE[@]}" up -d --quiet-pull --no-deps prometheus grafana
+  wait_http grafana "http://localhost:3000/api/health" 90 &&
+    echo "  sign in as ${GRAFANA_ADMIN_USER:-admin} / GRAFANA_ADMIN_PASSWORD from .env" || true
+}
+
+stop_monitoring() {
+  command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 || return 0
+  "${COMPOSE[@]}" stop prometheus grafana >/dev/null 2>&1 && echo "stopped monitoring" || true
+}
+
+# Wait for a URL with no pid to watch (containers).
+wait_http() {
+  local name="$1" url="$2" timeout="${3:-60}"
+  for ((i = 0; i < timeout * 2; i++)); do
+    if curl -s -o /dev/null --max-time 1 "$url"; then
+      echo "$name ready at ${url%/api/health}"
+      return 0
+    fi
+    sleep 0.5
+  done
+  echo "warning: $name not ready after ${timeout}s (${COMPOSE[*]} logs $name)" >&2
+  return 1
 }
 
 stop_all() {
@@ -109,8 +159,14 @@ status() {
 }
 
 case "${1:-start}" in
-  stop) stop_all ;;
-  status) status ;;
+  stop)
+    stop_all
+    stop_monitoring
+    ;;
+  status)
+    status
+    if docker info >/dev/null 2>&1; then "${COMPOSE[@]}" ps prometheus grafana; fi
+    ;;
   logs) tail -n 50 -F "$RUN_DIR/go.log" "$RUN_DIR/web.log" ;;
   start | restart)
     stop_all
@@ -122,6 +178,7 @@ case "${1:-start}" in
     ok=0
     wait_for go "http://localhost:$GO_PORT/" 120 || ok=1
     wait_for web "http://localhost:$WEB_PORT/" 60 || ok=1
+    start_monitoring
     exit $ok
     ;;
   *)

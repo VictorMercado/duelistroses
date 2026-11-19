@@ -81,7 +81,7 @@ goes wrong for a player. It does this for:
 report, ready to put behind a "Report a problem" button.
 
 Reports are stored in SQLite (`client_errors`, newest 10,000 kept), logged to
-the server log, and counted in `duelist_client_errors_total`. Reading them
+the server log with the sender's IP, and counted in `duelist_client_errors_total`. Reading them
 takes an administrator's token:
 
 ```sh
@@ -103,6 +103,27 @@ curl -s -X DELETE -H "Authorization: Bearer $TOKEN" https://your-host/api/admin/
 The **fingerprint** groups reports of one bug. It is built from the kind, the
 message and the top stack frame, leaving out numbers and bundle hashes, so the
 same bug in a newer build lands in the same group.
+
+### Client IPs in Grafana
+
+Each report keeps the player's IP. With players → Cloudflare → Traefik →
+the server, it is read from `X-Forwarded-For` (skipping proxy hops), or from
+Cloudflare's `CF-Connecting-IP` when the chain ends at Cloudflare. Those
+headers are believed only from proxies in `TRUSTED_PROXIES` (default
+`private,cloudflare`: the LAN and Cloudflare's published ranges), so a player
+cannot fake them. The **Client errors** row shows:
+
+- **Client errors by IP**: each address in the time range, its report and bug
+  counts, the players signed in from it, and its last error. Click an IP to
+  fill the **Client IP** variable at the top.
+- **Recent client errors**: the newest 500 reports with time, IP, player,
+  kind, message, room and build; only one address when **Client IP** is set.
+
+Grafana reads them with the Infinity datasource (installed when the container
+starts, so it needs internet the first time) from
+`http://app:9091/internal/client-errors` and `/internal/client-errors/ips`.
+Those are on the metrics port, which is not published, so they need no token.
+IPs are not Prometheus labels (one series per address would grow without end).
 
 ### What a report holds
 

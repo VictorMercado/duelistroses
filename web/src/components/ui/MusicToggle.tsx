@@ -1,15 +1,10 @@
-// import { useGameAudio } from "@/hooks/useGameAudio";
+import { trackTitle, type MusicControls } from "@/hooks/useGameAudio";
 
-interface MusicToggleProps {
-  isPlaying: boolean;
-  volume: number;
-  toggleMusic: () => void;
-  setVolume: (vol: number) => void;
+type MusicToggleProps = Pick<MusicControls, 'isPlaying' | 'volume' | 'toggleMusic' | 'setVolume' | 'tracks' | 'track' | 'choice' | 'chooseTrack'> & {
   style: 'minimal' | 'full';
-}
+};
 
-export default function MusicToggle({ isPlaying, volume, toggleMusic, setVolume, style }: MusicToggleProps) {
-  // const { isPlaying, volume, toggleMusic, setVolume } = useGameAudio();
+export default function MusicToggle({ isPlaying, volume, toggleMusic, setVolume, tracks, track, choice, chooseTrack, style }: MusicToggleProps) {
   return (
     <div className={style === 'minimal' ? 'flex flex-row z-50' : 'flex flex-col gap-2 z-50'}>
       <button
@@ -34,6 +29,25 @@ export default function MusicToggle({ isPlaying, volume, toggleMusic, setVolume,
         )}
       </button>
       
+      {/* Song picker: a fixed track, or shuffle for a random one each duel. */}
+      {tracks.length > 0 && (
+        <label className="bg-black/80 text-white px-4 py-2 border border-white/20 font-mono text-sm flex flex-col gap-1">
+          <span className="flex items-center justify-between text-xs text-gray-400">
+            <span>Song</span>
+            {isPlaying && track && <span className="truncate text-yellow-500/80" title="Playing now">♪ {trackTitle(track)}</span>}
+          </span>
+          <select
+            value={choice}
+            onChange={(e) => chooseTrack(e.target.value)}
+            className="w-full bg-black/60 border border-white/20 px-1 py-1 text-white outline-none hover:border-yellow-500 focus:border-yellow-500 cursor-pointer"
+            aria-label="Choose the soundtrack song"
+          >
+            <option value="">🎲 Shuffle</option>
+            {tracks.map((name) => <option key={name} value={name}>{trackTitle(name)}</option>)}
+          </select>
+        </label>
+      )}
+
       {/* Volume Slider */}
       <div className="bg-black/80 text-white px-4 py-2 border border-white/20 font-mono text-sm flex flex-col gap-1">
         <div className="flex items-center justify-between text-xs text-gray-400">

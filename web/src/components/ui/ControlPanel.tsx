@@ -1,6 +1,7 @@
 import { useUIStore } from '@/stores/uiStore';
 import { useEffect, useState } from 'react';
 import MusicToggle from "@/components/ui/MusicToggle";
+import type { MusicControls } from "@/hooks/useGameAudio";
 import { useGameStore } from '@/stores/gameStore';
 import FPSCounter from '@/components/ui/FPSCounter';
 import { useKeyBindings } from "@/hooks/useKeyBindings";
@@ -9,13 +10,9 @@ import type { KeyBindings } from "@/types";
 import { BecomeDisplayButton } from "@/components/ui/ArenaDisplay";
 import { useMayDisplay } from "@/game/arenaDisplay";
 
-interface ControlPanelProps {
+type ControlPanelProps = MusicControls & {
   controlsRef: React.RefObject<any>;
-  isPlaying: boolean;
-  volume: number;
-  toggleMusic: () => void;
-  setVolume: (vol: number) => void;
-}
+};
 
 type Tab = 'controls' | 'settings';
 
@@ -24,7 +21,8 @@ export default function ControlPanel({
   isPlaying,
   volume,
   toggleMusic,
-  setVolume
+  setVolume,
+  ...music
 }: ControlPanelProps) {
   // UI State
   const [activeTab, setActiveTab] = useState<Tab>('controls');
@@ -134,6 +132,10 @@ export default function ControlPanel({
         volume={volume}
         toggleMusic={toggleMusic}
         setVolume={setVolume}
+        tracks={music.tracks}
+        track={music.track}
+        choice={music.choice}
+        chooseTrack={music.chooseTrack}
         style="full"
       />
 

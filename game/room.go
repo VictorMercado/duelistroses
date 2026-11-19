@@ -16,6 +16,7 @@ import (
 	"duelistRoses/game/engine"
 	"duelistRoses/metrics"
 	"duelistRoses/profile"
+	"duelistRoses/replay"
 )
 
 const (
@@ -173,6 +174,12 @@ type Room struct {
 	recorded  bool
 	tested    bool
 
+	// The current duel's recording (see package replay), nil when it is not
+	// recorded, and whether it has been saved.
+	replay      *replay.Recorder
+	replayID    string
+	replaySaved bool
+
 	// The sandbox's settings (see Options.Sandbox): whether the controls
 	// follow the seat the game waits on, and whether cards are free.
 	follow    bool
@@ -311,6 +318,7 @@ func (r *Room) close() {
 	if r.timer != nil {
 		r.timer.Stop()
 	}
+	r.saveReplay() // a duel nobody finished is still worth watching
 	for c := range r.clients {
 		r.hub.clearPresence(c.User.ID, r.ID)
 		c.close()
@@ -529,6 +537,29 @@ func (r *Room) watchedSeat(c *Client) int {
 		}
 	}
 	return -1
+}
+
+// rewatch moves a spectator to watching through another seat (its team, for
+// one watching a team), as if they had joined that way, without dropping the
+// connection. Players watch from their own seat, and a view that already shows
+// everything (an administrator's, a duel between bots) has nothing to switch:
+// the client turns the board round for those by itself.
+func (r *Room) rewatch(c *Client, seat int) {
+	if c.seat >= 0 || !c.watch.Set || c.watch.Display || c.watch.Admin || c.watch.All {
+		r.refuse(c, "Only spectators can change whose side they watch from")
+		return
+	}
+	if seat < 0 || seat >= len(r.slots) {
+		r.refuse(c, "There is no such seat")
+		return
+	}
+	c.watch = Watch{Set: true, Seat: seat, TeamOnly: c.watch.TeamOnly}
+	r.welcome(c)
+	if r.game != nil {
+		c.send(r.stateFor(r.viewKey(c), nil, 0))
+	}
+	// Spectator chat and voice go by side: they now reach the other one.
+	r.sendVoiceRosters()
 }
 
 func (r *Room) welcome(c *Client) {
@@ -951,6 +982,7 @@ func (r *Room) start() bool {
 	}
 	r.epoch++
 	r.refreshInfo()
+	r.startReplay()
 	r.broadcastRoom()
 	r.schedule() // first, so the state carries the new turn's deadline
 	r.broadcastState(nil)
@@ -983,10 +1015,13 @@ func (r *Room) act(seat int, a engine.Action, from *Client, ack int) {
 	r.followActor()
 	r.epoch++
 	r.schedule() // first, so the state carries the new deadline
-	r.broadcastStateAck(r.game.TakeEvents(), from, ack)
+	events := r.game.TakeEvents()
+	r.recordStep(seat, &a, "", events)
+	r.broadcastStateAck(events, from, ack)
 	if r.game.Phase == engine.PhaseFinished {
 		r.refreshInfo()
 		r.broadcastRoom()
+		r.saveReplay()
 		r.record()
 	}
 }
@@ -1001,6 +1036,9 @@ func (r *Room) record() {
 	m := profile.Match{
 		Room: r.ID, Mode: r.opts.Mode, Map: r.info.MapName, Turns: g.TurnCount,
 		Started: r.startedAt, Ended: time.Now().UTC(), WinnerTeam: g.WinnerTeam, StartLP: g.Cfg.StartLP,
+	}
+	if r.replaySaved {
+		m.Replay = r.replayID
 	}
 	for i, s := range r.slots {
 		seat := g.Seats[i]
@@ -1056,7 +1094,9 @@ func (r *Room) adminTool(c *Client, m incoming) {
 	r.followActor()
 	r.epoch++
 	r.schedule()
-	r.broadcastStateAck(r.game.TakeEvents(), c, m.ID)
+	events := r.game.TakeEvents()
+	r.recordStep(c.seat, nil, m.Op, events)
+	r.broadcastStateAck(events, c, m.ID)
 }
 
 // sandboxTool runs the sandbox's own controls, reporting whether m was one:
@@ -1079,6 +1119,10 @@ func (r *Room) sandboxTool(c *Client, m incoming) bool {
 	case "unlimited":
 		r.unlimited = m.On
 		r.game.SetUnlimited(m.On)
+	case "map":
+		if !r.sandboxMap(c, m) {
+			return true
+		}
 	default:
 		return false
 	}
@@ -1086,6 +1130,46 @@ func (r *Room) sandboxTool(c *Client, m incoming) bool {
 	r.epoch++
 	r.schedule()
 	r.broadcastStateAck(r.game.TakeEvents(), c, m.ID)
+	return true
+}
+
+// sandboxMap changes the sandbox's map: m.Map names a saved map, or is empty
+// for a freshly generated one. A map the board's size has its terrain laid
+// under the duel as it stands; any other size deals a new duel on it. It
+// reports whether it worked, having told the client why not otherwise.
+func (r *Room) sandboxMap(c *Client, m incoming) bool {
+	var chosen *content.Map
+	if m.Map != "" {
+		if r.hub == nil || r.hub.Content == nil {
+			r.refuse(c, "Maps are not available")
+			return false
+		}
+		found, err := r.hub.Content.Map(m.Map, c.User.ID)
+		if err != nil {
+			r.refuse(c, "That map does not exist, or is not yours to use")
+			return false
+		}
+		chosen = found
+	}
+	if chosen != nil && chosen.Size != r.game.Cfg.Size {
+		r.opts.Map, r.opts.Size = chosen, chosen.Size
+		r.game = nil
+		r.start()
+		return true
+	}
+	tiles := GenerateTiles(r.game.Cfg.Size, len(r.slots), r.rng.Int63())
+	if chosen != nil {
+		tiles = chosen.TileMap()
+	}
+	if err := r.game.AdminSetTerrain(c.seat, tiles); err != nil {
+		r.refuse(c, err.Error())
+		return false
+	}
+	r.opts.Map = chosen
+	r.tested = true
+	r.recordStep(c.seat, nil, m.Op, nil)
+	r.refreshInfo()
+	r.broadcastRoom()
 	return true
 }
 
@@ -1371,6 +1455,8 @@ func (r *Room) toAdmins(m Outgoing) {
 
 func (r *Room) broadcastRoom() {
 	r.broadcast(Outgoing{T: "room", Room: &r.info})
+	// Whatever changed the room may change who hears whom.
+	r.sendVoiceRosters()
 }
 
 // stateFor encodes the game as one view key sees it (see viewKey).

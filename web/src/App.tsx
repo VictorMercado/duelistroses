@@ -35,6 +35,8 @@ import { countFrame } from "@/game/frameStats";
 import { startKeyboard } from "@/input/keyboard";
 import { startGamepad } from "@/input/gamepad";
 import { session } from "@/net/session";
+import { useReplayStore } from "@/net/replay";
+import { ReplayBar, ReplayLoading } from "@/components/ui/Replays";
 import { watchRenderer } from "@/net/errorReport";
 
 extend({ BaseHolographicMaterial, GodRaysMaterial });
@@ -235,6 +237,8 @@ export default function App() {
   const status = useGameStore((s) => s.status);
   const inGame = useGameStore((s) => s.view !== null);
   const menuScreen = useMenuStore((s) => s.screen);
+  // Watching a recorded duel: the board as a spectator sees it, with the replay's controls.
+  const replaying = useReplayStore((s) => s.doc !== null);
   // With an arena display in the room, the board is on the display and phones are controllers.
   const role = useGameStore(selectRole);
   const audio = useGameAudio();
@@ -259,7 +263,7 @@ export default function App() {
       {!(inGame && role === "controller") && <Scene />}
 
       {status === "idle" && (menuScreen === "lobby" ? <Lobby /> : menuScreen === "admin" ? <AdminDashboard /> : menuScreen === "profile" ? <ProfilePage /> : <Builder />)}
-      {status !== "idle" && !inGame && <WaitingRoom onLeave={leave} />}
+      {status !== "idle" && !inGame && !replaying && <WaitingRoom onLeave={leave} />}
 
       {inGame && role === "controller" && (
         <>
@@ -286,7 +290,28 @@ export default function App() {
         </>
       )}
 
-      {inGame && role === "board" && (
+      <ReplayLoading />
+      {inGame && replaying && (
+        <>
+          <Hud />
+          <EventLog />
+          <AdminPanel />
+          <FocusPortals />
+          <HandView />
+          <TurnRow />
+          <FusionSkip />
+          <GraveyardView />
+          <DestinyBanner />
+          <ActivationFlash />
+          <CardPreview />
+          <TilePreview />
+          {/* Read-only: Hand (tap a deck leader to pick whose), Inspect, Graveyard. */}
+          <ActionBar />
+          <ReplayBar />
+        </>
+      )}
+
+      {inGame && !replaying && role === "board" && (
         <>
           <Hud />
           <EventLog />
@@ -326,7 +351,7 @@ export default function App() {
       )}
       <div className="absolute left-2 top-2 z-[70] hidden flex-row gap-2 xl:flex">
         {showFPS && <FPSCounter style="minimal" />}
-        <MusicToggle isPlaying={audio.isPlaying} volume={audio.volume} toggleMusic={audio.toggleMusic} setVolume={audio.setVolume} style="minimal" />
+        <MusicToggle {...audio} style="minimal" />
       </div>
     </div>
   );

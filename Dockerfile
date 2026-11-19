@@ -28,6 +28,7 @@ COPY db ./db
 COPY game ./game
 COPY metrics ./metrics
 COPY profile ./profile
+COPY replay ./replay
 COPY reports ./reports
 RUN CGO_ENABLED=0 go build -o server .
 

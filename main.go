@@ -18,6 +18,7 @@ import (
 	"duelistRoses/game"
 	"duelistRoses/metrics"
 	"duelistRoses/profile"
+	"duelistRoses/replay"
 	"duelistRoses/reports"
 )
 
@@ -135,17 +136,22 @@ func main() {
 		return claudes[model]
 	})
 	hub.Profiles = profiles
+	// Every duel, recorded to be watched again (see package replay).
+	replays := replay.NewStore(database)
+	hub.Replays = replays
 
 	// Prometheus scrapes METRICS_ADDR (never the public port).
 	metrics.WatchAssets(assetDir)
 	metrics.GaugeFunc("duelist_rooms", "Rooms open on the server.", func() float64 { return float64(hub.Count()) })
+	errorReports := reports.New(database, accounts)
+	errorReports.RegisterInternal(metrics.Handle)
 	metrics.Serve(env("METRICS_ADDR", ":9091"))
 
 	mux := http.NewServeMux()
 	accounts.Register(mux)
 	library.Register(mux)
-	reports.New(database, accounts).Register(mux)
-	(&api.Server{Hub: hub, Auth: accounts, LLMAvailable: llm, LLMDefault: defaultModel, DefaultTurn: turnSeconds, Profiles: profiles, Arena: game.NewArena(library, llm), CardLab: cardlab.New(library, llm, defaultModel)}).Register(mux)
+	errorReports.Register(mux)
+	(&api.Server{Hub: hub, Auth: accounts, LLMAvailable: llm, LLMDefault: defaultModel, DefaultTurn: turnSeconds, Profiles: profiles, Replays: replays, Arena: game.NewArena(library, llm), CardLab: cardlab.New(library, llm, defaultModel)}).Register(mux)
 
 	// The built game client. Unknown paths are its routes.
 	staticDir := env("STATIC_DIR", "./web/dist")

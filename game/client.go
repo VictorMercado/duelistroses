@@ -73,6 +73,12 @@ type Outgoing struct {
 	// Sel is what a player is doing on the board, for the arena display to
 	// light up ("sel" messages; see Room.selection).
 	Sel *Selection `json:"sel,omitempty"`
+
+	// Voice chat (see voice.go): whom a connection in voice is linked to and
+	// how to reach them ("voice"), and a relayed call setup message ("rtc").
+	Peers []VoicePeer     `json:"peers,omitempty"`
+	ICE   []ICEServer     `json:"ice,omitempty"`
+	Data  json.RawMessage `json:"data,omitempty"`
 }
 
 // Selection is what a player has picked up and where it may go: the display
@@ -127,9 +133,13 @@ type incoming struct {
 	Field bool   `json:"field"`
 	Up    bool   `json:"up"` // put on the field face up
 	Deck  []int  `json:"deck"`
+	Map   string `json:"map"` // a map id, or empty for a freshly generated one ("map")
 	// A player's selection, for the arena display ("sel").
 	From    *engine.Pos  `json:"from"`
 	Targets []engine.Pos `json:"targets"`
+	// Voice chat: whom a call setup message is for, and the message ("rtc").
+	To   int             `json:"to"`
+	Data json.RawMessage `json:"data"`
 }
 
 // Client is one websocket connection. Its seat is only read and written on
@@ -148,6 +158,11 @@ type Client struct {
 	// id names this connection's cursor to the rest of the room.
 	id         int
 	lastCursor time.Time
+	// In the room's voice chat (see voice.go), with the servers its browser
+	// connects through and the last roster it was sent.
+	voice       bool
+	ice         []ICEServer
+	voiceRoster string
 
 	closeOnce sync.Once
 	closed    chan struct{}
@@ -251,10 +266,16 @@ func (c *Client) readPump() {
 			c.room.post(func() { c.room.hostStart(c) })
 		case "admin":
 			c.room.post(func() { c.room.adminTool(c, m) })
+		case "watch":
+			c.room.post(func() { c.room.rewatch(c, m.Seat) })
 		case "end":
 			c.room.post(func() { c.room.endBotsDuel(c) })
 		case "pause":
 			c.room.post(func() { c.room.pause(c, m.On, m.ID) })
+		case "voice":
+			c.room.post(func() { c.room.setVoice(c, m.On) })
+		case "rtc":
+			c.room.post(func() { c.room.rtc(c, m.To, m.Data) })
 		}
 	}
 }

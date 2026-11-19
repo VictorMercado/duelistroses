@@ -28,6 +28,7 @@ let key = 0;
  * than fit). A card already shown going off is not shown twice in a popup.
  */
 export function showFlash(cards: FlashCard[]) {
+  if (holds > 0) { held.push(cards); return; }
   const unique = cards.filter((card, i) => card.destroyed
     || !cards.slice(0, i).some((c) => !c.destroyed && c.num === card.num && c.seat === card.seat));
   if (!unique.length) return;
@@ -38,6 +39,33 @@ export function showFlash(cards: FlashCard[]) {
     // Keep the one on screen; drop the oldest waiting ones.
     return { queue: next.length > MAX_QUEUED ? [next[0], ...next.slice(-(MAX_QUEUED - 1))] : next };
   });
+}
+
+/**
+ * Popups wait while an effect plays out on the board (Raigeki's lightning,
+ * Dark Hole's vortex): the board shows what happened first, then the popup
+ * tells it. Their order is kept.
+ */
+let holds = 0;
+let held: FlashCard[][] = [];
+/** Longest a hold may last: a stalled board (a hidden tab draws no frames) never swallows the popups. */
+const MAX_HOLD_MS = 6000;
+
+/** Holds the popups until the returned release is called (once is enough; more do nothing). */
+export function holdFlash(): () => void {
+  holds++;
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    clearTimeout(timer);
+    if (--holds > 0) return;
+    const waiting = held;
+    held = [];
+    for (const cards of waiting) showFlash(cards);
+  };
+  const timer = setTimeout(release, MAX_HOLD_MS);
+  return release;
 }
 
 /** The popup on screen is done: on to the next. */

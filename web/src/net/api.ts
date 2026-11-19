@@ -1,5 +1,5 @@
 import { SERVER_URL } from '@/const';
-import type { RoomInfo } from './protocol';
+import type { GameEvent, GameView, RoomInfo } from './protocol';
 import { crumb, reportError } from './errorReport';
 
 export const GAME_URL = SERVER_URL;
@@ -189,6 +189,8 @@ export interface MatchSeat { userId?: string; name: string; bot?: boolean; team:
 export interface MatchSummary {
   at: string; room?: string; mode: string; map: string; result: 'win' | 'loss' | 'draw'; conceded?: boolean;
   deck?: string; lp: number; turns: number; seconds: number; allies: MatchSeat[]; opponents: MatchSeat[]; stats: DuelStats;
+  /** The duel's recording, to watch again (see listReplays). */
+  replay?: string;
 }
 export interface DuelRecord {
   games: number; wins: number; losses: number; draws: number; concedes: number; flawless: number;
@@ -242,3 +244,42 @@ export function wsUrl(room: string, token: string, deck: string, watch?: string)
   if (watch) query.set('spectate', watch);
   return `${origin}/ws/${encodeURIComponent(room)}?${query}`;
 }
+
+// --- game server: replays (recorded duels; anyone may watch any of them) ---
+export interface ReplayPlayer { userId?: string; name: string; team: number; bot?: boolean; deck?: string; }
+export interface ReplayMeta {
+  id: string; room: string; mode: string; map: string; started: string; ended: string;
+  /** False for a duel the room closed on before anyone won. */
+  finished: boolean;
+  /** -1: a draw, or not finished. */
+  winnerTeam: number;
+  turns: number; steps: number; players: ReplayPlayer[];
+}
+/** An action as the server recorded it: fields it left empty are missing. */
+export interface ReplayAction { type: string; cardId?: number; cardIds?: number[]; x: number; y: number; flip?: boolean; defense?: boolean; choice?: number; }
+/** One step of a recorded duel: the board after it, with nothing hidden, and what caused it. */
+export interface ReplayFrame {
+  /** Milliseconds since the duel was dealt. */
+  at: number;
+  /** Who acted; -1 for the deal. */
+  seat: number;
+  action?: ReplayAction;
+  /** An administrator's test tool, if one made this step. */
+  tool?: string;
+  state: GameView;
+  events?: GameEvent[];
+}
+export interface ReplayDoc {
+  v: number;
+  room: RoomInfo;
+  frames: ReplayFrame[];
+  end: { finished: boolean; winnerTeam: number; turns: number; ended: string; };
+}
+/** The latest recorded duels, newest first: everyone's, or one account's. */
+export const listReplays = (user?: string, before?: string) => {
+  const query = new URLSearchParams();
+  if (user) query.set('user', user);
+  if (before) query.set('before', before);
+  return request<ReplayMeta[]>(`${GAME_URL}/api/replays${query.size ? `?${query}` : ''}`);
+};
+export const loadReplay = (id: string) => request<ReplayDoc>(`${GAME_URL}/api/replays/${encodeURIComponent(id)}/frames`);

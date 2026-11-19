@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { selectRole, useGameStore, type Prediction } from '@/stores/gameStore';
-import { BOARD_WIPES, session } from '@/net/session';
+import { session } from '@/net/session';
 import { cardName, catalogCard } from '@/game/catalog';
 import { terrainAt } from '@/game/terrain';
 import { playSfx, type Sfx } from '@/game/sfx';
@@ -215,7 +215,7 @@ function soundsOf(action: Action, view: GameView): [Sfx, number?][] {
     case 'flip': {
       const def = catalogCard(view.cards.find((c) => c.id === action.cardId)?.num ?? -1);
       if (def?.kind !== 'spell') return []; // a ritual is sounded by the summon it performs
-      return [[BOARD_WIPES.has(def.effect?.op ?? '') ? 'cleanboard' : 'spell']];
+      return [['spell']];
     }
   }
   return [];
@@ -318,23 +318,32 @@ function pickUp(p: Pos, ctx: Ctx): boolean {
 }
 
 /**
- * For an administrator who sees every hand: a tap on a deck leader picks
- * whose hand the hand view shows. Returns false when p is not a leader.
+ * Watching with every hand in view (an administrator, a duel between bots, a
+ * replay): a tap on a deck leader selects it, so the action bar offers its
+ * hand (see leaderHandSeat). Returns false when p is not a leader.
  */
 function pickHandSeat(p: Pos, ctx: Ctx): boolean {
-  if (ctx.seat >= 0 || !ctx.view.reveal) return false;
-  const leader = leaderAt(ctx.view, p);
-  if (!leader) return false;
+  const seat = leaderHandSeat(ctx.view, ctx.seat, p);
+  if (seat < 0) return false;
   playSfx('select', 0.4);
-  set({ handSeat: leader.index });
+  set({ handSeat: seat, cursor: p });
   return true;
 }
 
+/**
+ * The seat whose deck leader stands on p, when its hand can be looked at from
+ * here (we watch with every hand in view); -1 otherwise.
+ */
+export function leaderHandSeat(view: GameView, seat: number, p: Pos): number {
+  if (seat >= 0 || !view.reveal) return -1;
+  return leaderAt(view, p)?.index ?? -1;
+}
+
 /** Opens the hand, either to play into `target` or (with null) just to look at it. */
-function showHand(ctx: Ctx, target: Pos | null) {
-  if (ctx.hand.length === 0) { refuse(); return; }
+function showHand(ctx: Ctx, target: Pos | null, hand = ctx.hand) {
+  if (hand.length === 0) { refuse(); return; }
   playSfx('select', 0.4);
-  set((s) => ({ mode: { kind: 'hand', picked: [], target }, handIndex: Math.min(s.handIndex, ctx.hand.length - 1) }));
+  set((s) => ({ mode: { kind: 'hand', picked: [], target }, handIndex: Math.min(s.handIndex, hand.length - 1) }));
 }
 
 /** A seat's graveyard, newest first: the order it is shown in. */
@@ -495,7 +504,17 @@ function handle(action: InputAction, device: InputDevice) {
       const mine = card && card.owner === ctx.seat && ctx.myTurn;
       switch (action) {
         case 'CONFIRM': if (!pickUp(cursor, ctx) && !pickHandSeat(cursor, ctx)) refuse(); return;
-        case 'HAND': startSummon(ctx); return;
+        case 'HAND': {
+          // Watching: the hand of the deck leader under the cursor, if that is where it is.
+          const owner = leaderHandSeat(ctx.view, ctx.seat, cursor);
+          if (owner >= 0) {
+            set({ handSeat: owner });
+            showHand(ctx, null, visibleHand(ctx.view, ctx.seat, useGameStore.getState().watch, owner));
+            return;
+          }
+          startSummon(ctx);
+          return;
+        }
         case 'NEXT': cycle(1, ctx); return;
         case 'PREV': cycle(-1, ctx); return;
         case 'FLIP': case 'POSITION': {
@@ -654,6 +673,8 @@ export function pointTile(x: number, y: number) {
   if (mode.kind === 'hand') {
     // While summoning, tapping another legal square moves the summon there; anything else closes the hand.
     if (mode.target && ctx.view.legal?.summon.some((p) => p.x === x && p.y === y)) set({ mode: { ...mode, target: { x, y } } });
+    // Watching every hand: tapping another deck leader shows theirs instead.
+    else if (!mode.target && pickHandSeat({ x, y }, ctx)) set({ handIndex: 0 });
     else { set({ mode: { kind: 'browse' } }); backOut(); }
     return;
   }
@@ -705,6 +726,34 @@ export function inspectCursorCard() {
 /** The tile portal: the terrain under the cursor, full screen. */
 export function inspectCursorTile() {
   if (useGameStore.getState().view) set({ tilePreview: { ...get().cursor } });
+}
+
+/**
+ * Whether we can switch to watching from `target`'s side: we are watching,
+ * not playing (nor the arena display), and it is another duelist's.
+ */
+export function canWatchFrom(target: number): boolean {
+  const game = useGameStore.getState();
+  const perspective = game.seat >= 0 ? game.seat : game.watch;
+  return game.seat < 0 && !game.display && !!game.view?.seats[target] && target !== perspective;
+}
+
+/**
+ * Watches from `target`'s side: the board turns to face from their edge and
+ * their side is shown as ours. Seeing every hand already (a replay, an
+ * administrator, a duel between bots) that is only a matter of turning the
+ * board here; otherwise the server sends that side's view (see Room.rewatch).
+ */
+export function watchFrom(target: number) {
+  if (!canWatchFrom(target)) return;
+  const game = useGameStore.getState();
+  playSfx('select', 0.4);
+  if (game.view?.reveal) {
+    useGameStore.setState({ watch: target });
+    set({ handSeat: target });
+    return;
+  }
+  session.watchSeat(target);
 }
 
 /** Opens the 3D preview of a seat's deck leader (from its portrait in the HUD). */

@@ -230,13 +230,21 @@ func (r *recorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 func (r *recorder) Unwrap() http.ResponseWriter { return r.ResponseWriter }
 
+// internal is served on the metrics address beside /metrics: never on the
+// public port, so only Prometheus and Grafana (on the compose network) reach it.
+var internal = http.NewServeMux()
+
+// Handle adds an internal-only endpoint to the metrics address (Grafana reads
+// client error reports from here). Call it before Serve.
+func Handle(pattern string, h http.Handler) { internal.Handle(pattern, h) }
+
 // Serve answers Prometheus on addr ("off" or empty turns it off). It runs in
 // the background; a failure to listen is logged, not fatal.
 func Serve(addr string) {
 	if addr == "" || addr == "off" {
 		return
 	}
-	mux := http.NewServeMux()
+	mux := internal
 	mux.Handle("GET /metrics", promhttp.Handler())
 	go func() {
 		log.Printf("metrics on %s/metrics", addr)

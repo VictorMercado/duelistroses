@@ -9,6 +9,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { session } from "@/net/session";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import CardFace from "./CardFace";
+import { VoiceButton } from "./Voice";
 import { Countdown } from "./Hud";
 import { StrengthChip } from "./GameOverlays";
 import { buttonColor, hintsFor, terrainOf, trackBarHeight, type Hint } from "@/game/hints";
@@ -57,6 +58,7 @@ function Seats({ view, seat }: { view: GameView; seat: number; }) {
         <span className="flex items-center gap-2">
           <Countdown deadline={deadline} />
           <button className="flex h-9 items-center border border-white/15 px-2 text-[10px] text-white/60" onClick={() => { if (confirm("Surrender this duel?")) session.send({ type: "concede" }); }}>⚑</button>
+          <VoiceButton className="!h-9 !w-9" />
           <button className="flex h-9 w-9 items-center justify-center border border-white/20" onClick={() => useUIStore.getState().setShowControlPanel(true)} aria-label="Settings">⚙️</button>
         </span>
       </div>

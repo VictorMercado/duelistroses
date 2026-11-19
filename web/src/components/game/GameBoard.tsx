@@ -4,6 +4,12 @@ import { useTexture } from "@react-three/drei";
 import { AdditiveBlending, BufferAttribute, BufferGeometry, CanvasTexture, Group, LinearMipmapLinearFilter, Mesh, MeshBasicMaterial, Path, PlaneGeometry, RepeatWrapping, Shape, ShapeGeometry, SRGBColorSpace, Vector2, Vector3, type Texture } from "three";
 import YugiohCard, { WarmCardFont } from "./YugiohCard";
 import SpellCasts from "./SpellCasts";
+import CardOverflows from "./CardOverflows";
+import RitualRites from "./RitualRites";
+import { useRitualStore } from "@/stores/ritualStore";
+import Lightning from "./Lightning";
+import DarkHole from "./DarkHole";
+import Exodia from "./Exodia";
 import LeaderStrikes, { STRIKE_TRAVEL } from "./LeaderStrikes";
 import { useFusionStore } from "@/stores/fusionStore";
 import { ASSET_URL, SEAT_COLORS } from "@/const";
@@ -762,7 +768,9 @@ export default function GameBoard() {
   // Cards a fusion animation is still making: they appear once it lands, and
   // ours then fly onto their square like any card played from the hand.
   const fusing = useFusionStore((s) => s.queue.map((c) => c.resultId).join(","));
-  const hiddenIds = useMemo(() => new Set(fusing ? fusing.split(",").map(Number) : []), [fusing]);
+  // Ritual monsters still being summoned, likewise (see RitualRites).
+  const ritualHidden = useRitualStore((s) => s.hidden);
+  const hiddenIds = useMemo(() => new Set([...(fusing ? fusing.split(",").map(Number) : []), ...ritualHidden]), [fusing, ritualHidden]);
   const landing = useFusionStore((s) => s.landing);
   // A card we just played flies in before the server answers (see Prediction).
   const predictedId = useGameStore((s) => s.prediction?.card.id);
@@ -845,6 +853,51 @@ export default function GameBoard() {
       {/* Spells and traps going off, after the card itself has left the board. */}
       {playing && showCards && (
         <SpellCasts facingFor={(owner) => CARD_FACING[owner] ?? 0} isEnemy={(owner) => seats?.[owner]?.team !== myTeam} />
+      )}
+
+      {/* A ritual summoning: the field darkens and the tributes orbit the board's centre. */}
+      {playing && showCards && (
+        <RitualRites
+          size={size}
+          facingFor={(owner) => CARD_FACING[owner] ?? 0}
+          upright={-(display ? displayRotation(arenaTurn) : BOARD_ROTATION[seat] ?? 0)}
+          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+        />
+      )}
+
+      {/* A card played onto a full field, torn apart where it landed. */}
+      {playing && showCards && (
+        <CardOverflows facingFor={(owner) => CARD_FACING[owner] ?? 0} isEnemy={(owner) => seats?.[owner]?.team !== myTeam} />
+      )}
+
+      {/* Raigeki: lightning down every square of its row and column. */}
+      {playing && showCards && (
+        <Lightning
+          liftAt={(x, y) => (layoutView ? liftAt(layoutView, x, y) : 0)}
+          facingFor={(owner) => CARD_FACING[owner] ?? 0}
+          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+        />
+      )}
+
+      {/* Dark Hole: the field whirls into a black hole in the middle of the board. */}
+      {playing && showCards && (
+        <DarkHole
+          size={size}
+          liftAt={(x, y) => (layoutView ? liftAt(layoutView, x, y) : 0)}
+          facingFor={(owner) => CARD_FACING[owner] ?? 0}
+          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+        />
+      )}
+
+      {/* Exodia assembled: the Forbidden One rises over the field and obliterates the enemy. */}
+      {playing && showCards && (
+        <Exodia
+          size={size}
+          upright={-(display ? displayRotation(arenaTurn) : BOARD_ROTATION[seat] ?? 0)}
+          liftAt={(x, y) => (layoutView ? liftAt(layoutView, x, y) : 0)}
+          facingFor={(owner) => CARD_FACING[owner] ?? 0}
+          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+        />
       )}
 
       {/* A deck leader losing LP: the hit, and how much it cost. */}

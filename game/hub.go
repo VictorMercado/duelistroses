@@ -11,6 +11,7 @@ import (
 	"duelistRoses/bot"
 	"duelistRoses/content"
 	"duelistRoses/profile"
+	"duelistRoses/replay"
 )
 
 // Hub is the set of rooms on this server.
@@ -26,6 +27,9 @@ type Hub struct {
 	NewBot func(kind string) bot.Bot
 	// Profiles is where finished duels are recorded; nil records nothing.
 	Profiles *profile.Store
+	// Replays is where duels are recorded to be watched again; nil records
+	// nothing.
+	Replays *replay.Store
 }
 
 func NewHub(c *content.Service, newBot func(string) bot.Bot) *Hub {

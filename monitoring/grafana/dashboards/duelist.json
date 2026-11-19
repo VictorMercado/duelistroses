@@ -1713,10 +1713,299 @@
           "sort": "desc"
         }
       }
+    },
+    {
+      "type": "table",
+      "title": "Client errors by IP",
+      "id": 30,
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "duelist-app"
+      },
+      "description": "Every address that sent an error report in the time range, most reports first. The IP is the player's, read through Traefik's X-Forwarded-For (see TRUSTED_PROXIES). Click an IP to filter the reports below.",
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 81
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "duelist-app"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "http://app:9091/internal/client-errors/ips?from=${__from}&to=${__to}",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "ip",
+              "text": "IP",
+              "type": "string"
+            },
+            {
+              "selector": "reports",
+              "text": "Reports",
+              "type": "number"
+            },
+            {
+              "selector": "bugs",
+              "text": "Bugs",
+              "type": "number"
+            },
+            {
+              "selector": "users",
+              "text": "Players",
+              "type": "string"
+            },
+            {
+              "selector": "lastSeen",
+              "text": "Last seen",
+              "type": "timestamp"
+            },
+            {
+              "selector": "firstSeen",
+              "text": "First seen",
+              "type": "timestamp"
+            },
+            {
+              "selector": "lastKind",
+              "text": "Last kind",
+              "type": "string"
+            },
+            {
+              "selector": "lastMessage",
+              "text": "Last error",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "IP"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show this IP's reports",
+                    "url": "/d/duelist?${__url_time_range}&var-ip=${__value.raw}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reports"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bugs"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Reports",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Recent client errors",
+      "id": 31,
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "duelist-app"
+      },
+      "description": "The newest 500 error reports in the time range (only the Client IP variable's address when it is set). The full report: GET /api/admin/client-errors/{ID}.",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 90
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "duelist-app"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "http://app:9091/internal/client-errors?from=${__from}&to=${__to}&ip=${ip}",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "receivedAt",
+              "text": "Time",
+              "type": "timestamp"
+            },
+            {
+              "selector": "ip",
+              "text": "IP",
+              "type": "string"
+            },
+            {
+              "selector": "userName",
+              "text": "Player",
+              "type": "string"
+            },
+            {
+              "selector": "kind",
+              "text": "Kind",
+              "type": "string"
+            },
+            {
+              "selector": "message",
+              "text": "Message",
+              "type": "string"
+            },
+            {
+              "selector": "roomId",
+              "text": "Room",
+              "type": "string"
+            },
+            {
+              "selector": "build",
+              "text": "Build",
+              "type": "string"
+            },
+            {
+              "selector": "fingerprint",
+              "text": "Bug",
+              "type": "string"
+            },
+            {
+              "selector": "id",
+              "text": "ID",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "IP"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Kind"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ID"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
     }
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "type": "textbox",
+        "name": "ip",
+        "label": "Client IP",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "description": "Show only this address's reports in \"Recent client errors\". Click an IP in \"Client errors by IP\" to fill it."
+      }
+    ]
   },
   "annotations": {
     "list": []
