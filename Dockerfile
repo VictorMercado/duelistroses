@@ -26,6 +26,7 @@ COPY cardscout ./cardscout
 COPY content/*.go ./content/
 COPY content/data ./content/data
 COPY db ./db
+COPY deckai ./deckai
 COPY game ./game
 COPY metrics ./metrics
 COPY profile ./profile
