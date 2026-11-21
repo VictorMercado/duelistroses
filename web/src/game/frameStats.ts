@@ -9,9 +9,11 @@ export function countFrame() {
   frames++;
 }
 
-/** Frames drawn since the last call. */
-export function takeFrames(): number {
-  const n = frames;
-  frames = 0;
-  return n;
+/**
+ * Frames drawn since the page loaded. Readers keep their own last value and
+ * take the difference, so several counters on screen don't share (and split)
+ * one count that each of them resets.
+ */
+export function totalFrames(): number {
+  return frames;
 }

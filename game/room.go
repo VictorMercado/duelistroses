@@ -964,7 +964,7 @@ func (r *Room) start() bool {
 	}
 	setups := make([]engine.SeatSetup, len(r.slots))
 	for i, s := range r.slots {
-		setups[i] = engine.SeatSetup{Team: s.Team, Deck: s.deck, Leader: s.leader}
+		setups[i] = engine.SeatSetup{Team: s.Team, Deck: s.deck, Leader: s.leader, RarityPoints: r.rarityPoints(s)}
 	}
 	cfg := engine.DefaultConfig(r.opts.Size)
 	cfg.DestinyPool = content.DestinyPool
@@ -1026,6 +1026,21 @@ func (r *Room) act(seat int, a engine.Action, from *Client, ack int) {
 	}
 }
 
+// rarityPoints is a player's card rarity points so far, for the engine to
+// show their cards' rarity and count what they earn (see engine/rarity.go);
+// nil for a seat that keeps none: a bot, a guest. One small indexed query,
+// once per seat as the duel starts.
+func (r *Room) rarityPoints(s *slot) map[int]int {
+	if s.Kind == KindBot || s.guest || s.UserID == "" || r.hub.Profiles == nil {
+		return nil
+	}
+	points, err := r.hub.Profiles.CardPoints(s.UserID)
+	if err != nil {
+		log.Printf("room %s: card rarity for %s: %v", r.ID, s.UserID, err)
+	}
+	return points
+}
+
 // record files a finished duel in its players' profiles, once.
 func (r *Room) record() {
 	g := r.game
@@ -1045,6 +1060,7 @@ func (r *Room) record() {
 		m.Seats = append(m.Seats, profile.Seat{
 			UserID: s.UserID, Name: s.Name, Guest: s.guest, Bot: s.Kind == KindBot,
 			Team: seat.Team, Deck: s.DeckName, LP: seat.LP, Conceded: seat.Conceded, Stats: seat.Stats,
+			CardPoints: seat.CardPoints,
 		})
 	}
 	// Off the room's goroutine: the duel never waits on the disk.
@@ -1083,6 +1099,8 @@ func (r *Room) adminTool(c *Client, m incoming) {
 		err = r.game.AdminSetLP(c.seat, m.Num)
 	case "remove":
 		err = r.game.AdminRemove(c.seat, m.Num)
+	case "rarity":
+		err = r.game.AdminSetRarity(c.seat, m.Num, m.Text)
 	default:
 		err = engine.RuleError("Unknown test tool")
 	}
@@ -1461,6 +1479,12 @@ func (r *Room) broadcastRoom() {
 
 // stateFor encodes the game as one view key sees it (see viewKey).
 func (r *Room) stateFor(key int, events []engine.Event, ack int) []byte {
+	view := r.viewFor(key)
+	return r.encodeState(key, &view, events, ack)
+}
+
+// viewFor projects the game as one view key sees it.
+func (r *Room) viewFor(key int) engine.View {
 	var view engine.View
 	switch {
 	case key == adminView:
@@ -1491,7 +1515,13 @@ func (r *Room) stateFor(key int, events []engine.Event, ack int) []byte {
 	default:
 		view = r.game.ViewFor(key)
 	}
-	m := Outgoing{T: "state", Seq: r.seq, State: &view, Events: hideChains(key, events), ID: ack}
+	return view
+}
+
+// encodeState encodes a view as the state message for its key; ack is the
+// id of the action it answers for the connection that sent it, else 0.
+func (r *Room) encodeState(key int, view *engine.View, events []engine.Event, ack int) []byte {
+	m := Outgoing{T: "state", Seq: r.seq, State: view, Events: hideChains(key, events), ID: ack}
 	if !r.deadline.IsZero() {
 		m.Deadline = r.deadline.UnixMilli()
 	}
@@ -1545,16 +1575,28 @@ func (r *Room) broadcastStateAck(events []engine.Event, from *Client, ack int) {
 		return
 	}
 	r.seq++
+	// Each view is worked out once per key. The connection that sent the
+	// action shares it and only gets its own encoding, with the ack.
+	views := map[int]*engine.View{}
+	viewOf := func(key int) *engine.View {
+		v, ok := views[key]
+		if !ok {
+			built := r.viewFor(key)
+			v = &built
+			views[key] = v
+		}
+		return v
+	}
 	cache := map[int][]byte{}
 	for c := range r.clients {
+		key := r.viewKey(c)
 		if c == from && ack != 0 {
-			c.send(r.stateFor(r.viewKey(c), events, ack))
+			c.send(r.encodeState(key, viewOf(key), events, ack))
 			continue
 		}
-		key := r.viewKey(c)
 		b, ok := cache[key]
 		if !ok {
-			b = r.stateFor(key, events, 0)
+			b = r.encodeState(key, viewOf(key), events, 0)
 			cache[key] = b
 		}
 		c.send(b)

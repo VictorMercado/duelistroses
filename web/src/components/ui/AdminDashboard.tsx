@@ -1,5 +1,5 @@
 import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
-import { closeRoom, createAccount, listAccounts, listAllRooms, setAccountAdmin, setAccountPassword, type AccountInfo } from "@/net/api";
+import { closeRoom, createAccount, GAME_URL, listAccounts, listAllRooms, openGrafanaSession, setAccountAdmin, setAccountPassword, type AccountInfo } from "@/net/api";
 import type { RoomInfo } from "@/net/protocol";
 import { session } from "@/net/session";
 import { useMenuStore } from "@/stores/menuStore";
@@ -8,6 +8,8 @@ import { poll, POLL } from "@/net/poll";
 import ArenaPanel from "./ArenaPanel";
 import CardsPanel, { type CardDraft } from "./CardsPanel";
 import CardLabPanel from "./CardLabPanel";
+import DeckAIPanel from "./DeckAIPanel";
+import CardScoutPanel from "./CardScoutPanel";
 
 const ghost = " border border-white/25 px-3 py-2 text-sm hover:border-white active:border-yellow-400 disabled:opacity-40 pointer-coarse:min-h-11";
 const small = " border border-white/25 px-2 py-1 text-xs hover:border-white disabled:opacity-40 pointer-coarse:min-h-10";
@@ -21,6 +23,9 @@ const TABS = [
   { id: "arena", label: "⚔️ Arena" },
   { id: "cards", label: "🃏 Cards" },
   { id: "lab", label: "✨ Card Lab" },
+  { id: "deckai", label: "🤖 Deck AI" },
+  { id: "scout", label: "🔭 Card Scout" },
+  { id: "monitoring", label: "📈 Monitoring" },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
 const TAB_KEY = "admin.tab";
@@ -57,7 +62,8 @@ function savedTab(): Tab {
 /**
  * The administrators' pages, one per tab: accounts (admin access and
  * passwords), rooms, the arena (test games between bots and LLMs), the card
- * editor and the Card Lab (Claude designs cards). Only administrators reach it.
+ * editor, the Card Lab (Claude designs cards) and the Card Scout (outside
+ * cards Claude adapted, waiting for review). Only administrators reach it.
  */
 export default function AdminDashboard() {
   const { token, user } = useSessionStore();
@@ -113,13 +119,13 @@ export default function AdminDashboard() {
   const admins = accounts?.filter((a) => a.admin).length ?? 0;
   return (
     <div className="absolute inset-0 z-40 overflow-y-auto overscroll-contain bg-black/60 p-3 pt-[max(3.5rem,calc(env(safe-area-inset-top)+3rem))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] font-mono text-white">
-      {/* Centred and capped, so rows stay readable on a wide monitor. */}
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
+      {/* Centred and capped, so rows stay readable on a wide monitor; the Grafana dashboards use the full width. */}
+      <div className={`mx-auto flex w-full flex-col gap-3 ${tab === "monitoring" ? "" : "max-w-5xl"}`}>
       <header className="flex flex-wrap items-center gap-2">
         <button className={ghost} onClick={() => setScreen("lobby")}>← Menu</button>
         <h1 className="mr-2 text-xl font-bold text-fuchsia-300">Admin</h1>
       </header>
-      <nav className="-mx-1 flex gap-1 overflow-x-auto border-b border-white/15 px-1" role="tablist">
+      <nav className="-mx-1 flex justify-center-safe gap-1 overflow-x-auto border-b border-white/15 px-1" role="tablist">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -159,6 +165,20 @@ export default function AdminDashboard() {
             onOpen={(card) => { setDraft({ key: Date.now(), card: { card, from: "from the Card Lab" } }); go("cards"); }}
           />
           </PageBoundary>
+        </div>
+      )}
+
+      {opened.has("scout") && (
+        <div hidden={tab !== "scout"}>
+          <PageBoundary name="Card Scout"><CardScoutPanel token={token} active={tab === "scout"} onNotice={setNotice} /></PageBoundary>
+        </div>
+      )}
+
+      {tab === "deckai" && <PageBoundary name="Deck AI"><DeckAIPanel token={token} onNotice={setNotice} /></PageBoundary>}
+
+      {opened.has("monitoring") && (
+        <div hidden={tab !== "monitoring"}>
+          <PageBoundary name="Monitoring"><Monitoring token={token} /></PageBoundary>
         </div>
       )}
 
@@ -319,6 +339,16 @@ function AccountRow({ account, me, onOpen, onBuild, onAdmin, onPassword }: {
 function Rooms({ token, onNotice }: { token: string; onNotice: (notice: Notice) => void; }) {
   const [rooms, setRooms] = useState<RoomInfo[] | null>(null);
   const [busy, setBusy] = useState("");
+  // The room whose close button was tapped once and now asks to be tapped again.
+  // An in-page confirm rather than window.confirm, which some browsers (embedded
+  // previews, automation, a tab losing focus) dismiss on their own.
+  const [armed, setArmed] = useState("");
+
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(""), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
 
   useEffect(() => {
     let live = true;
@@ -327,8 +357,8 @@ function Rooms({ token, onNotice }: { token: string; onNotice: (notice: Notice) 
   }, [token, onNotice]);
 
   const close = async (room: RoomInfo) => {
-    const what = room.started && !room.finished ? "end the duel in progress and disconnect" : "disconnect";
-    if (!confirm(`Close room ${room.id}? This will ${what} everyone in it.`)) return;
+    if (armed !== room.id) { setArmed(room.id); return; }
+    setArmed("");
     setBusy(room.id);
     onNotice(null);
     try {
@@ -361,8 +391,13 @@ function Rooms({ token, onNotice }: { token: string; onNotice: (notice: Notice) 
                 </p>
               </div>
               {room.started && <button className={small} onClick={() => session.connect(room.id, "admin")}>Watch</button>}
-              <button className={`${small} border-rose-400/60 text-rose-200 hover:border-rose-300`} disabled={busy === room.id} onClick={() => close(room)}>
-                {room.started && !room.finished ? "End duel & close" : "Close room"}
+              <button
+                className={`${small} ${armed === room.id ? "border-rose-300 bg-rose-900/70 font-bold text-white" : "border-rose-400/60 text-rose-200 hover:border-rose-300"}`}
+                disabled={busy === room.id}
+                title={armed === room.id ? `This ${room.started && !room.finished ? "ends the duel in progress and disconnects" : "disconnects"} everyone in it.` : undefined}
+                onClick={() => close(room)}
+              >
+                {armed === room.id ? "Tap again to close" : room.started && !room.finished ? "End duel & close" : "Close room"}
               </button>
             </li>
           );
@@ -370,5 +405,36 @@ function Rooms({ token, onNotice }: { token: string; onNotice: (notice: Notice) 
         {rooms && rooms.length === 0 && <li className="text-sm text-white/50">No rooms are open.</li>}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Grafana's "Duelist server" dashboard, inside the portal: the game server
+ * proxies Grafana at /grafana/ to administrators and signs in to it for them
+ * (api/grafana.go), so there is nothing else to open or log in to. It stays
+ * mounted once opened, so switching tabs keeps its place and time range.
+ */
+function Monitoring({ token }: { token: string; }) {
+  const [state, setState] = useState<"opening" | "ready" | string>("opening");
+  useEffect(() => {
+    let live = true;
+    openGrafanaSession(token)
+      .then(() => live && setState("ready"))
+      .catch((e) => live && setState((e as Error).message));
+    return () => { live = false; };
+  }, [token]);
+
+  if (state === "opening") return <p className="text-sm text-white/60">Opening the dashboards…</p>;
+  if (state !== "ready") return <p className="text-sm text-rose-300">{state}</p>;
+  const src = `${GAME_URL}/grafana/d/duelist?theme=dark&refresh=30s`;
+  return (
+    <div className="flex flex-col gap-1">
+      <iframe
+        title="Monitoring: the Duelist server dashboard"
+        src={src}
+        className="h-[calc(100dvh-11rem)] min-h-96 w-full border border-white/15 bg-black"
+      />
+      <a className="self-end text-xs text-white/50 underline hover:text-white" href={src} target="_blank" rel="noreferrer">Open in a new tab</a>
+    </div>
   );
 }

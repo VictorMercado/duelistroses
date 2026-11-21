@@ -12,6 +12,8 @@ import { wsUrl } from './api';
 import { voice } from './voice';
 import { crumb, reportError } from './errorReport';
 import type { Action, AdminTool, GameEvent, GameView, LobbyMessage, RoomInfo, Selection, ServerMessage } from './protocol';
+import { rarityInfo } from '@/const';
+import type { Rarity } from '@/types';
 
 /** How long a duel's first state may wait for its cards' art before it is shown anyway. */
 const FIRST_STATE_WAIT_MS = 3000;
@@ -563,6 +565,13 @@ class Session {
         break;
       }
       case 'rankUp': store.pushLog(`${who}'s deck leader rose to rank ${event.amount}.`, mine ? 'good' : 'info'); break;
+      case 'rarity': {
+        // A monster crossed a rarity threshold by killing: its foil changes on the board at once.
+        const rarity = rarityInfo(event.text as Rarity);
+        store.pushLog(`${who}'s ${cardName(event.num)} is now ${/^[AEIOU]/.test(rarity.name) ? 'an' : 'a'} ${rarity.name}!`, mine ? 'good' : 'info');
+        sound('powerup');
+        break;
+      }
       case 'leaderWin': store.pushLog(`${event.text} is unleashed! ${who} wins.`, mine ? 'good' : 'bad'); break;
       case 'adminTool': store.pushLog(`🛠 ${who} ${event.text ?? 'used the test tools'}.`, 'say'); break;
     }

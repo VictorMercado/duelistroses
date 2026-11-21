@@ -11,6 +11,9 @@ type SeatSetup struct {
 	Team   int
 	Deck   []int // card numbers
 	Leader int   // the deck leader's card number (unknown: none)
+	// RarityPoints is the player's rarity points so far, by card number; nil
+	// for a seat that keeps none (a bot, a guest). See rarity.go.
+	RarityPoints map[int]int
 }
 
 // seatEdges places leaders in the middle of an edge: south, north, east, west.
@@ -64,6 +67,7 @@ func New(cfg Config, cat Catalog, tiles map[Pos]string, seats []SeatSetup, seed 
 		g.Seats = append(g.Seats, &Seat{
 			Index: i, Team: setup.Team, Alive: true,
 			LP: cfg.StartLP, Stars: cfg.StartStars, Leader: leader, Deck: deck, Rank: 1,
+			RarityBase: setup.RarityPoints,
 		})
 		if def := cat.Card(setup.Leader); def != nil && def.IsMonster() {
 			g.Seats[i].LeaderDef = def
@@ -332,6 +336,10 @@ func (g *Game) damage(seat, amount int, reason string, by int) {
 	lost := min(amount, s.LP)
 	s.LP -= lost
 	g.creditDamage(seat, by, lost)
+	// The final blow to a deck leader.
+	if s.LP <= 0 && by != noOne {
+		g.earn(LeaderKillPoints, by, seat)
+	}
 	// Only what the seat actually lost: damage beyond its last LP is gone, it
 	// never spills onto a teammate.
 	g.emit(Event{Type: "damage", Seat: seat, Amount: lost, Text: reason, X: s.Leader.X, Y: s.Leader.Y})
@@ -562,13 +570,9 @@ func (g *Game) beginTurn() {
 	if len(s.Hand) < g.Cfg.HandSize {
 		g.destinyDraw(s)
 	}
-	for len(s.Hand) < g.Cfg.HandSize {
-		if len(s.Deck) == 0 {
-			// Nothing left to draw: the duelist has lost.
-			g.eliminate(s, "deck ran out")
-			g.settle()
-			return
-		}
+	// An empty deck is no loss: the duelist plays on with what is in hand and
+	// on the field, which can still win the duel.
+	for len(s.Hand) < g.Cfg.HandSize && len(s.Deck) > 0 {
 		g.draw(s)
 	}
 
@@ -629,4 +633,10 @@ func (g *Game) finishOnPoints() {
 		winner = -1
 	}
 	g.finish(winner, "round limit reached")
+}
+
+// TypeTerrain says where a monster type is strong and where it is weak.
+func TypeTerrain(monsterType string) (strong, weak []string) {
+	t := typeTerrain[monsterType]
+	return t.strong, t.weak
 }

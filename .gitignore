@@ -62,3 +62,10 @@ content/assets/*
 ./assets
 # dev.sh pids and logs
 .dev/
+
+# make_mask: its Python environment, the masks it makes for review (the ones
+# accepted are copied into content/assets), and the sample art it was tried on.
+make_mask/venv/
+make_mask/review/
+make_mask/cards/
+make_mask/__pycache__/

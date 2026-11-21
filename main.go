@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -8,13 +9,16 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"duelistRoses/api"
 	"duelistRoses/auth"
 	"duelistRoses/bot"
 	"duelistRoses/cardlab"
+	"duelistRoses/cardscout"
 	"duelistRoses/content"
 	"duelistRoses/db"
+	"duelistRoses/deckai"
 	"duelistRoses/game"
 	"duelistRoses/metrics"
 	"duelistRoses/profile"
@@ -151,7 +155,27 @@ func main() {
 	accounts.Register(mux)
 	library.Register(mux)
 	errorReports.Register(mux)
-	(&api.Server{Hub: hub, Auth: accounts, LLMAvailable: llm, LLMDefault: defaultModel, DefaultTurn: turnSeconds, Profiles: profiles, Replays: replays, Arena: game.NewArena(library, llm), CardLab: cardlab.New(library, llm, defaultModel)}).Register(mux)
+	cardLab := cardlab.New(library, llm, defaultModel)
+	// The card scout: finds Synchro monsters, has Claude suggest how each
+	// could work here, and keeps them for review in the admin portal. It is
+	// switched on from there (and stays on across restarts).
+	scoutInterval, err := time.ParseDuration(env("CARD_SCOUT_INTERVAL", "5m"))
+	if err != nil {
+		log.Fatalf("CARD_SCOUT_INTERVAL: %v", err)
+	}
+	scoutDaily, _ := strconv.Atoi(env("CARD_SCOUT_DAILY", "60"))
+	scout := cardscout.New(library, cardLab, database, llm, cardscout.Config{
+		Model:      env("CARD_SCOUT_MODEL", defaultModel),
+		Interval:   scoutInterval,
+		DailyLimit: scoutDaily,
+		AssetDir:   assetDir,
+		Scripts:    env("CARD_SCOUT_SCRIPTS", "./scripts/content"),
+		MaskModel:  os.Getenv("CARD_SCOUT_MASK_MODEL"),
+		// Card images administrators upload for Claude to read.
+		UploadDir: filepath.Join(dataDir, "scout-uploads"),
+	})
+	go scout.Run(context.Background())
+	(&api.Server{Hub: hub, Auth: accounts, LLMAvailable: llm, LLMDefault: defaultModel, DefaultTurn: turnSeconds, Profiles: profiles, Replays: replays, Arena: game.NewArena(library, llm), CardLab: cardLab, DeckAI: deckai.New(library, database, llm, defaultModel), Scout: scout}).Register(mux)
 
 	// The built game client. Unknown paths are its routes.
 	staticDir := env("STATIC_DIR", "./web/dist")

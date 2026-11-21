@@ -271,26 +271,33 @@ func TestPositionChangeCanFlipFaceUp(t *testing.T) {
 	}
 }
 
-func TestFlippingAndAttackPositionLeaveTheCardFreeToMove(t *testing.T) {
+// Turning a card face up, or changing its position, is its order for the turn:
+// it cannot move afterwards. To flip (or leave defense) and move, it does both
+// in one move order.
+func TestFlippingOrChangingPositionIsTheCardsOrder(t *testing.T) {
 	g := duel(t)
 	c := put(g, 2, 0, 0, 0, true)
 	must(t, g, 0, Action{Type: ActFlip, CardID: c.ID})
-	if c.FaceDown || c.Acted {
-		t.Fatal("a monster turned face up can still act")
+	if c.FaceDown || !c.Acted {
+		t.Fatal("turning a monster face up is its order for the turn")
 	}
-	must(t, g, 0, Action{Type: ActMove, CardID: c.ID, X: 0, Y: 1})
-	if c.Pos != (Pos{0, 1}) || !c.Acted {
-		t.Fatal("it moves after flipping, and that is its order")
-	}
+	refuse(t, g, 0, Action{Type: ActMove, CardID: c.ID, X: 0, Y: 1})
 
 	g = duel(t)
 	c = put(g, 2, 0, 0, 0, false)
 	c.Defense = true
 	must(t, g, 0, Action{Type: ActPosition, CardID: c.ID, Defense: false})
-	if c.Defense || c.Acted {
-		t.Fatal("switching to attack leaves the card free to move")
+	if c.Defense || !c.Acted {
+		t.Fatal("switching to attack is the card's order for the turn")
 	}
-	must(t, g, 0, Action{Type: ActMove, CardID: c.ID, X: 0, Y: 1})
+	refuse(t, g, 0, Action{Type: ActMove, CardID: c.ID, X: 0, Y: 1})
+
+	g = duel(t)
+	c = put(g, 2, 0, 0, 0, true)
+	must(t, g, 0, Action{Type: ActMove, CardID: c.ID, X: 0, Y: 1, Flip: true})
+	if c.FaceDown || c.Pos != (Pos{0, 1}) || !c.Acted {
+		t.Fatal("flip and move are one order")
+	}
 
 	g = duel(t)
 	c = put(g, 2, 0, 0, 0, true)
@@ -325,14 +332,11 @@ func TestMonstersNeverMoveInDefense(t *testing.T) {
 		t.Fatal("flip and move in one order ends face up in attack position")
 	}
 
-	// Flip up first, as its own order, and the card can still move afterwards.
+	// Flip up first, as its own order, and that is the card's turn: no move after it.
 	g = duel(t)
 	c = put(g, 2, 0, 0, 0, true)
 	must(t, g, 0, Action{Type: ActFlip, CardID: c.ID})
-	must(t, g, 0, Action{Type: ActMove, CardID: c.ID, X: 0, Y: 1})
-	if c.FaceDown || c.Defense || c.Pos != (Pos{0, 1}) {
-		t.Fatal("a card flipped face up keeps its move")
-	}
+	refuse(t, g, 0, Action{Type: ActMove, CardID: c.ID, X: 0, Y: 1})
 }
 
 func TestDirectAttackAndVictory(t *testing.T) {
@@ -719,12 +723,20 @@ func TestTraps(t *testing.T) {
 	}
 }
 
-func TestDeckOutLoses(t *testing.T) {
+func TestDeckOutPlaysOn(t *testing.T) {
 	g := duel(t)
 	g.Seats[1].Deck = nil
+	g.Seats[1].Hand = g.Seats[1].Hand[:0]
 	must(t, g, 0, Action{Type: ActEndTurn})
-	if g.Phase != PhaseFinished || g.WinnerTeam != 0 {
-		t.Fatal("a duelist who cannot draw loses")
+	if g.Phase != PhasePlaying || !g.Seats[1].Alive || g.Turn != 1 {
+		t.Fatal("a duelist with an empty deck keeps playing")
+	}
+	if len(g.Seats[1].Hand) != 0 {
+		t.Fatal("nothing is drawn from an empty deck")
+	}
+	must(t, g, 1, Action{Type: ActEndTurn})
+	if g.Phase != PhasePlaying || !g.Seats[1].Alive {
+		t.Fatal("and can end its turn with nothing in hand")
 	}
 }
 
@@ -1391,5 +1403,34 @@ func TestHideChainShowsWhatIsPublic(t *testing.T) {
 	}
 	if st := chainOf(true, 22)[0]; st.Base != HiddenNum || st.Add != HiddenNum || st.Result != HiddenNum {
 		t.Fatalf("power-up into a face-down monster: %+v", st)
+	}
+}
+
+// Cards played onto one already on the field merge into it in order: the
+// field card is the first in the chain, not the last.
+func TestChainStartsFromFieldCard(t *testing.T) {
+	g := duel(t, 1, 2, 4)
+	s := g.Seats[0]
+	put(g, 1, 0, 0, -2, false)
+	two, four := g.newCard(2, 0), g.newCard(4, 0)
+	s.Hand = append(s.Hand, two, four)
+	must(t, g, 0, Action{Type: ActSummon, CardIDs: []int{two.ID, four.ID}, X: 0, Y: -2})
+	var steps []ChainStep
+	for _, e := range g.TakeEvents() {
+		if e.Type == "fusionChain" {
+			steps = e.Steps
+		}
+	}
+	want := []struct{ base, add, result int }{{1, 2, 9}, {9, 4, 4}}
+	if len(steps) != len(want) {
+		t.Fatalf("steps %+v", steps)
+	}
+	for i, w := range want {
+		if st := steps[i]; st.Base != w.base || st.Add != w.add || st.Result != w.result || !st.Board {
+			t.Fatalf("step %d: got %+v, want %+v on the board", i, st, w)
+		}
+	}
+	if got := g.Board[Pos{0, -2}]; got == nil || got.Def.Num != 4 {
+		t.Fatalf("board %+v", got)
 	}
 }

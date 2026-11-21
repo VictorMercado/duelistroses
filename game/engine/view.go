@@ -48,11 +48,15 @@ type CardView struct {
 	// Terrain is what the square adds to the monster's ATK and DEF (already
 	// in Atk and Def): positive where it is strong, negative where weak.
 	Terrain int `json:"terrain,omitempty"`
+	// Rarity is the card's rarity for the player whose deck it came from
+	// (see rarity.go): empty for common, and for a card hidden from the viewer.
+	Rarity string `json:"rarity,omitempty"`
 }
 
 type HandCardView struct {
-	ID  int `json:"id"`
-	Num int `json:"num"`
+	ID     int    `json:"id"`
+	Num    int    `json:"num"`
+	Rarity string `json:"rarity,omitempty"`
 }
 
 type SeatView struct {
@@ -183,7 +187,7 @@ func (g *Game) ViewAll() View {
 	for _, s := range g.Seats {
 		hand := []HandCardView{}
 		for _, c := range s.Hand {
-			hand = append(hand, HandCardView{ID: c.ID, Num: c.Def.Num})
+			hand = append(hand, HandCardView{ID: c.ID, Num: c.Def.Num, Rarity: g.rarityOf(c)})
 		}
 		reveal.Hands = append(reveal.Hands, hand)
 		reveal.Decks = append(reveal.Decks, append([]int{}, s.Deck...))
@@ -217,7 +221,9 @@ func (g *Game) view(viewer int, all bool) View {
 		})
 	}
 
-	for _, c := range g.boardCards() {
+	// Sorted once for the whole view; nothing below adds or removes cards.
+	board := g.boardCards()
+	for _, c := range board {
 		cv := CardView{
 			ID: c.ID, Owner: c.Owner, X: c.Pos.X, Y: c.Pos.Y,
 			FaceDown: c.FaceDown, Defense: c.Defense, Acted: c.Acted,
@@ -240,9 +246,10 @@ func (g *Game) view(viewer int, all bool) View {
 			}
 		} else {
 			cv.Num = c.Def.Num
+			cv.Rarity = g.rarityOf(c)
 			cv.AtkMod, cv.DefMod = c.AtkMod, c.DefMod
 			if c.Def.IsMonster() {
-				cv.Atk, cv.Def = g.atk(c, g.Tiles[c.Pos]), g.def(c, g.Tiles[c.Pos])
+				cv.Atk, cv.Def = g.strengthOn(c, g.Tiles[c.Pos])
 				cv.Terrain = c.Def.bonus(g.Tiles[c.Pos])
 			}
 		}
@@ -251,7 +258,7 @@ func (g *Game) view(viewer int, all bool) View {
 
 	if s := g.seat(viewer); s != nil {
 		for _, c := range s.Hand {
-			v.Hand = append(v.Hand, HandCardView{ID: c.ID, Num: c.Def.Num})
+			v.Hand = append(v.Hand, HandCardView{ID: c.ID, Num: c.Def.Num, Rarity: g.rarityOf(c)})
 		}
 		if s.PeekTurn > 0 && s.PeekTurn == g.TurnCount {
 			for _, o := range g.enemies(s.Index) {
@@ -278,7 +285,7 @@ func (g *Game) view(viewer int, all bool) View {
 		if legal.Leader == nil {
 			legal.Leader = []Pos{}
 		}
-		for _, c := range g.boardCards() {
+		for _, c := range board {
 			if c.Owner != viewer {
 				continue
 			}
@@ -313,16 +320,20 @@ func (g *Game) view(viewer int, all bool) View {
 		for _, t := range v.Tiles {
 			terrains[t] = true
 		}
-		for _, c := range g.boardCards() {
+		for _, c := range board {
 			if c.Owner != viewer || !c.Def.IsMonster() {
 				continue
 			}
 			if legal.Strength == nil {
 				legal.Strength = map[int]map[string]Strength{}
 			}
-			byTerrain := map[string]Strength{}
+			// The auras are the same on every terrain: scan them once, not twice per terrain.
+			auraAtk, auraDef := g.auraBonus(c)
+			baseAtk, baseDef := c.baseStats()
+			byTerrain := make(map[string]Strength, len(terrains))
 			for t := range terrains {
-				byTerrain[t] = Strength{Atk: g.atk(c, t), Def: g.def(c, t)}
+				b := c.Def.bonus(t)
+				byTerrain[t] = Strength{Atk: floor0(baseAtk + c.AtkMod + auraAtk + b), Def: floor0(baseDef + c.DefMod + auraDef + b)}
 			}
 			legal.Strength[c.ID] = byTerrain
 		}

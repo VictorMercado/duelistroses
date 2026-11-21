@@ -17,7 +17,9 @@ import (
 	"duelistRoses/auth"
 	"duelistRoses/bot"
 	"duelistRoses/cardlab"
+	"duelistRoses/cardscout"
 	"duelistRoses/content"
+	"duelistRoses/deckai"
 	"duelistRoses/game"
 	"duelistRoses/profile"
 	"duelistRoses/replay"
@@ -37,6 +39,10 @@ type Server struct {
 	Arena *game.Arena
 	// CardLab is the Claude conversation that designs cards.
 	CardLab *cardlab.Lab
+	// DeckAI is the deck builder's Claude assistant.
+	DeckAI *deckai.Assistant
+	// Scout finds cards to add and keeps them for review; nil turns it off.
+	Scout *cardscout.Scout
 
 	social social
 }
@@ -103,6 +109,9 @@ func (s *Server) Register(mux *http.ServeMux) {
 	s.registerAdmin(mux)
 	s.registerProfiles(mux)
 	s.registerReplays(mux)
+	s.registerGrafana(mux)
+	s.registerDeckAI(mux)
+	s.registerCardScout(mux)
 }
 
 // Map choices that are not a map id.

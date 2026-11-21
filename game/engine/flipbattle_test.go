@@ -3,9 +3,9 @@ package engine
 import "testing"
 
 // A monster whose flip raises its own ATK fights with the raised ATK, however
-// it was turned face up: flipped as part of the attack, flipped first, or
-// turned face up with a position change; and when it is the face-down
-// defender, revealed by the attack.
+// it was turned face up: flipped as part of the attack, flipped on its own
+// earlier, or turned face up with a position change; and when it is the
+// face-down defender, revealed by the attack.
 func TestFlipBoostCountsInTheBattle(t *testing.T) {
 	const booster = 9101
 	c := testCatalog{}
@@ -26,11 +26,15 @@ func TestFlipBoostCountsInTheBattle(t *testing.T) {
 		switch how {
 		case "flip with the move":
 			must(t, g, 0, Action{Type: ActMove, CardID: b.ID, X: 0, Y: 1, Flip: true})
+		// Flipping, or a position change, is the card's whole order: it attacks
+		// on a later turn (its order given back here, as a new turn would).
 		case "flip first":
 			must(t, g, 0, Action{Type: ActFlip, CardID: b.ID})
+			b.Acted = false
 			must(t, g, 0, Action{Type: ActMove, CardID: b.ID, X: 0, Y: 1})
 		case "position and flip":
 			must(t, g, 0, Action{Type: ActPosition, CardID: b.ID, Defense: false, Flip: true})
+			b.Acted = false
 			must(t, g, 0, Action{Type: ActMove, CardID: b.ID, X: 0, Y: 1})
 		}
 		if drake.OnBoard || !b.OnBoard || g.Board[Pos{0, 1}] != b {

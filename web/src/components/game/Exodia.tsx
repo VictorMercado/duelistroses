@@ -59,8 +59,8 @@ const HOVER = 1.0; // how high the pieces rise over their squares
 const FACE = 0.87;
 /** How big the assembled figure is, in cards. */
 const SCALE = 1.25;
-/** Where the figure stands, in the screen-facing frame: a little towards the near edge, its feet just off the board. */
-const ORIGIN = new Vector3(0, -0.7, DARK_Z + 0.2);
+/** Where the figure stands, in the screen-facing frame: well towards the near edge, so the whole figure sits low enough on screen to see. */
+const ORIGIN = new Vector3(0, -1.6, DARK_Z + 0.2);
 
 /** Each piece's place in the figure, in cards: legs, then arms, then the head last (its order of arrival). */
 const SLOTS: { name: string; x: number; y: number; z: number; }[] = [

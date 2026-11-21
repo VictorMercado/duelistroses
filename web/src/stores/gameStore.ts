@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Card } from '@/types';
 import type { CardView, GameEvent, GameView, RoomInfo, SandboxInfo, Selection } from '@/net/protocol';
-import { toRenderCard } from '@/game/catalog';
+import { pruneRenderCards, toRenderCard } from '@/game/catalog';
 import { liftAt } from '@/game/terrain';
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'open' | 'reconnecting' | 'closed';
@@ -47,7 +47,11 @@ function withPrediction(view: GameView, p: Prediction): GameView | null {
   };
 }
 
-const renderCards = (view: GameView) => view.cards.map((card: CardView, index) => toRenderCard(card, index, liftAt(view, card.x, card.y)));
+const renderCards = (view: GameView) => {
+  const cards = view.cards.map((card: CardView, index) => toRenderCard(card, index, liftAt(view, card.x, card.y)));
+  pruneRenderCards(new Set(view.cards.map((card) => card.id)));
+  return cards;
+};
 
 /** How a bot reached a move. The server sends these to administrators only. */
 export interface Thought { id: number; seat: number; name: string; text: string; action: string; }

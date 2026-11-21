@@ -27,6 +27,7 @@ import DestinyBanner from "@/components/ui/DestinyBanner";
 import { ActionBar, AdminPanel, ThinkingPanel, ChoiceDialog, EventLog, FocusPortals, GameOver, GraveyardView, HandView, PausedOverlay, TilePreview, TurnRow } from "@/components/ui/GameOverlays";
 import { BaseHolographicMaterial } from "@/shaders/BaseHolographic";
 import { GodRaysMaterial } from "@/shaders/GodRays";
+import { FoilMaterial } from "@/shaders/Foil";
 import { useIsMobileLandscape } from "@/hooks/useIsMobile";
 import { useGameAudio } from "@/hooks/useGameAudio";
 import { useWakeLock } from "@/hooks/useWakeLock";
@@ -39,7 +40,7 @@ import { useReplayStore } from "@/net/replay";
 import { ReplayBar, ReplayLoading } from "@/components/ui/Replays";
 import { watchRenderer } from "@/net/errorReport";
 
-extend({ BaseHolographicMaterial, GodRaysMaterial });
+extend({ BaseHolographicMaterial, GodRaysMaterial, FoilMaterial });
 
 const DEG = Math.PI / 180;
 
@@ -49,12 +50,32 @@ function leave() {
   if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
 }
 
+// Store fields the 3D scene never draws: a change to only these needs no new frame.
+// (The latency ping alone arrives every few seconds.)
+const UNDRAWN_GAME = new Set(["latency", "log", "thoughts", "deadline", "status", "players"]);
+const UNDRAWN_INTERACTION = new Set(["handIndex", "choiceIndex", "device", "busy", "preview", "tilePreview", "handSeat"]);
+
+/** True when some field outside `undrawn` changed. */
+function drawnChange(undrawn: Set<string>) {
+  return (state: object, previous: object) => {
+    const before = previous as Record<string, unknown>;
+    for (const [key, value] of Object.entries(state)) if (value !== before[key] && !undrawn.has(key)) return true;
+    return false;
+  };
+}
+const gameChanged = drawnChange(UNDRAWN_GAME);
+const interactionChanged = drawnChange(UNDRAWN_INTERACTION);
+
 /** Draws a new frame whenever game, input or display state changes; the canvas renders on demand. */
 function RenderOnChange() {
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
     const redraw = () => invalidate();
-    const stops = [useGameStore.subscribe(redraw), useInteraction.subscribe(redraw), useUIStore.subscribe(redraw)];
+    const stops = [
+      useGameStore.subscribe((state, previous) => { if (gameChanged(state, previous)) invalidate(); }),
+      useInteraction.subscribe((state, previous) => { if (interactionChanged(state, previous)) invalidate(); }),
+      useUIStore.subscribe(redraw),
+    ];
     return () => stops.forEach((stop) => stop());
   }, [invalidate]);
   useFrame(countFrame);

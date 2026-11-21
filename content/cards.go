@@ -180,6 +180,19 @@ func (s *Service) reload() error {
 	return nil
 }
 
+// Reload rebuilds the catalog from the database, so files added to the asset
+// folder since (a card's WebP copies) are offered.
+func (s *Service) Reload() error { return s.reload() }
+
+// NextFreeNum is the number a new card gets: one past the highest in use.
+func (s *Service) NextFreeNum() int {
+	next := 0
+	for _, d := range s.Catalog().Defs() {
+		next = max(next, d.Num+1)
+	}
+	return next
+}
+
 // --- editing cards -----------------------------------------------------------
 
 // computedFields are added to each card when the catalog is served (see

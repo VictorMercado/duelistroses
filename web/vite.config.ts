@@ -36,6 +36,11 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      // Grafana, which the game server proxies to administrators (admin portal → Monitoring).
+      '/grafana': {
+        target: 'http://localhost:8080',
+        ws: true,
+      },
     },
   },
   plugins: [
@@ -50,7 +55,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         // Never answer API or websocket routes from the app shell.
-        navigateFallbackDenylist: [/^\/api\//, /^\/ws\//, /^\/assets\//, /^\/\.well-known\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/ws\//, /^\/assets\//, /^\/grafana\//, /^\/\.well-known\//],
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {

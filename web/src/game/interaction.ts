@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { selectRole, useGameStore, type Prediction } from '@/stores/gameStore';
 import { session } from '@/net/session';
-import { cardName, catalogCard } from '@/game/catalog';
+import { catalogCard } from '@/game/catalog';
 import { terrainAt } from '@/game/terrain';
 import { playSfx, type Sfx } from '@/game/sfx';
 import { BOARD_ROTATION, displayRotation, upOnScreen } from '@/game/orientation';
+import type { Rarity } from '@/types';
 import { setInputHandler, type InputAction, type InputDevice } from '@/input/actions';
 import type { Action, CardView, GameView, HandCardView, Pos, Selection } from '@/net/protocol';
 
@@ -17,16 +18,16 @@ import type { Action, CardView, GameView, HandCardView, Pos, Selection } from '@
  *           separate piece of state that could fall out of step.
  *   card    one of our cards is picked up: its legal squares are lit and
  *           Confirm on one of them orders the move (or attack, or merge).
- *           Flip and Position only stage a change (shown on the board);
- *           Confirm on the card itself commits it. Turning face up or into
- *           attack position is free, so the card can still move; switching
- *           into defense is its whole order for the turn.
+ *           Flip and Position only stage a change (shown on the board).
+ *           Confirm on the card itself commits it, and that is the card's
+ *           whole order for the turn: it is put down. Confirm on a lit square
+ *           instead moves it with the staged flip in the same order.
  *   leader  our deck leader is picked up: step it, or start a summon.
  *   place   summoning, step 1: choose the square next to the leader the
  *           card will go to.
  *   hand    the hand is open. With a `target` (summoning, step 2) choose the
  *           card to play there; Up marks cards to fuse, in order, and the
- *           highlighted card joins last. Without a target it is
+ *           highlighted card joins last. Up again or Down unmarks one. Without a target it is
  *           only being looked at (not our turn, or nothing left to play).
  *   grave   a graveyard is open to look through, newest card first. Anyone
  *           can open any seat's graveyard at any time: they are public.
@@ -54,7 +55,7 @@ interface InteractionState {
   choiceIndex: number;
   busy: boolean;
   /** Card shown full screen in the 3D preview (rotatable, with its holo foil). `note` is its state on the board. */
-  preview: { num: number; atk?: number; def?: number; /** What its square adds to ATK and DEF. */ terrain?: number; note?: string; /** A deck leader: shown as its art alone, not as a card. */ leader?: boolean; } | null;
+  preview: { num: number; atk?: number; def?: number; /** What its square adds to ATK and DEF. */ terrain?: number; note?: string; /** A deck leader: shown as its art alone, not as a card. */ leader?: boolean; /** Absent for common. */ rarity?: Rarity; } | null;
   /** Square whose terrain is shown full screen. */
   tilePreview: Pos | null;
   device: InputDevice;
@@ -151,7 +152,7 @@ export function cardNote(card: CardView): string | undefined {
 function inspectCardAt(view: GameView, p: Pos): boolean {
   const card = cardAt(view, p);
   // A card hidden from us previews as its back.
-  if (card) { set({ preview: { num: card.num, atk: card.atk, def: card.def, terrain: card.terrain, note: cardNote(card) } }); return true; }
+  if (card) { set({ preview: { num: card.num, atk: card.atk, def: card.def, terrain: card.terrain, note: cardNote(card), rarity: card.rarity } }); return true; }
   const leader = leaderAt(view, p);
   if (leader && leader.leaderNum >= 0) { set({ preview: { num: leader.leaderNum, note: `deck leader · ${leader.lp} LP`, leader: true } }); return true; }
   return false;
@@ -413,12 +414,13 @@ function stageOrder(card: CardView, action: 'FLIP' | 'POSITION', mode: Extract<M
   set({ mode: { ...mode, flip: !mode.flip } });
 }
 
-/** Confirm on the picked-up card itself: send what was staged, or put it down. */
+/**
+ * Confirm on the picked-up card itself: send what was staged, which is the
+ * card's order for the turn, and put it down; with nothing staged, just put it
+ * down.
+ */
 function commitStaged(card: CardView, mode: Extract<Mode, { kind: 'card'; }>) {
-  const monster = catalogCard(card.num)?.kind === 'monster';
-  // Going face up or into attack leaves a monster free to move: keep it picked up.
-  const free = monster && !(mode.switchPosition && !card.defense);
-  const after = { mode: (free ? { kind: 'card', cardId: card.id, flip: false, switchPosition: false } : { kind: 'browse' }) as Mode };
+  const after: Partial<InteractionState> = { mode: { kind: 'browse' } };
   if (mode.switchPosition) send({ type: 'position', cardId: card.id, defense: !card.defense, flip: mode.flip || undefined }, after);
   else if (mode.flip) send({ type: 'flip', cardId: card.id }, after);
   else set({ mode: { kind: 'browse' } });
@@ -465,7 +467,7 @@ function handle(action: InputAction, device: InputDevice) {
     }
     if (mode.kind === 'hand') {
       const current = ctx.hand[state.handIndex];
-      if (current) set({ preview: { num: current.num } });
+      if (current) set({ preview: { num: current.num, rarity: current.rarity } });
       else refuse();
       return;
     }
@@ -559,9 +561,6 @@ function handle(action: InputAction, device: InputDevice) {
         case 'CONFIRM':
           if (same(cursor, leader)) startSummon(ctx);
           else if (ctx.view.legal?.leader.some((p) => same(p, cursor))) {
-            // Stepping onto one of our own cards eats it: make sure that was meant.
-            const meal = cardAt(ctx.view, cursor);
-            if (meal && !confirm(`Your deck leader will eat (destroy) your own ${cardName(meal.num)}. Continue?`)) return;
             send({ type: 'leader', x: cursor.x, y: cursor.y }, { mode: { kind: 'browse' } });
           }
           else if (!pickUp(cursor, ctx)) refuse();
@@ -583,6 +582,12 @@ function handle(action: InputAction, device: InputDevice) {
           if (!current || !mode.target) { refuse(); return; }
           playSfx('blip', 0.35);
           set({ mode: { ...mode, picked: mode.picked.includes(current.id) ? mode.picked.filter((id) => id !== current.id) : [...mode.picked, current.id] } });
+          return;
+        case 'DOWN':
+          // The opposite of Up: unmarks the highlighted card (nothing to undo otherwise).
+          if (!current || !mode.picked.includes(current.id)) return;
+          playSfx('blip', 0.25);
+          set({ mode: { ...mode, picked: mode.picked.filter((id) => id !== current.id) } });
           return;
         // Cards are not discarded from the hand: the Position key does nothing here.
         case 'POSITION': refuse(); return;

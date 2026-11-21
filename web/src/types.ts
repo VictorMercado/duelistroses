@@ -47,14 +47,17 @@ export type TilePiece = {
   /** The seat that controls the piece. */
   owner: number;
 };
-// secret: sparkle image
-// super: shiny art
-// ghost: white filter with shiny art and level and attribute
-// ultra: shiny art, level and attribute
-// gold: gold shiny art, bezels, level and attribute
-// ultimate: shiny art, bezels, card template, level and attribute, add halo effect
-// starlight: sparkle shiny art, bezels, card template, level and attribute, add halo effect
-export type Rarity = 'common' | 'secret' | 'ghost' | 'super' | 'ultra' | 'ultimate' | 'starlight' | 'gold';
+/**
+ * How rare a player's copy of a card is, earned by using it to kill (see
+ * game/engine/rarity.go on the server, and RARITIES in const.ts):
+ *   rare      holo level stars
+ *   secret    fine diagonal rainbow lines on the art only
+ *   ultra     holo art and level stars
+ *   ultimate  holo art, level stars, attribute and the border round the art, and an aura on the field
+ * and one never earned with points, unlocked some other way:
+ *   cosmic    glitter on the art only
+ */
+export type Rarity = 'common' | 'rare' | 'secret' | 'ultra' | 'ultimate' | 'cosmic';
 
 export type MonsterType =
   'aqua' |

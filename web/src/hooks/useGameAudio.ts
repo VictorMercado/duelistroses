@@ -134,7 +134,19 @@ export function useGameAudio() {
     playNext();
   }, [inGame, playNext]);
 
-  return { isPlaying, volume, toggleMusic, setVolume, tracks, track, choice, chooseTrack };
+  /** Skips ahead: a fresh random track on shuffle, else the next one in the list. */
+  const skipTrack = useCallback(() => {
+    if (!choiceRef.current) {
+      if (!inGame) return;
+      write('musicMuted', '0');
+      playNext();
+      return;
+    }
+    const i = tracks.indexOf(choiceRef.current);
+    if (tracks.length > 0) chooseTrack(tracks[(i + 1) % tracks.length]);
+  }, [inGame, playNext, tracks, chooseTrack]);
+
+  return { isPlaying, volume, toggleMusic, setVolume, tracks, track, choice, chooseTrack, skipTrack };
 }
 
 /** What the music controls need (see MusicToggle). */

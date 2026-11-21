@@ -7,6 +7,9 @@ export const BaseHolographicMaterial = shaderMaterial(
     maskTexture: null, // New input for the black/white mask
     useMask: 0.0, // 0 = false, 1 = true (toggle based on if mask exists)
     time: 0,
+    // The art's foil: 0 the rainbow holo with its light sweep (ultra,
+    // ultimate), 1 the secret rare's fine diagonal lines, 2 the cosmic rare's glitter.
+    pattern: 0.0,
   },
   // Vertex Shader (Unchanged)
   `
@@ -28,10 +31,81 @@ export const BaseHolographicMaterial = shaderMaterial(
     uniform sampler2D maskTexture;
     uniform float useMask;
     uniform float time;
+    uniform float pattern;
     
     varying vec2 vUv;
     varying vec3 vViewPosition;
     varying vec3 vNormal;
+
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+    // Cosmic rare: a scatter of tiny flakes over the art, each catching the
+    // light at its own moment and its own viewing angle, in rainbow tints.
+    // The layers sit at different depths under the surface: tilting the card
+    // slides them against the art and each other (parallax), so the glitter
+    // reads as sunk into the card, like the ultra holo's sheen.
+    vec3 glitter(vec2 uv, vec3 viewDir, vec3 reflectDir) {
+      vec3 total = vec3(0.0);
+      // Two layers of flakes, a fine one and a sparser coarse one.
+      for (int layer = 0; layer < 2; layer++) {
+        float scale = layer == 0 ? 70.0 : 34.0;
+        float depth = layer == 0 ? 0.05 : 0.12;
+        vec2 grid = (uv + reflectDir.xy * depth) * vec2(scale, scale * 1.08);
+        vec2 cell = floor(grid);
+        vec2 f = fract(grid) - 0.5;
+        float h = hash(cell + float(layer) * 17.0);
+        float h2 = hash(cell + 3.7);
+        // Only some cells hold a flake; it sits off-centre in its cell.
+        float present = step(layer == 0 ? 0.62 : 0.8, h);
+        vec2 at = f - (vec2(h, h2) - 0.5) * 0.5;
+        // Each flake faces its own way: tilting the card sweeps which ones flash.
+        float facing = dot(viewDir.xy, vec2(h - 0.5, h2 - 0.5)) * 14.0;
+        float twinkle = pow(max(0.0, sin(h * 6.2831 + time * (1.2 + h2 * 2.5) + facing)), 12.0);
+        // A bright dot with a faint four-pointed glint.
+        float dotShape = smoothstep(0.22, 0.0, length(at));
+        float glint = max(0.0, 1.0 - abs(at.x) * 9.0) * max(0.0, 1.0 - abs(at.y) * 2.2)
+                    + max(0.0, 1.0 - abs(at.y) * 9.0) * max(0.0, 1.0 - abs(at.x) * 2.2);
+        vec3 tint = 0.65 + 0.35 * cos(6.2831 * (h2 + vec3(0.0, 0.33, 0.67)));
+        total += tint * (dotShape + glint * 0.35) * twinkle * present * (layer == 0 ? 0.9 : 1.3);
+      }
+      return total;
+    }
+
+    // Secret rare: the art is etched with fine parallel lines running
+    // diagonally, each broken into tiny dashes. They throw rainbow colours that
+    // run in bands across the card and slide as it tilts, and broad bands of
+    // light come and go across them; a few flakes sparkle on top.
+    vec3 secretLines(vec2 uv, vec3 reflectDir) {
+      // Across the lines (/ from bottom left to top right), and along them.
+      float across = (uv.x - uv.y) * 0.7071;
+      float along = (uv.x + uv.y) * 0.7071;
+      float lineCoord = across * 75.0;
+      // Lines thinner than a pixel would shimmer (moire): fade the pattern to
+      // its average as it gets that fine.
+      float w = fwidth(lineCoord);
+      float fineness = clamp(1.0 - (w - 0.25) * 2.0, 0.0, 1.0);
+      float l = abs(fract(lineCoord) - 0.5);
+      float line = mix(0.4, smoothstep(0.2 + w, 0.2 - w, l), fineness);
+      // Each line is broken into long dashes with short gaps, offset line to
+      // line, so the lines read as lines and the gaps never line up in a grid.
+      float row = floor(lineCoord);
+      float dashCoord = along * (18.0 + 10.0 * hash(vec2(row, 2.0))) + hash(vec2(row, 1.0)) * 7.0;
+      float dw = fwidth(dashCoord);
+      float dash = mix(0.9, 1.0 - smoothstep(0.42 - dw, 0.47 + dw, abs(fract(dashCoord) - 0.5)), fineness);
+      // A slight per-dash variation in brightness, as real foil has.
+      float grain = 0.65 + 0.35 * hash(vec2(row, floor(dashCoord)));
+
+      // Rainbow running along the diagonal and shifting with the view.
+      float phase = along * 2.2 + dot(reflectDir.xy, vec2(1.6, 1.1)) + time * 0.05;
+      vec3 rainbow = 0.5 + 0.5 * cos(6.2831 * (phase + vec3(0.0, 0.33, 0.67)));
+      // Broad bands of light across the lines, moving as it tilts.
+      float band = 0.5 + 0.5 * sin(along * 9.0 + (reflectDir.x + reflectDir.y) * 5.0 + time * 0.4);
+      band = 0.25 + 0.75 * band * band;
+
+      vec3 lines = rainbow * line * dash * grain * band * 0.6;
+      // A light dusting of sparkles over the lines.
+      return lines + glitter(uv, normalize(vViewPosition), reflectDir) * 0.35;
+    }
 
     void main() {
       vec4 baseColor = texture2D(baseTexture, vUv);
@@ -93,6 +167,11 @@ export const BaseHolographicMaterial = shaderMaterial(
       // Apply the maskFactor to the shine calculation
       // If maskFactor is 0 (on the dragon), no shine is added.
       vec3 holoEffect = (shine.r * rainbow * 0.6 + sweepColor) * maskFactor;
+      // Secret rare trades the rainbow sheen for the glitter, with a fainter sweep.
+      if (pattern > 0.5 && pattern < 1.5) holoEffect = (secretLines(vUv, reflectDir) + sweepColor * 0.3) * maskFactor;
+      // Under the flakes, a faint sheen of the holo's rainbow, shifting with the
+      // view the same way, gives the art its depth.
+      if (pattern > 1.5) holoEffect = (glitter(vUv, viewDir, reflectDir) + shine.r * rainbow * 0.22 + sweepColor * 0.35) * maskFactor;
       
       vec3 finalColor = baseColor.rgb + holoEffect;
 
@@ -155,3 +234,7 @@ export const BaseHolographicMaterial = shaderMaterial(
 //     }
 //   `
 // );
+
+// A card keeps the shader its material was built with, so a hot update would
+// leave the cards on screen drawing the old one: reload the page instead.
+if (import.meta.hot) import.meta.hot.accept(() => location.reload());

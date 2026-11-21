@@ -86,6 +86,9 @@ type Catalog struct {
 	// Which monsters get the ritual frame. (Fusion monsters are marked on
 	// the card itself; see engine.CardDef.Fusion.)
 	ritualMonsters map[int]bool
+	// notWorking are cards whose effect the engine does not carry out yet
+	// ("implemented": false in the stored card).
+	notWorking map[int]bool
 	// payload is the whole catalog as served at /api/cards. Cards are passed
 	// through as stored: fields only the client uses (art,
 	// flags) never need a change here.
@@ -95,6 +98,10 @@ type Catalog struct {
 func (c *Catalog) Card(num int) *engine.CardDef { return c.cards[num] }
 
 func (c *Catalog) Size() int { return len(c.cards) }
+
+// Working is whether the engine carries out the card's effect (cards marked
+// "implemented": false play as blanks).
+func (c *Catalog) Working(num int) bool { return !c.notWorking[num] }
 
 // Defs is every card, by number.
 func (c *Catalog) Defs() []*engine.CardDef {
@@ -160,6 +167,18 @@ func buildCatalog(cardsRaw, fusionsRaw, startersRaw []byte) (*Catalog, []Deck, e
 		return nil, nil, errors.New("the catalog has no cards")
 	}
 	catalog := NewCatalog(defs)
+	var flags []struct {
+		Num         int   `json:"num"`
+		Implemented *bool `json:"implemented"`
+	}
+	if err := json.Unmarshal(cardsRaw, &flags); err == nil {
+		catalog.notWorking = map[int]bool{}
+		for _, f := range flags {
+			if f.Implemented != nil && !*f.Implemented {
+				catalog.notWorking[f.Num] = true
+			}
+		}
+	}
 	if err := json.Unmarshal(fusionsRaw, &catalog.recipes); err != nil {
 		return nil, nil, fmt.Errorf("fusions: %w", err)
 	}

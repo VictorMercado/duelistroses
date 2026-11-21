@@ -28,6 +28,8 @@ type Seat struct {
 
 	Conceded bool         `json:"conceded,omitempty"`
 	Stats    engine.Stats `json:"-"`
+	// CardPoints is the rarity points the player's cards earned in the duel, by card number.
+	CardPoints map[int]int `json:"-"`
 }
 
 // Match is a finished duel as the room reports it.
@@ -212,8 +214,39 @@ func (s *Store) Record(m Match) error {
 			ON CONFLICT (user_id) DO UPDATE SET record = excluded.record`, seat.UserID, string(data)); err != nil {
 			return err
 		}
+		for num, points := range seat.CardPoints {
+			if points <= 0 {
+				continue
+			}
+			if _, err := tx.Exec(`INSERT INTO card_rarity (user_id, num, points) VALUES (?, ?, ?)
+				ON CONFLICT (user_id, num) DO UPDATE SET points = points + excluded.points`, seat.UserID, num, points); err != nil {
+				return err
+			}
+		}
 	}
 	return tx.Commit()
+}
+
+// CardPoints is the rarity points a player's cards have earned, by card
+// number (see engine.RarityFor). Cards without any are left out.
+func (s *Store) CardPoints(userID string) (map[int]int, error) {
+	out := map[int]int{}
+	if s == nil || userID == "" {
+		return out, nil
+	}
+	rows, err := s.db.Query(`SELECT num, points FROM card_rarity WHERE user_id = ?`, userID)
+	if err != nil {
+		return out, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var num, points int
+		if err := rows.Scan(&num, &points); err != nil {
+			return out, err
+		}
+		out[num] = points
+	}
+	return out, rows.Err()
 }
 
 // Get returns a duelist's record; a duelist who never finished a duel gets an

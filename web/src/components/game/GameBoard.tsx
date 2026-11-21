@@ -1,16 +1,16 @@
-import { Component, memo, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import { AdditiveBlending, BufferAttribute, BufferGeometry, CanvasTexture, Group, LinearMipmapLinearFilter, Mesh, MeshBasicMaterial, Path, PlaneGeometry, RepeatWrapping, Shape, ShapeGeometry, SRGBColorSpace, Vector2, Vector3, type Texture } from "three";
 import YugiohCard, { WarmCardFont } from "./YugiohCard";
-import SpellCasts from "./SpellCasts";
-import CardOverflows from "./CardOverflows";
-import RitualRites from "./RitualRites";
+import SpellCastsEffect from "./SpellCasts";
+import CardOverflowsEffect from "./CardOverflows";
+import RitualRitesEffect from "./RitualRites";
 import { useRitualStore } from "@/stores/ritualStore";
-import Lightning from "./Lightning";
-import DarkHole from "./DarkHole";
-import Exodia from "./Exodia";
-import LeaderStrikes, { STRIKE_TRAVEL } from "./LeaderStrikes";
+import LightningEffect from "./Lightning";
+import DarkHoleEffect from "./DarkHole";
+import ExodiaEffect from "./Exodia";
+import LeaderStrikesEffect, { STRIKE_TRAVEL } from "./LeaderStrikes";
 import { useFusionStore } from "@/stores/fusionStore";
 import { ASSET_URL, SEAT_COLORS } from "@/const";
 import { selectPerspective, useGameStore } from "@/stores/gameStore";
@@ -363,6 +363,26 @@ function onTap(x: number, y: number) {
 // Each seat sees the board turned so its own edge is at the bottom of the
 // screen, and its cards face it.
 const CARD_FACING = [0, Math.PI, Math.PI / 2, -Math.PI / 2];
+const facingFor = (owner: number) => CARD_FACING[owner] ?? 0;
+
+// The effects re-render only when their props change: GameBoard re-renders on
+// every server state, and they follow the store themselves.
+const SpellCasts = memo(SpellCastsEffect);
+const CardOverflows = memo(CardOverflowsEffect);
+const RitualRites = memo(RitualRitesEffect);
+const Lightning = memo(LightningEffect);
+const DarkHole = memo(DarkHoleEffect);
+const Exodia = memo(ExodiaEffect);
+const LeaderStrikes = memo(LeaderStrikesEffect);
+
+/**
+ * A tap on a board card: the square it stands on, looked up when tapped. One
+ * function for every card, so the memoised cards are not re-rendered for a new one each time.
+ */
+function selectCard(cardId: number) {
+  const card = useGameStore.getState().view?.cards.find((c) => c.id === cardId);
+  if (card) pointTile(card.x, card.y);
+}
 
 // The board rests on a slab of wooden planks. How far it reaches past the
 // squares on each side, how thick it is, and how much of the board one copy
@@ -792,6 +812,9 @@ export default function GameBoard() {
   const spectating = !!seats && !seats[seat];
   // Enough of the board to tell how high each square stands.
   const layoutView = useMemo(() => (duelLayout ? { size, tiles: duelLayout.split(",") } : null), [duelLayout, size]);
+  const liftOf = useCallback((x: number, y: number) => (layoutView ? liftAt(layoutView, x, y) : 0), [layoutView]);
+  const isEnemyOwner = useCallback((owner: number) => seats?.[owner]?.team !== myTeam, [seats, myTeam]);
+  const upright = -(display ? displayRotation(arenaTurn) : BOARD_ROTATION[seat] ?? 0);
 
   return (
     <group position={[0, 0, 1]} rotation={[0, 0, display ? displayRotation(arenaTurn) : BOARD_ROTATION[seat] ?? 0]}>
@@ -834,7 +857,7 @@ export default function GameBoard() {
                   entrance={fromHand.has(card.id) || landing.includes(card.id) || card.id === predictedId}
                   // The card catches taps meant for its square (it stands above the
                   // board, so the tile under the finger is often a neighbour).
-                  onSelect={view ? () => pointTile(view.x, view.y) : undefined}
+                  onSelect={view ? selectCard : undefined}
                 />
               </Suspense>
             </CardGuard>
@@ -852,30 +875,30 @@ export default function GameBoard() {
 
       {/* Spells and traps going off, after the card itself has left the board. */}
       {playing && showCards && (
-        <SpellCasts facingFor={(owner) => CARD_FACING[owner] ?? 0} isEnemy={(owner) => seats?.[owner]?.team !== myTeam} />
+        <SpellCasts facingFor={facingFor} isEnemy={isEnemyOwner} />
       )}
 
       {/* A ritual summoning: the field darkens and the tributes orbit the board's centre. */}
       {playing && showCards && (
         <RitualRites
           size={size}
-          facingFor={(owner) => CARD_FACING[owner] ?? 0}
-          upright={-(display ? displayRotation(arenaTurn) : BOARD_ROTATION[seat] ?? 0)}
-          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+          facingFor={facingFor}
+          upright={upright}
+          isEnemy={isEnemyOwner}
         />
       )}
 
       {/* A card played onto a full field, torn apart where it landed. */}
       {playing && showCards && (
-        <CardOverflows facingFor={(owner) => CARD_FACING[owner] ?? 0} isEnemy={(owner) => seats?.[owner]?.team !== myTeam} />
+        <CardOverflows facingFor={facingFor} isEnemy={isEnemyOwner} />
       )}
 
       {/* Raigeki: lightning down every square of its row and column. */}
       {playing && showCards && (
         <Lightning
-          liftAt={(x, y) => (layoutView ? liftAt(layoutView, x, y) : 0)}
-          facingFor={(owner) => CARD_FACING[owner] ?? 0}
-          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+          liftAt={liftOf}
+          facingFor={facingFor}
+          isEnemy={isEnemyOwner}
         />
       )}
 
@@ -883,9 +906,9 @@ export default function GameBoard() {
       {playing && showCards && (
         <DarkHole
           size={size}
-          liftAt={(x, y) => (layoutView ? liftAt(layoutView, x, y) : 0)}
-          facingFor={(owner) => CARD_FACING[owner] ?? 0}
-          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+          liftAt={liftOf}
+          facingFor={facingFor}
+          isEnemy={isEnemyOwner}
         />
       )}
 
@@ -893,18 +916,18 @@ export default function GameBoard() {
       {playing && showCards && (
         <Exodia
           size={size}
-          upright={-(display ? displayRotation(arenaTurn) : BOARD_ROTATION[seat] ?? 0)}
-          liftAt={(x, y) => (layoutView ? liftAt(layoutView, x, y) : 0)}
-          facingFor={(owner) => CARD_FACING[owner] ?? 0}
-          isEnemy={(owner) => seats?.[owner]?.team !== myTeam}
+          upright={upright}
+          liftAt={liftOf}
+          facingFor={facingFor}
+          isEnemy={isEnemyOwner}
         />
       )}
 
       {/* A deck leader losing LP: the hit, and how much it cost. */}
       {playing && showPlayers && (
         <LeaderStrikes
-          liftAt={(x, y) => (layoutView ? liftAt(layoutView, x, y) : 0)}
-          upright={-(display ? displayRotation(arenaTurn) : BOARD_ROTATION[seat] ?? 0)}
+          liftAt={liftOf}
+          upright={upright}
         />
       )}
 

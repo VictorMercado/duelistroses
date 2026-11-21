@@ -64,3 +64,32 @@ func TestRecordTotalsStreaksAndPersistence(t *testing.T) {
 		t.Fatal("bots get no record")
 	}
 }
+
+func TestCardPointsAccumulate(t *testing.T) {
+	s, err := Open(db.OpenTemp(t), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	duel := func(points map[int]int) Match {
+		return Match{Room: "r", Seats: []Seat{
+			{UserID: "u1", Name: "A", Team: 0, CardPoints: points},
+			{UserID: "u2", Name: "B", Team: 1, Guest: true, CardPoints: map[int]int{9: 50}},
+		}}
+	}
+	if err := s.Record(duel(map[int]int{5: 7, 6: 10})); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Record(duel(map[int]int{5: 4})); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.CardPoints("u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[5] != 11 || got[6] != 10 || len(got) != 2 {
+		t.Fatalf("points %v, want 5:11 6:10", got)
+	}
+	if guest, _ := s.CardPoints("u2"); len(guest) != 0 {
+		t.Fatalf("a guest kept points %v", guest)
+	}
+}

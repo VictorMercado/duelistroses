@@ -5,7 +5,7 @@
 | Service | Address | What it is |
 |---|---|---|
 | Prometheus | http://localhost:9090 (server-local only) | Scrapes the game server (`app:9091`) and cAdvisor every 15 s, keeps 30 days (`PROMETHEUS_RETENTION`) and evaluates the alerts in `prometheus/alerts.yml` |
-| Grafana | http://localhost:3000 (server-local only) | The **Duelist server** dashboard is the home page. Sign in as `admin` / `GRAFANA_ADMIN_PASSWORD` |
+| Grafana | The admin portal's **Monitoring** tab; also http://localhost:3000/grafana/ | The **Duelist server** dashboard is the home page. In the portal there is no login (the game server proxies it to administrators, see `api/grafana.go`); directly, sign in as `admin` / `GRAFANA_ADMIN_PASSWORD` |
 | cAdvisor | (internal) | Each container's CPU, memory and real network traffic |
 
 Prometheus and Grafana listen on 127.0.0.1 only. From your machine:

@@ -22,6 +22,7 @@ COPY api ./api
 COPY auth ./auth
 COPY bot ./bot
 COPY cardlab ./cardlab
+COPY cardscout ./cardscout
 COPY content/*.go ./content/
 COPY content/data ./content/data
 COPY db ./db

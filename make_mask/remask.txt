@@ -1,0 +1,175 @@
+# Cards whose holo mask should be remade with Gemini (batch_masks.py --list remask.txt).
+# Picked by laying every live mask over its art (2026-11-20).
+
+# Named: the old mask cuts them roughly.
+3     # Kaiser Dragon
+294   # Summoned Skull
+
+# Monsters: the background was kept with the subject, so little or no foil shows.
+11    # Serpent Night Dragon
+12    # Mikazukinoyaiba
+31    # Sky Dragon
+38    # White Magical Hat
+50    # Maiden of the Moonlight
+58    # Exodia the Forbidden One
+63    # Kamionwizard
+68    # Akakieisu
+81    # Witch's Apprentice
+99    # Kazejin
+100   # Aqua Madoor
+101   # Shadow Specter
+104   # The Snake Hair
+107   # Clown Zombie
+151   # Flame Swordsman
+166   # Dragon Statue
+168   # Rhaimundos of the Red Sword
+173   # Mysterious Puppeteer
+195   # Performance of Sword
+197   # Lava Battleguard
+201   # Queen's Double
+244   # Master & Expert
+249   # Leogun
+268   # Fiend Reflection #2
+273   # Harpie Lady Sisters
+275   # Faith Bird
+291   # Birdface
+300   # King of Yamimakai
+345   # Soul Hunter
+348   # Dragon Seeker
+358   # Whiptail Crow
+360   # Baron of the Fiend Sword
+361   # Wall of Illusion
+365   # Kryuel
+368   # Gyakutenno Megami
+380   # Ray & Temperature
+385   # Dark Witch
+393   # Doma The Angel of Silence
+397   # Basic Insect
+405   # Winged Cleaver
+421   # Kamakiriman
+453   # Grappler
+478   # Aqua Dragon
+502   # Barrel Dragon
+534   # Sanga of the Thunder
+544   # Kaminari Attack
+548   # Fire Kraken
+565   # Water Element
+568   # The Furious Sea King
+578   # Waterdragon Fairy
+624   # Prisman
+625   # Rock Ogre Grotto #1
+633   # Millennium Golem
+662   # Darkworld Thorns
+672   # Jowls of Dark Demise
+678   # Timeater
+
+# Monsters: the mask misses most of the subject, so foil covers it.
+109   # Graveyard and the Hand of Invitation
+384   # Skelengel
+387   # Muse-A
+614   # Wings of Wicked Flame
+622   # Molten Behemoth
+677   # Electromagnetic Bagworm
+682   # Moisture Creature
+
+# Spells, traps and rituals with a clear subject (a creature, person or object):
+# today they get an all-black mask, so the foil runs over the subject too.
+# Landscapes, fields and pure effects (Forest, Umi, Raigeki, Dark Hole...) keep foil everywhere.
+683   # Dragon Capture Jar
+685   # Monster Reborn
+686   # Copycat
+687   # Mimicat
+688   # Graverobber
+695   # Toon World
+703   # Mooyan Curry
+704   # Red Medicine
+705   # Goblin's Secret Remedy
+706   # Soul of the Pure
+707   # Dian Keto the Cure Master
+708   # Gift of The Mystical Elf
+714   # Just Desserts
+716   # Dark-Piercing Light
+719   # The Inexperienced Spy
+720   # Warrior Elimination
+721   # Eternal Rest
+723   # Eradicating Aerosol
+726   # Fissure
+728   # Exile of the Wicked
+732   # Change of Heart
+733   # Brain Control
+735   # Winged Trumpeter
+740   # Windstorm of Etaqua
+741   # Sebek's Blessing
+742   # Aqua Chorus
+743   # Stop Defense
+746   # Shift
+747   # Solomon's Lawbook
+748   # Magic Drain
+752   # Legendary Sword
+753   # Sword of Dark Destruction
+754   # Dark Energy
+755   # Axe of Despair
+756   # Laser Cannon Armor
+757   # Insect Armor with Laser Cannon
+759   # Beast Fangs
+760   # Steel Shell
+762   # Black Pendant
+763   # Silver Bow and Arrow
+764   # Horn of Light
+765   # Horn of the Unicorn
+766   # Dragon Treasure
+767   # Electro-Whip
+768   # Cyber Shield
+769   # Mystical Moon
+770   # Malevolent Nuzzler
+771   # Book of Secret Arts
+772   # Violet Crystal
+775   # Raise Body Heat
+778   # Kunai with Chain
+779   # Salamandra
+780   # Megamorph
+781   # Bright Castle
+782   # Fiend Castle
+785   # Gust Fan
+786   # Burning Spear
+787   # 7 Completed
+788   # Nails of Bane
+790   # Multiply
+791   # Sword of Dragon's Soul
+792   # Enchanted Javelin
+793   # Anti-Magic Fragrance
+795   # Paralyzing Potion
+796   # Cursebreaker
+799   # Metalmorph
+803   # Mesmeric Control
+804   # Tears of the Mermaid
+807   # House of Adhesive Tape
+808   # Eatgaboon
+809   # Bear Trap
+810   # Invisible Wire
+814   # Goblin Fan
+815   # Bad Reaction to Simochi
+816   # Reverse Trap
+817   # Block Attack
+819   # Gorgon's Eye
+820   # Fake Trap
+821   # Anti Raigeki
+822   # Call of the Grave
+834   # Zera Ritual
+835   # War-Lion Ritual
+836   # Beastly Mirror Ritual
+838   # Commencement Dance
+839   # Hamburger Recipe
+840   # Revival of Sennen Genjin
+841   # Novox's Prayer
+842   # Curse of Tri-Horned Dragon
+843   # Revived Serpent Night Dragon
+844   # Turtle Oath
+845   # Contruct of Mask
+846   # Resurrection of Chakra
+847   # Puppet Ritual
+848   # Javelin Beetle Pact
+849   # Garma Sword Oath
+850   # Cosmo Queen's Prayer
+900   # Pot of Greed
+906   # Black Illusion Ritual

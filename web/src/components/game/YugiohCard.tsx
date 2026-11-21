@@ -1,16 +1,42 @@
-import { memo, useRef, useLayoutEffect, useState } from "react";
+import { memo, useEffect, useRef, useLayoutEffect, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import { CanvasTexture, CircleGeometry, Group, DoubleSide, Mesh, MeshBasicMaterial, Euler, Quaternion, SRGBColorSpace, Vector3 } from "three";
-import { type Card } from "@/types";
-import { ASSET_URL, getGlowColor } from "@/const"
+import { BufferGeometry, CanvasTexture, CircleGeometry, Group, DoubleSide, Mesh, MeshBasicMaterial, MeshStandardMaterial, Euler, PlaneGeometry, Quaternion, SRGBColorSpace, Vector3 } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { type Card, type Rarity } from "@/types";
+import { ASSET_URL, ULTIMATE_AURA } from "@/const"
 import { useUIStore } from "@/stores/uiStore";
 import { ease } from "@/game/motion";
 import { terrainColor } from "@/game/terrain";
-import { BLANK_MASK, MYSTERY_CARD, useCardTexture } from "@/game/cardTextures";
+import { BLANK_MASK, MYSTERY_CARD, useCardTexture, useColorTexture, useIconTexture } from "@/game/cardTextures";
+import { holdShimmer } from "@/game/shimmer";
+import { watchFaces } from "@/game/faceCulling";
 
 // Shader time used while battery saver holds the shimmer still.
 const FROZEN_TIME = 1.3;
+
+/**
+ * What each rarity makes holographic (see Rarity in types.ts). `art` is the
+ * artwork's foil: the rainbow holo, or the secret rare's glitter.
+ */
+const FOIL: Record<Rarity, { art?: "holo" | "lines" | "glitter"; stars?: boolean; attribute?: boolean; frame?: boolean; aura?: boolean; }> = {
+  common: {},
+  rare: { stars: true },
+  secret: { art: "lines" },
+  cosmic: { art: "glitter" },
+  ultra: { art: "holo", stars: true },
+  ultimate: { art: "holo", stars: true, attribute: true, frame: true, aura: true },
+};
+// The art foils as BaseHolographicMaterial's `pattern` numbers them.
+const ART_PATTERN = { holo: 0, lines: 1, glitter: 2 } as const;
+// How strongly the border round the art shines: less than the art, so it frames rather than competes.
+const FRAME_FOIL = 0.55;
+// How strongly the level stars shine: gently, so the small star stays readable.
+const STAR_FOIL = 0.45;
+// Ultimate foils only the border round the art: the template above the bottom
+// panel (card height, 0 bottom to 1 top, where the bar under the art ends).
+// The rest of the card stays plain.
+const FRAME_FOIL_ABOVE = 0.247;
 
 type CardPropType = {
   card: Card;
@@ -27,7 +53,8 @@ type CardPropType = {
   isPreview?: boolean;
   /** Just played from our hand: it flies in from the bottom of the screen, face up, and turns over onto its square. */
   entrance?: boolean;
-  onSelect?: () => void;
+  /** Called with the card's id: one stable function can serve every card, so memo holds. */
+  onSelect?: (cardId: number) => void;
 };
 
 // The play-from-hand animation, in seconds: a beat showing the card where the
@@ -154,10 +181,6 @@ function badgeMaterial(color: string, kind: BadgeKind): MeshBasicMaterial {
   return material;
 }
 
-// Scratch space for turning the badge upright each frame.
-const worldTurn = new Quaternion();
-const worldEuler = new Euler();
-
 /**
  * Loads the ATK/DEF font before the first card needs it: drei's Text suspends
  * on its font, and a card summoned before it arrived would wait for it. Draws
@@ -167,39 +190,129 @@ export function WarmCardFont() {
   return <Text font={FONT_URL} fontSize={0.001} visible={false}>0123456789</Text>;
 }
 
+// Shared by every card: one geometry per shape, not one per mesh per card.
+const FACE_GEOMETRY = new PlaneGeometry(0.68, 0.98);
+const ART_GEOMETRY = new PlaneGeometry(0.65, 0.7);
+const BACK_GEOMETRY = new PlaneGeometry(0.68, 1.06);
+const ATTRIBUTE_GEOMETRY = new PlaneGeometry(0.069, 0.069);
+const GLOW_GEOMETRY = new PlaneGeometry(1.5, 1.8);
+const ENEMY_GEOMETRY = new PlaneGeometry(0.85, 1.25);
+// The back is taller than the front, so the frame round it is too.
+const FRAME_UP_GEOMETRY = new PlaneGeometry(0.71, 1.01);
+const FRAME_DOWN_GEOMETRY = new PlaneGeometry(0.71, 1.09);
+
+// The level stars: a row of `level` stars in one mesh (one draw call, not one per star), made once per level.
+const STAR_SIZE = 0.04;
+const STAR_SPACING = 0.043;
+const starRows = new Map<number, BufferGeometry>();
+function starRow(level: number): BufferGeometry {
+  let row = starRows.get(level);
+  if (!row) {
+    const centerOffset = -((level - 1) * STAR_SPACING) / 2 - 0.05;
+    const stars = Array.from({ length: level }, (_, i) => new PlaneGeometry(STAR_SIZE, STAR_SIZE).translate(i * STAR_SPACING + centerOffset, 0, 0));
+    row = mergeGeometries(stars) ?? stars[0];
+    stars.forEach((star) => { if (star !== row) star.dispose(); });
+    starRows.set(level, row);
+  }
+  return row;
+}
+
+// The enemy tint. Lit, like before, so it looks the same.
+let enemyMaterial: MeshStandardMaterial | null = null;
+
+/**
+ * The card back (a brown border, a darker panel and a black oval), painted
+ * once into a texture so it is one mesh instead of three. Still a lit
+ * material, as the three meshes were, so it looks the same under the scene's light.
+ */
+let backMaterial: MeshStandardMaterial | null = null;
+function cardBack(): MeshStandardMaterial {
+  if (backMaterial) return backMaterial;
+  // 400 pixels per board unit: the 0.68 x 1.06 back.
+  const k = 400, w = 0.68 * k, h = 1.06 * k;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "#7e6346";
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#513224";
+    ctx.fillRect((w - 0.61 * k) / 2, (h - 1 * k) / 2, 0.61 * k, 1 * k);
+    ctx.fillStyle = "#000000";
+    ctx.beginPath();
+    ctx.ellipse(w / 2, h / 2, 0.2 * 0.6 * k, 0.2 * 1.3 * k, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.anisotropy = 4;
+  backMaterial = new MeshStandardMaterial({ map: texture });
+  return backMaterial;
+}
+
+// The thin frame round a card, one material per colour.
+const frameMaterials = new Map<string, MeshBasicMaterial>();
+function frameMaterial(color: string): MeshBasicMaterial {
+  let material = frameMaterials.get(color);
+  if (!material) {
+    material = new MeshBasicMaterial({ color, side: DoubleSide, toneMapped: false });
+    frameMaterials.set(color, material);
+  }
+  return material;
+}
+
+const noRaycast = () => null;
+
 function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, ownerColor, facing = 0, isPreview = false, entrance = false, onSelect }: CardPropType) {
   const lowPower = useUIStore((s) => s.lowPower);
   const camera = useThree((s) => s.camera);
+  const scene = useThree((s) => s.scene);
+  const invalidate = useThree((s) => s.invalidate);
   const intro = useRef<Intro | null>(null);
   const outerGroup = useRef<Group>(null);
   const innerGroup = useRef<Group>(null);
+  const frontRef = useRef<Group>(null);
+  const backRef = useRef<Mesh>(null);
   const glowRef = useRef<Mesh>(null);
+  // The foiled parts besides the art, whose shader clocks are set each frame.
+  const templateRef = useRef<Mesh>(null);
+  const starsRef = useRef<Mesh>(null);
+  const attributeRef = useRef<Mesh>(null);
   const badgeRef = useRef<Group>(null);
   const holoMeshRef = useRef<Mesh>(null);
-  const isSelectedInHand = false;
   // Each falls back to something drawable if it cannot be loaded, so a card never goes missing (see game/cardTextures.ts).
   const texture = useCardTexture(card.textureUrl, card.textureFallbackUrl ?? MYSTERY_CARD);
   const shineTexture = useCardTexture(ASSET_URL + "/textures/shine_mask_2.png", BLANK_MASK);
   const maskTexture = useCardTexture(card.maskUrl || BLANK_MASK);
-  const attributeTexture = useCardTexture(card.attribute?.attributeUrl || BLANK_MASK);
-  const cardTemplate = useCardTexture(card.templateUrl, ASSET_URL + "/textures/normalTemplate.png");
-  const levelStarTexture = useCardTexture(ASSET_URL + "/textures/levelStar.png");
+  const attributeTexture = useIconTexture(card.attribute?.attributeUrl || BLANK_MASK);
+  const cardTemplate = useColorTexture(card.templateUrl, ASSET_URL + "/textures/normalTemplate.png");
+  const levelStarTexture = useIconTexture(ASSET_URL + "/textures/levelStar.png");
   const mysteryCardTexture = useCardTexture(MYSTERY_CARD);
-
-  // Setting textures to repeat/wrap is usually good for holo patterns, 
-  // though 512x512 fits the card well by default.
-  // shineTexture.wrapS = shineTexture.wrapT = THREE.RepeatWrapping;
 
   const defaultCardRotation = isPreview ? 0 : facing;
 
   // The server strips the identity of cards we may not see.
   const isAnonymous = !!card.hidden;
   const isEnemyCard = isEnemy;
+  // Shimmer and god rays animate unless battery saver is on, in which case they hold still.
+  const foil = FOIL[card.rarity] ?? FOIL.common;
+  const shimmering = card.rarity !== 'common' && !lowPower;
 
   const BASE_CARD_Z = 0.001;
   const MID_CARD_Z = 0.002;
-  const TOP_CARD_Z = 0.003;
   const OPP_CARD_Z = -0.001;
+
+  // The shimmer redraws the canvas on a shared, capped clock (see game/shimmer.ts).
+  useEffect(() => (shimmering ? holdShimmer(invalidate) : undefined), [shimmering, invalidate]);
+
+  // Only the face turned toward the camera is drawn, decided as each frame is drawn (see game/faceCulling.ts).
+  const anonymousPreview = isAnonymous && isPreview;
+  useEffect(() => {
+    const pivot = innerGroup.current;
+    if (!pivot || anonymousPreview) return;
+    return watchFaces(scene, { pivot, front: frontRef.current, back: backRef.current });
+  }, [scene, anonymousPreview]);
 
   // A layout effect, so the first frame drawn already has the card where it starts.
   useLayoutEffect(() => {
@@ -245,14 +358,12 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
   const [startPosition] = useState(card.position);
 
   useFrame((state, delta) => {
-    // Shimmer and god rays animate unless battery saver is on, in which case they hold still.
-    const shimmer = card.rarity !== 'common';
-    const time = shimmer && !lowPower ? state.clock.getElapsedTime() : FROZEN_TIME;
-    for (const mesh of [glowRef.current, holoMeshRef.current]) {
+    const time = shimmering ? state.clock.getElapsedTime() : FROZEN_TIME;
+    for (const mesh of [glowRef.current, holoMeshRef.current, templateRef.current, starsRef.current, attributeRef.current]) {
       const uniforms = (mesh?.material as { uniforms?: { time?: { value: number; }; }; } | undefined)?.uniforms;
       if (uniforms?.time) uniforms.time.value = time;
     }
-    let moving = shimmer && !lowPower;
+    let moving = false;
 
     const play = intro.current;
     if (play && outerGroup.current && innerGroup.current) {
@@ -287,32 +398,31 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
         Number(ease(position, 'z', targetZ, 0.1, delta)) |
         Number(ease(outer, 'z', targetRotationZ, 0.1, delta)) |
         Number(ease(inner, 'y', targetRotationY, 0.1, delta));
-      moving ||= easing === 1;
+      moving = easing === 1;
     }
     // Put the position badge on the owner's top-right corner, upright for the owner:
-    // undo the card's own turn (e.g. into defense) but keep its owner's facing. Hidden while the card flies in from the hand, where it faces the camera.
+    // undo the card's own turn (e.g. into defense) but keep its owner's facing.
+    // The card only turns about the table's axis once it has landed, so that is
+    // its owner's facing less its own local turn. Hidden while the card flies in
+    // from the hand, where it faces the camera.
     const badge = badgeRef.current;
     const outer = outerGroup.current;
     if (badge && outer) {
       badge.visible = !intro.current;
-      const cardTurn = worldEuler.setFromQuaternion(outer.getWorldQuaternion(worldTurn)).z;
-      const boardTurn = outer.parent ? worldEuler.setFromQuaternion(outer.parent.getWorldQuaternion(worldTurn)).z : 0;
-      const ownerTurn = boardTurn + defaultCardRotation;
-      badge.rotation.z = ownerTurn - cardTurn;
+      if (badge.visible) badge.rotation.z = defaultCardRotation - outer.rotation.z;
     }
     // The canvas renders on demand: ask for another frame only while something moves.
     if (moving) state.invalidate();
   });
-  
-  if (isAnonymous && isPreview)  {
+
+  if (anonymousPreview) {
     return(
       <group rotation={[0, 0, 0]}>
-        <mesh position={[0, 0, BASE_CARD_Z]}>
-          <planeGeometry args={[0.68, 0.98]} />
+        <mesh position={[0, 0, BASE_CARD_Z]} geometry={FACE_GEOMETRY}>
           <meshBasicMaterial map={mysteryCardTexture} />
         </mesh>
       </group>
-    ) 
+    )
   }
 
   return (
@@ -320,15 +430,13 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
       e.stopPropagation();
       // A finger that panned the board and lifted over a card is a drag, not a tap.
       if (e.delta > 10) return;
-      onSelect?.();
+      onSelect?.(card.id);
     }}>
       {isEnemyCard && !isPreview && (
-        <mesh position={[0, 0, OPP_CARD_Z]}>
-          <planeGeometry args={[0.85, 1.25]} />
-          <meshStandardMaterial transparent opacity={0.6} color="#b45672" />
-        </mesh>
+        <mesh position={[0, 0, OPP_CARD_Z]} geometry={ENEMY_GEOMETRY}
+          material={(enemyMaterial ??= new MeshStandardMaterial({ transparent: true, opacity: 0.6, color: "#b45672" }))} />
       )}
-      
+
       {/* Whose card it is (colour) and how it stands (emblem), on the owner's top-right corner.
           A card hidden from us may be a monster, and its position is public, so it
           shows a sword or shield like one. */}
@@ -338,38 +446,25 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
             position={BADGE_OFFSET}
             geometry={(badgeGeometry ??= new CircleGeometry(BADGE_RADIUS, 32))}
             material={badgeMaterial(ownerColor ?? "#8a8f98", card.attack === -1 && !isAnonymous ? "spell" : card.isDefenseMode ? "defense" : "attack")}
-            raycast={() => null}
+            raycast={noRaycast}
           />
         </group>
       )}
 
-      {/* SELECTION BORDER */}
-      {isSelectedInHand && (
-         <mesh position={[0, 0, -0.02]}>
-          <planeGeometry args={[0.74, 1.04]} />
-          <meshBasicMaterial color="#0044aa" side={DoubleSide} />
-        </mesh>
-      )}
       <group ref={innerGroup}>
         {/* A thin frame (see frameColor), between the front and back faces so it
             turns and flips with the card. The back is taller than the front. */}
         {frameColor && !isPreview && (
-          <mesh position={[0, 0, 0]}>
-            <planeGeometry args={card.isFaceDown ? [0.71, 1.09] : [0.71, 1.01]} />
-            <meshBasicMaterial color={frameColor} side={DoubleSide} toneMapped={false} />
-          </mesh>
+          <mesh position={[0, 0, 0]} geometry={card.isFaceDown ? FRAME_DOWN_GEOMETRY : FRAME_UP_GEOMETRY} material={frameMaterial(frameColor)} />
         )}
         {/* Rarity Glow - God Rays Effect */}
-        {(card.rarity === 'ultimate' || card.rarity === 'starlight') && (
-          <mesh ref={glowRef} position={[0, 0, -0.01]}>
-            {/* Larger plane for rays to extend */}
-            <planeGeometry args={[1.5, 1.8]} />
-            <godRaysMaterial 
-            color={getGlowColor(card.rarity)}
-            time={0} // Will be updated by useFrame if we pass a ref, or we can just let R3F handle it?
-                      // Better to use a ref to the material and update time in useFrame for performance
-                      // OR just pass state.clock.elapsedTime as a prop, but that causes re-renders.
-                      // Let's use the ref approach.
+        {/* An ultimate rare's aura, while it is on the field. */}
+        {foil.aura && !isPreview && (
+          <mesh ref={glowRef} position={[0, 0, -0.01]} geometry={GLOW_GEOMETRY} raycast={noRaycast}>
+            {/* The time uniform is set each frame in useFrame, through the ref. */}
+            <godRaysMaterial
+            color={ULTIMATE_AURA}
+            time={0}
             alpha={1.0}
             transparent
             depthWrite={false} // Don't write to depth buffer to avoid occlusion issues
@@ -378,46 +473,30 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
           </mesh>
         )}
 
-       {/* Back Face (Classic Design) */}
-        <group rotation={[0, Math.PI, 0]}>
-          <mesh position={[0, 0, BASE_CARD_Z]}>
-            <planeGeometry args={[0.68, 1.06]} />
-            <meshStandardMaterial color="#7e6346" />
-          </mesh>
-          <mesh position={[0, 0, MID_CARD_Z]}>
-            <planeGeometry args={[0.61, 1]} />
-            <meshStandardMaterial color="#513224" />
-          </mesh>
-          <mesh position={[0, 0, TOP_CARD_Z]} scale={[0.6, 1.3, 1]}>
-            <circleGeometry args={[0.2, 32]} />
-            <meshStandardMaterial color="black" />
-          </mesh>
-        </group>
+        {/* Back face (classic design), painted into one texture (see cardBack). */}
+        <mesh ref={backRef} rotation={[0, Math.PI, 0]} position={[0, 0, -BASE_CARD_Z]} geometry={BACK_GEOMETRY} material={cardBack()} />
 
         {/* Front Face Logic */}
+        <group ref={frontRef}>
         {isAnonymous ? (
           // face-down card belonging to somebody else
-          <group rotation={[0, 0, 0]}>
-            <mesh position={[0, 0, BASE_CARD_Z]}>
-              <planeGeometry args={[0.68, 0.98]} />
-              <meshBasicMaterial map={mysteryCardTexture} />
-            </mesh>
-          </group>
+          <mesh position={[0, 0, BASE_CARD_Z]} geometry={FACE_GEOMETRY}>
+            <meshBasicMaterial map={mysteryCardTexture} />
+          </mesh>
         ) : (
           // Detailed player/opponent face-up card (HOLO ADDED HERE)
-          <group rotation={[0, 0, 0]}>
+          <>
             {/* Card Template */}
-            <mesh position={[0, 0, BASE_CARD_Z]}>
-              <planeGeometry args={[0.68, 0.98]} />
-              <meshBasicMaterial map={cardTemplate} />
+            <mesh ref={templateRef} position={[0, 0, BASE_CARD_Z]} geometry={FACE_GEOMETRY}>
+              {foil.frame
+                ? <foilMaterial foilMap={cardTemplate} shineTexture={shineTexture} strength={FRAME_FOIL} above={FRAME_FOIL_ABOVE} cardOffset={[0, 0]} time={0} />
+                : <meshBasicMaterial map={cardTemplate} />}
             </mesh>
 
             {/* --- ARTWORK IMAGE WITH HOLO EFFECT --- */}
-            <mesh ref={holoMeshRef} position={[0, 0.1244, MID_CARD_Z]}>
-              <planeGeometry args={[0.65, 0.7]} />
-              {/* Replaced meshBasicMaterial with custom shader */}
+            <mesh ref={holoMeshRef} position={[0, 0.1244, MID_CARD_Z]} geometry={ART_GEOMETRY}>
               {
-                card.rarity === "common" ? (
+                !foil.art ? (
                   <meshBasicMaterial map={texture} />
                 ) : (
                   <baseHolographicMaterial
@@ -425,37 +504,31 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
                     shineTexture={shineTexture}
                     maskTexture={maskTexture}
                     useMask={card.maskUrl ? 1.0 : 0.0}
+                    pattern={ART_PATTERN[foil.art]}
                     time={0}
                   />
                 )
               }
             </mesh>
 
-            {/* Level */}
-            {
-              Array.from({ length: card.level }, (_, index) => {
-                const starSpacing = 0.043;
-                const totalWidth = (card.level - 1) * starSpacing;
-                const centerOffset = -(totalWidth / 2) - 0.05;
-                const xPosition = (index * starSpacing) + centerOffset;
-                
-                return (
-                  <mesh key={index} position={[xPosition, -0.3, MID_CARD_Z]}>
-                    <planeGeometry args={[0.04, 0.040]} />
-                    <meshBasicMaterial map={levelStarTexture} alphaTest={0.01}/>
-                  </mesh>
-                );
-              })
-            }
+            {/* Level: the whole row of stars in one mesh. */}
+            {card.level > 0 && (
+              <mesh ref={starsRef} position={[0, -0.3, MID_CARD_Z]} geometry={starRow(card.level)}>
+                {foil.stars
+                  ? <foilMaterial foilMap={levelStarTexture} shineTexture={shineTexture} strength={STAR_FOIL} alphaPremultiplied={1} cardOffset={[0, -0.3]} time={0} transparent premultipliedAlpha />
+                  : <meshBasicMaterial map={levelStarTexture} transparent premultipliedAlpha alphaTest={0.01} />}
+              </mesh>
+            )}
             {
               card.attack !== -1 && (
                 <>
                 {/* Attribute */}
-                <mesh position={[0.249, -0.305, MID_CARD_Z]}>
-                  <planeGeometry args={[0.069, 0.069]} />
-                  <meshBasicMaterial map={attributeTexture} alphaTest={0.01}/>
+                <mesh ref={attributeRef} position={[0.249, -0.305, MID_CARD_Z]} geometry={ATTRIBUTE_GEOMETRY}>
+                  {foil.attribute
+                    ? <foilMaterial foilMap={attributeTexture} shineTexture={shineTexture} alphaPremultiplied={1} cardOffset={[0.249, -0.305]} time={0} transparent premultipliedAlpha />
+                    : <meshBasicMaterial map={attributeTexture} transparent premultipliedAlpha alphaTest={0.01} />}
                 </mesh>
-                <mesh position={[-0.155, -0.405, MID_CARD_Z]}>
+                <group position={[-0.155, -0.405, MID_CARD_Z]}>
                   <Text
                     fontSize={0.06}
                     color={terrainColor(card.terrainBonus)}
@@ -465,9 +538,9 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
                   >
                     {card.attack}
                   </Text>
-                </mesh>
+                </group>
 
-                <mesh position={[0.155, -0.405, MID_CARD_Z]}>
+                <group position={[0.155, -0.405, MID_CARD_Z]}>
                   <Text
                     fontSize={0.06}
                     color={terrainColor(card.terrainBonus)}
@@ -477,12 +550,13 @@ function YugiohCard({ card, isSelected = false, isEnemy = false, frameColor, own
                   >
                     {card.defense}
                   </Text>
-                </mesh>
+                </group>
                 </>
               )
             }
-          </group>
+          </>
         )}
+        </group>
       </group>
     </group>
   );

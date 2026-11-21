@@ -17,6 +17,8 @@ export interface CatalogCard {
   def?: number;
   deckCost?: number;
   text?: string;
+  /** A normal monster's description: what the card says, with no effect on play. */
+  flavor?: string;
   image?: string;
   /** WebP copies of `image`, relative to /assets, when the server has them: 512px and 256px. */
   art?: string;
@@ -56,7 +58,8 @@ export class ApiError extends Error {
 }
 
 async function request<T>(url: string, init: RequestInit = {}, token?: string | null): Promise<T> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  // A FormData body sets its own multipart Content-Type (with the boundary).
+  const headers: Record<string, string> = init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
   let response: Response;
   try {
@@ -105,6 +108,13 @@ export const setAccountAdmin = (token: string, id: string, admin: boolean) =>
   request<AccountInfo>(`${GAME_URL}/api/admin/users/${encodeURIComponent(id)}/admin`, put({ admin }), token);
 export const setAccountPassword = (token: string, id: string, password: string) =>
   request<AccountInfo>(`${GAME_URL}/api/admin/users/${encodeURIComponent(id)}/password`, put({ password }), token);
+/**
+ * Lets this browser see Grafana at /grafana/ (the admin portal's Monitoring
+ * page): the server sets a cookie for it, as an embedded page cannot send the
+ * Authorization header.
+ */
+export const openGrafanaSession = (token: string) =>
+  request<void>(`${GAME_URL}/api/admin/grafana/session`, { method: 'POST' }, token);
 /** Every room on the server, private ones included. */
 export const listAllRooms = (token: string) => request<RoomInfo[]>(`${GAME_URL}/api/admin/rooms`, {}, token);
 /** Ends the room's duel, if one is on, and disconnects everyone in it. */
@@ -162,6 +172,88 @@ export const getCardLab = (token: string) =>
 export const sendCardLab = (token: string, body: { session: string; model: string; message: string; }) =>
   request<CardLabReply>(`${GAME_URL}/api/admin/cardlab`, { method: 'POST', body: JSON.stringify(body) }, token);
 
+// --- game server: admin card scout (Claude adapts outside cards for review) ---
+/** One way a scouted card could work in this game, already checked against the engine. */
+export interface ScoutOption { title: string; card: StoredCard; summary: string; newBehaviour?: string; warnings: string[]; }
+/** The card as the outside card database describes it. `atk`/`def` are null for "?". */
+export interface ScoutSource {
+  id: number; name: string; type: string; desc: string; race: string; attribute: string;
+  atk: number | null; def: number | null; level: number; released: string;
+  image: string; imageSmall: string; imageCropped: string; url: string;
+  /** Uploaded cards: imageSmall is a data URL thumbnail of the card, artThumb one of the art dropped with it. */
+  uploaded?: boolean; artThumb?: string; hint?: string;
+}
+/** working: Claude is still reading an uploaded card. */
+export type ScoutStatus = 'working' | 'pending' | 'accepted' | 'rejected' | 'failed';
+export interface ScoutSuggestion {
+  id: number; sourceId: number; name: string; summon: string; released: string; source: ScoutSource;
+  status: ScoutStatus; options: ScoutOption[]; note: string; model: string; costUsd: number;
+  createdAt: string; decidedAt: string; decidedBy: string; chosen: number | null; cardNum: number | null;
+  /** '' (not yet), working, done or failed: the art's WebP copies and holo mask. */
+  assets: '' | 'working' | 'done' | 'failed'; assetsLog: string;
+}
+export interface ScoutState {
+  available: boolean; running: boolean; busy: string; lastScan: string; lastError: string; model: string;
+  intervalSeconds: number; dailyLimit: number; today: number; counts: Partial<Record<ScoutStatus, number>>;
+  /** Cards not scouted yet; -1 until the scout has read the list. */
+  left: number; spentUsd: number; summons: string[];
+}
+export const getCardScout = (token: string) =>
+  request<{ status: ScoutState; suggestions: ScoutSuggestion[]; }>(`${GAME_URL}/api/admin/scout`, {}, token);
+export const setCardScoutRunning = (token: string, running: boolean) =>
+  request<void>(`${GAME_URL}/api/admin/scout/running`, { method: 'POST', body: JSON.stringify({ running }) }, token);
+export const scanCardScout = (token: string) =>
+  request<void>(`${GAME_URL}/api/admin/scout/scan`, { method: 'POST' }, token);
+/** Saves that option as a new card and starts building its art; answers the new card's number. */
+export const acceptScouted = (token: string, id: number, option: number) =>
+  request<{ num: number; }>(`${GAME_URL}/api/admin/scout/${id}/accept`, { method: 'POST', body: JSON.stringify({ option }) }, token);
+export const rejectScouted = (token: string, id: number) =>
+  request<void>(`${GAME_URL}/api/admin/scout/${id}/reject`, { method: 'POST' }, token);
+export const rescanScouted = (token: string, id: number, feedback: string) =>
+  request<void>(`${GAME_URL}/api/admin/scout/${id}/rescan`, { method: 'POST', body: JSON.stringify({ feedback }) }, token);
+/**
+ * Sends the image of a card to add (and, optionally, the art to draw it with
+ * in the game). Claude reads it in the background: it shows as "working".
+ */
+export const uploadScoutCard = (token: string, card: File, art: File | null, hint: string) => {
+  const form = new FormData();
+  form.append('card', card);
+  if (art) form.append('art', art);
+  form.append('hint', hint);
+  return request<{ id: number; }>(`${GAME_URL}/api/admin/scout/upload`, { method: 'POST', body: form }, token);
+};
+export const retryScoutedAssets = (token: string, id: number) =>
+  request<void>(`${GAME_URL}/api/admin/scout/${id}/assets`, { method: 'POST' }, token);
+
+// --- game server: deck assistant (Claude builds decks) ---
+export interface DeckProposal { name: string; leaderNum: number; cards: number[]; summary: string; deckCost: number; fusions: number; }
+export interface DeckAssistantReply { session: string; model: string; text: string; proposals: DeckProposal[]; steps: string[]; }
+/** models comes only for administrators, who may pick one per conversation. */
+export const getDeckAssistant = (token: string) =>
+  request<{ available: boolean; model?: string; models?: LLMModelInfo[]; }>(`${GAME_URL}/api/deck-assistant`, {}, token);
+/** One message to Claude with the deck open in the builder; an empty session starts a conversation. Status 410: the server forgot it. */
+export const sendDeckAssistant = (token: string, body: { session: string; model: string; message: string; draft: { name: string; leaderNum: number; cards: number[]; }; }) =>
+  request<DeckAssistantReply>(`${GAME_URL}/api/deck-assistant`, { method: 'POST', body: JSON.stringify(body) }, token);
+
+export interface DeckAssistEntry {
+  id: number; at: string; userId: string; userName: string; session: string; model: string;
+  message: string; reply: string; steps: string[]; proposals: DeckProposal[]; refusals: number;
+  usage: ArenaUsage; costUsd: number; durationMs: number; error?: string;
+}
+export interface DeckAssistStats {
+  model: string; queries: number; failed: number; withDeck: number; decks: number; refusals: number;
+  totalCostUsd: number; avgCostUsd: number; avgCostPerDeckUsd: number; avgSeconds: number; avgCalls: number;
+  avgOutputTokens: number; avgFusionsPerDeck: number; cacheHitRate: number;
+}
+export interface DeckAssistOverview {
+  available: boolean; models: LLMModelInfo[]; playerModel: string; defaultModel: string;
+  stats: DeckAssistStats[]; log: DeckAssistEntry[];
+}
+export const getDeckAssistOverview = (token: string, days: number) =>
+  request<DeckAssistOverview>(`${GAME_URL}/api/admin/deck-assistant?days=${days}`, {}, token);
+export const setDeckAssistPlayerModel = (token: string, playerModel: string) =>
+  request<void>(`${GAME_URL}/api/admin/deck-assistant`, { method: 'PUT', body: JSON.stringify({ playerModel }) }, token);
+
 // --- game server: friends ---
 export interface Friend { id: string; name: string; online: boolean; roomId?: string; }
 export interface FriendsList {
@@ -207,6 +299,8 @@ export interface Profile {
   record: DuelRecord;
   decks: NamedTally[]; rivals: NamedTally[]; maps: NamedTally[];
   collection: { decks: number; publicDecks: number; maps: number; friends: number; };
+  /** Rarity points their cards have earned, by card number (cards with none are left out). */
+  cardPoints: Record<string, number>;
   /** The decks they built: sent to themselves and to administrators only. */
   ownDecks?: DeckSummary[];
   /** The viewer may change ownDecks in the deck builder. */
@@ -215,6 +309,10 @@ export interface Profile {
 /** Leave out the name for your own profile. */
 export const loadProfile = (token: string, name?: string) =>
   request<Profile>(`${GAME_URL}/api/profile${name ? `/${encodeURIComponent(name)}` : ''}`, {}, token);
+
+/** Your cards' rarity points, by card number (cards with none are left out). See Rarity in types.ts. */
+export const loadRarity = (token: string) =>
+  request<{ points: Record<string, number>; }>(`${GAME_URL}/api/rarity`, {}, token).then((r) => r.points);
 
 // --- game server: cards, decks, maps ---
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) });

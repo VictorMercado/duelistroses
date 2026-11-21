@@ -48,25 +48,61 @@ function LevelStars({ level }: { level: number; }) {
 }
 
 /** A card's name, kind and text. `stars` adds a monster's level stars beside the name. */
+/** The order a hand card was picked for a fusion: its number on the select-frame texture. */
+export function FuseBadge({ order }: { order: number; }) {
+  return (
+    <span
+      className="pointer-events-none absolute -top-2 right-0 grid aspect-[174/140] w-8 place-items-center bg-contain bg-center bg-no-repeat font-mono text-sm font-bold leading-none text-white [text-shadow:0_1px_2px_#000]"
+      style={{ backgroundImage: `url(${ASSET_URL}/textures/selectTexture.png)` }}
+      title={`Fusion material ${order}`}
+    >{order}</span>
+  );
+}
+
 export function CardText({ num, stars = false }: { num: number; stars?: boolean; }) {
   const card = catalogCard(num);
   if (!card) return <p className="text-white/60">Face-down card. Attack it to find out what it is.</p>;
   return (
     <>
+      <CardHeading num={num} stars={stars} />
+      {card.text && <p className="mt-1 text-white/85">{card.text}{card.abilityPending && <span className="text-white/40"> (ability not active yet)</span>}</p>}
+    </>
+  );
+}
+
+/** A card's name (with level stars) and its type line. `large` is the card inspector's size. */
+export function CardHeading({ num, stars = false, large = false }: { num: number; stars?: boolean; large?: boolean; }) {
+  const card = catalogCard(num);
+  if (!card) return null;
+  const name = <p className={`font-bold text-yellow-200 ${large ? "text-xl leading-snug" : ""}`}>{card.name}</p>;
+  return (
+    <>
       {stars && card.kind === "monster" && (card.level ?? 0) > 0 ? (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="font-bold text-yellow-200">{card.name}</p>
+          {name}
           <LevelStars level={card.level ?? 0} />
         </div>
-      ) : (
-        <p className="font-bold text-yellow-200">{card.name}</p>
-      )}
-      <p className="text-white/60">
+      ) : name}
+      <p className={`text-white/60 ${large ? "mt-0.5 text-base" : ""}`}>
         {card.kind === "monster" ? `${card.type} · ${card.attribute} · level ${card.level}` : card.kind}
         {card.kind !== "monster" && card.implemented === false && " · effect not available yet"}
       </p>
-      {card.text && <p className="mt-1 text-white/85">{card.text}{card.abilityPending && <span className="text-white/40"> (ability not active yet)</span>}</p>}
     </>
+  );
+}
+
+/** A card's text in a padded, labelled panel, set apart for the card inspector. */
+export function CardEffect({ num }: { num: number; }) {
+  const card = catalogCard(num);
+  const body = card?.text || card?.flavor;
+  if (!card || !body) return null;
+  const flavor = !card.text || (card.kind === "monster" && card.frame === "normal");
+  return (
+    <div className="border-l-2 border-yellow-300/70 bg-white/[0.06] px-4 py-3">
+      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-widest text-yellow-300/80">{flavor ? "Description" : "Effect"}</p>
+      <p className={`text-[15px] leading-relaxed ${flavor ? "italic text-white/85" : "text-white"}`}>{body}</p>
+      {card.abilityPending && <p className="mt-2 text-xs text-white/45">Ability not active yet</p>}
+    </div>
   );
 }
 
@@ -346,7 +382,7 @@ export function HandView() {
               className={`relative min-w-0 max-w-36 flex-1 basis-0 transition-transform [@media(max-height:500px)]:max-w-20 ${index === handIndex ? "-translate-y-4" : "opacity-80"}`}
             >
               <CardFace num={card.num} className={`w-full ${index === handIndex ? "ring-4 ring-yellow-400" : partners.has(card.id) ? "ring-4 ring-fuchsia-400" : ""} ${picked ? "ring-4 ring-emerald-400" : ""} ${tooCostly ? "grayscale" : ""}`} />
-              {picked && <span className="absolute -top-2 right-0 bg-emerald-500 px-1 text-[10px] font-bold text-black">FUSE {mode.picked.indexOf(card.id) + 1}</span>}
+              {picked && <FuseBadge order={mode.picked.indexOf(card.id) + 1} />}
               {tooCostly && <span className="absolute inset-x-0 bottom-1 mx-auto w-fit bg-black/80 px-1 text-[10px] text-red-300">needs ★{def?.level}</span>}
               {fusable.has(card.id) && !picked && <span className="absolute -top-2 left-0 bg-fuchsia-500 px-1 text-[10px] font-bold text-black" title="Fuses with something in reach">⚗</span>}
               {partners.has(card.id) && (

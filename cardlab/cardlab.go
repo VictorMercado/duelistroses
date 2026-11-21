@@ -555,3 +555,32 @@ WORKING STYLE
 - Keep cards balanced against the catalog: compare stats, level and deckCost with similar cards.
 - Run check_card on a design before proposing it, and fix every problem it reports.
 - Be brief in conversation: what you made, how it plays, and anything the administrator must do (art, a new op to implement).`
+
+// --- for other designers (the card scout) --------------------------------------
+
+// Reference is the system prompt's card reference: how cards are written and
+// every op the engine carries out, with examples. It changes only with the
+// catalog.
+func (l *Lab) Reference(catalog *content.Catalog) string { return l.reference(catalog) }
+
+// LookupTools are the tools that read the catalog and check a card without
+// proposing anything: search_cards, get_card and check_card.
+func LookupTools() []anthropic.ToolUnionParam {
+	var out []anthropic.ToolUnionParam
+	for _, t := range toolDefs() {
+		if t.OfTool.Name != "propose_card" {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// RunLookup carries out one of LookupTools: what to tell Claude, whether it
+// is an error, and a line for a transcript.
+func (l *Lab) RunLookup(catalog *content.Catalog, name string, raw []byte) (out string, isErr bool, step string) {
+	if name == "propose_card" {
+		return "unknown tool " + name, true, "unknown tool " + name
+	}
+	out, isErr, step, _ = l.runTool(catalog, name, raw)
+	return out, isErr, step
+}

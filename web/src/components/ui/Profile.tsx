@@ -1,4 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { rarityProgress } from "@/const";
+import { allCards, cardArt, catalogCard, ensureCatalog } from "@/game/catalog";
+import { CardInspector } from "./CardPreview";
 import { loadProfile, type DeckSummary, type DuelStats, type MatchSummary, type NamedTally, type Profile, type Tally } from "@/net/api";
 import { watchReplay } from "@/net/replay";
 import { useMenuStore } from "@/stores/menuStore";
@@ -124,6 +127,8 @@ function ProfileBody({ profile }: { profile: Profile; }) {
         </Section>
       )}
 
+      {!user.guest && <CardRarity profile={profile} />}
+
       {profile.ownDecks && <OwnDecks profile={profile} />}
 
       {t && games > 0 && (
@@ -171,6 +176,60 @@ function ProfileBody({ profile }: { profile: Profile; }) {
         </>
       )}
     </>
+  );
+}
+
+/**
+ * Every card that has earned rarity points, rarest first: its rarity, its
+ * points and how far it is from the next rarity. Tapping one opens it.
+ */
+function CardRarity({ profile }: { profile: Profile; }) {
+  const [ready, setReady] = useState(() => allCards().length > 0);
+  const [inspect, setInspect] = useState<number | null>(null);
+  useEffect(() => { if (!ready) ensureCatalog().then(() => setReady(true)).catch(() => { }); }, [ready]);
+
+  const cards = useMemo(() => Object.entries(profile.cardPoints ?? {})
+    .map(([num, points]) => ({ num: Number(num), points, ...rarityProgress(points) }))
+    .filter((c) => c.points > 0)
+    .sort((a, b) => b.points - a.points || a.num - b.num), [profile.cardPoints]);
+
+  return (
+    <Section title={`Card rarity${cards.length ? ` · ${cards.length}` : ""}`}>
+      {cards.length === 0 && (
+        <p className="text-xs text-white/50">
+          {profile.me ? "Your monsters earn rarity by destroying enemy monsters and finishing off deck leaders." : "No card has earned rarity yet."}
+        </p>
+      )}
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-2">
+        {cards.map(({ num, points, rarity, next }) => {
+          const name = ready ? catalogCard(num)?.name ?? `Card #${num}` : "…";
+          const from = rarity.points, to = next?.points;
+          const fill = to ? ((points - from) / (to - from)) * 100 : 100;
+          return (
+            <li key={num}>
+              <button
+                className="flex w-full gap-2 border border-white/10 bg-white/5 p-1.5 text-left hover:border-white/40 active:border-yellow-400"
+                style={{ borderLeftColor: rarity.color, borderLeftWidth: 3 }}
+                onClick={() => setInspect(num)}
+              >
+                {ready && <img src={cardArt(num).art} alt="" loading="lazy" className="h-12 w-12 shrink-0 object-cover" />}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs">{name}</span>
+                  <span className="block text-[11px] font-bold" style={{ color: rarity.color }}>{rarity.name}</span>
+                  <span className="mt-0.5 block h-1 overflow-hidden bg-white/10">
+                    <span className="block h-full" style={{ width: `${fill}%`, background: next?.color ?? rarity.color }} />
+                  </span>
+                  <span className="block text-[10px] tabular-nums text-white/50">{to ? `${points} / ${to} pts` : `${points} pts · max`}</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {inspect !== null && (
+        <CardInspector num={inspect} onClose={() => setInspect(null)} points={profile.cardPoints[inspect] ?? 0} rarity={rarityProgress(profile.cardPoints[inspect] ?? 0).rarity.id} />
+      )}
+    </Section>
   );
 }
 

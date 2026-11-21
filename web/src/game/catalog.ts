@@ -1,7 +1,7 @@
 import { Vector3 } from 'three';
 import { ASSET_URL } from '@/const';
 import { loadCatalog, type CatalogCard } from '@/net/api';
-import type { Card } from '@/types';
+import type { Card, Rarity } from '@/types';
 import type { CardView } from '@/net/protocol';
 
 /**
@@ -73,7 +73,8 @@ const rendered = new Map<number, { key: string; card: Card; }>();
 
 /** `lift` raises the card above high ground (see game/terrain.ts); `full` draws the 512px art. */
 export function toRenderCard(view: CardView, index: number, lift = 0, full = false): Card {
-  const key = `${full}|${lift}|${view.num}|${view.owner}|${view.x}|${view.y}|${view.faceDown}|${view.defense}|${view.atk}|${view.def}|${view.terrain ?? 0}|${view.hidden}`;
+  // The index sets the card's small z offset, so it is part of the key too.
+  const key = `${full}|${lift}|${index % 16}|${view.num}|${view.owner}|${view.x}|${view.y}|${view.faceDown}|${view.defense}|${view.atk}|${view.def}|${view.terrain ?? 0}|${view.hidden}|${view.rarity ?? ''}`;
   const cached = rendered.get(view.id);
   if (cached && cached.key === key) return cached.card;
 
@@ -94,8 +95,9 @@ export function toRenderCard(view: CardView, index: number, lift = 0, full = fal
     type: 'normal',
     templateUrl: art.template,
     attribute: { type: 'dark', attributeUrl: art.attribute },
-    // Only cards that ship a holo mask get the holographic treatment.
-    rarity: art.mask ? 'ultra' : 'common',
+    // Earned by the player whose deck it is (see Rarity); a holo mask, where
+    // the card has one, keeps the foil off the figure in its art.
+    rarity: view.rarity ?? 'common',
     textureUrl: full ? art.artFull : art.art,
     textureFallbackUrl: art.fallback,
     maskUrl: art.mask,
@@ -107,13 +109,22 @@ export function toRenderCard(view: CardView, index: number, lift = 0, full = fal
   return card;
 }
 
+/**
+ * Forgets cached board cards that are no longer on the board (`ids` is what is),
+ * so the cache does not grow duel after duel. Preview cards (negative ids) are kept.
+ */
+export function pruneRenderCards(ids: Set<number>) {
+  for (const id of rendered.keys()) if (id >= 0 && !ids.has(id)) rendered.delete(id);
+}
+
 /** A card centred at the origin for the full-screen 3D preview: face up, or its back when hidden from us. */
-export function previewRenderCard(num: number, atk?: number, def?: number, terrain?: number): Card {
+export function previewRenderCard(num: number, atk?: number, def?: number, terrain?: number, rarity?: Rarity): Card {
   const base = cards.get(num);
   const view: CardView = {
     // Ids well clear of real card ids, so the preview never shares a cache entry with a board card.
     id: -1_000_000 - num, num, owner: 0, x: 0, y: 0, faceDown: !base, defense: false, acted: false, hidden: !base,
     atk: atk ?? base?.atk ?? 0, def: def ?? base?.def ?? 0, terrain,
+    rarity: base && rarity !== 'common' ? rarity : undefined,
   };
   return { ...toRenderCard(view, 0, 0, true), position: new Vector3(0, 0, 0) };
 }

@@ -209,22 +209,26 @@ func (g *Game) actSummon(s *Seat, a Action) error {
 		return RuleError("You can only play a card next to your deck leader")
 	}
 
-	// The marked cards merge among themselves first, then with whatever of
-	// the player's is on the square. When they cannot stand on their own (two
-	// fusion or equip spells, say) but the card on the square can take them
-	// one by one, they are added to it in the order marked instead.
+	// The card already on the square starts the chain: the marked cards are
+	// merged into it one by one, in the order marked. Only when that chain is
+	// not legal do the marked cards merge among themselves first and then
+	// land on it as one.
 	occupant := g.Board[target]
 	// An ally's monster only takes power-ups and real fusions.
 	ally := occupant != nil && occupant.Owner != s.Index
-	running, cost, ok := g.mergePlan(nil, cards)
-	ontoOccupant := false
-	if ok && occupant != nil && (g.combineKind(occupant.Def, running) == "" || (ally && !g.allyMerge(occupant.Def, running))) {
-		ok = false
-	}
-	if !ok && occupant != nil {
+	var running *CardDef
+	var cost int
+	ok, ontoOccupant := false, false
+	if occupant != nil {
 		running, cost, ok = g.mergePlan(occupant.Def, cards)
-		ontoOccupant = ok
 		if ok && ally && !g.allyChain(occupant.Def, cards) {
+			ok = false
+		}
+		ontoOccupant = ok
+	}
+	if !ok {
+		running, cost, ok = g.mergePlan(nil, cards)
+		if ok && occupant != nil && (g.combineKind(occupant.Def, running) == "" || (ally && !g.allyMerge(occupant.Def, running))) {
 			ok = false
 		}
 	}
@@ -502,7 +506,9 @@ func (g *Game) MoveTargets(c *Card) map[Pos]Pos {
 		return out
 	}
 	frontier := []Pos{c.Pos}
-	for step := 0; step < g.reach(c); step++ {
+	// reach scans the auras: work it out once, not on every step.
+	reach := g.reach(c)
+	for step := 0; step < reach; step++ {
 		var next []Pos
 		for _, from := range frontier {
 			for _, d := range orthogonal {
@@ -683,7 +689,9 @@ func (g *Game) attackLeader(c *Card, leader *Seat) {
 	st.Attacks++
 	st.DirectAttacks++
 	g.emit(Event{Type: "attack", Seat: c.Owner, CardID: c.ID, Num: cardNum(c.Def.Num), Target: -1, X: leader.Leader.X, Y: leader.Leader.Y, Amount: amount})
+	done := g.crediting(c)
 	g.damage(leader.Index, amount, "direct attack", c.Owner)
+	done()
 }
 
 func (g *Game) battle(att, def *Card) {
@@ -727,7 +735,14 @@ func (g *Game) battle(att, def *Card) {
 				return
 			}
 		}
+		// Credited to the monster that won the exchange.
+		winner := att
+		if def.Owner == by {
+			winner = def
+		}
+		done := g.crediting(winner)
 		g.damage(seat, amount, "battle", by)
+		done()
 	}
 	// A monster that beats one with "banish" is gone for good. One holding an
 	// absorbed monster (Relinquished) loses that instead, and stays.
@@ -739,7 +754,9 @@ func (g *Game) battle(att, def *Card) {
 		if g.ability(winner, "banish") != nil {
 			reason = "banished"
 		}
+		done := g.crediting(winner)
 		g.bury(loser, reason, winner.Owner)
+		done()
 		return true
 	}
 
@@ -843,8 +860,10 @@ func (g *Game) actFlip(s *Seat, a Action) error {
 	}
 	switch c.Def.Kind {
 	case KindMonster:
-		// Turning a monster face up is free: it may still move or change position.
+		// Turning a monster face up is its order for the turn. To flip and move
+		// in one order, move with Flip set (see actMove).
 		c.SelfFlipped = true
+		c.Acted = true
 		g.reveal(c)
 	case KindTrap:
 		return RuleError("Traps spring on their own")
@@ -871,9 +890,9 @@ func (g *Game) actPosition(s *Seat, a Action) error {
 		return RuleError("The card is already in that position")
 	}
 	c.Defense = a.Defense
-	// Going into defense is the card's order for the turn; going into attack
-	// leaves it free to move.
-	c.Acted = a.Defense
+	// Changing position, either way, is the card's order for the turn. A
+	// defending monster that moves goes into attack as part of the move.
+	c.Acted = true
 	// A face-down monster may turn face up as part of the same order.
 	if a.Flip && c.FaceDown {
 		c.SelfFlipped = true

@@ -4,6 +4,8 @@
  * that comes back. It never computes game rules itself.
  */
 
+import type { Rarity } from "@/types";
+
 export interface Pos { x: number; y: number; }
 
 export interface CardView {
@@ -31,6 +33,8 @@ export interface CardView {
   class?: 'monster' | 'spell' | 'trap' | 'ritual' | 'power-up';
   /** A hidden monster's type, while The Inexperienced Spy shows it. */
   type?: string;
+  /** Its rarity for the player whose deck it came from; absent for common, and for a card hidden from us. */
+  rarity?: Rarity;
 }
 
 export interface SeatView {
@@ -102,7 +106,7 @@ export interface GameView {
   peek?: { seat: number; cards: number[]; }[];
 }
 
-export interface HandCardView { id: number; num: number; }
+export interface HandCardView { id: number; num: number; /** Absent for common. */ rarity?: Rarity; }
 
 export interface GameEvent {
   type: string;
@@ -197,6 +201,8 @@ export type AdminTool =
   | { op: 'lp'; num: number; }
   /** Sends the card with this id from the field to its owner's graveyard. */
   | { op: 'remove'; num: number; }
+  /** Sets the rarity of the card with this id (field or hand) for its owner, for this duel only. */
+  | { op: 'rarity'; num: number; text: Rarity; }
   // The sandbox's own controls (Options.Sandbox in game/room.go).
   | { op: 'control'; seat: number; }
   | { op: 'follow'; on: boolean; }

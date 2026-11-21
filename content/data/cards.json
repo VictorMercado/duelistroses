@@ -11,7 +11,8 @@
   "def": 2500,
   "implemented": true,
   "image": "cards/000.png",
-  "mask": "cards/000_Mask.png"
+  "mask": "cards/000_Mask.png",
+  "flavor": "This legendary dragon is a powerful engine of destruction. Virtually invincible, very few have faced this awesome creature and lived to tell the tale."
  },
  {
   "num": 1,
@@ -79,7 +80,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/004.png",
-  "mask": "cards/004_Mask.png"
+  "mask": "cards/004_Mask.png",
+  "flavor": "A dragon that dwells in the depths of darkness, its vulnerability lies in its poor eyesight."
  },
  {
   "num": 5,
@@ -93,7 +95,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/005.png",
-  "mask": "cards/005_Mask.png"
+  "mask": "cards/005_Mask.png",
+  "flavor": "A vicious, fire-breathing dragon whose wicked flame corrupts the souls of its victims."
  },
  {
   "num": 6,
@@ -175,7 +178,8 @@
   "def": 2350,
   "implemented": true,
   "image": "cards/010.png",
-  "mask": "cards/010_Mask.png"
+  "mask": "cards/010_Mask.png",
+  "flavor": "An unworthy dragon with three sharp horns sprouting from its head."
  },
  {
   "num": 11,
@@ -213,7 +217,8 @@
   "def": 2350,
   "implemented": true,
   "image": "cards/012.png",
-  "mask": "cards/012_Mask.png"
+  "mask": "cards/012_Mask.png",
+  "flavor": "A dragon warrior of the moon armed with a crescent sword."
  },
  {
   "num": 13,
@@ -273,7 +278,8 @@
   "def": 1900,
   "implemented": true,
   "image": "cards/015.png",
-  "mask": "cards/015_Mask.png"
+  "mask": "cards/015_Mask.png",
+  "flavor": "A crimson dragon that spits fireballs to create a blazing sea of fire."
  },
  {
   "num": 16,
@@ -331,7 +337,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/018.png",
-  "mask": "cards/018_Mask.png"
+  "mask": "cards/018_Mask.png",
+  "flavor": "This weakened dragon can no longer fly, but is still a deadly force to be reckoned with."
  },
  {
   "num": 19,
@@ -345,7 +352,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/019.png",
-  "mask": "cards/019_Mask.png"
+  "mask": "cards/019_Mask.png",
+  "flavor": "This dragon appeared from the sky and crashed to the earth."
  },
  {
   "num": 20,
@@ -359,7 +367,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/020.png",
-  "mask": "cards/020_Mask.png"
+  "mask": "cards/020_Mask.png",
+  "flavor": "''A jet-black dragon found in the deepest jungles who normally devours trees.''"
  },
  {
   "num": 21,
@@ -373,7 +382,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/021.png",
-  "mask": "cards/021_Mask.png"
+  "mask": "cards/021_Mask.png",
+  "flavor": "Much more than just a child, this dragon is gifted with untapped power."
  },
  {
   "num": 22,
@@ -387,7 +397,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/022.png",
-  "mask": "cards/022_Mask.png"
+  "mask": "cards/022_Mask.png",
+  "flavor": "A dragon commonly found guarding mountain fortresses. Its signature attack is a sweeping dive from out of the blue."
  },
  {
   "num": 23,
@@ -454,7 +465,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/026.png",
-  "mask": "cards/026_Mask.png"
+  "mask": "cards/026_Mask.png",
+  "flavor": "A very small dragon known for its vicious attacks."
  },
  {
   "num": 27,
@@ -468,7 +480,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/027.png",
-  "mask": "cards/027_Mask.png"
+  "mask": "cards/027_Mask.png",
+  "flavor": "This dragon wears a shield not only for its own protection, but also for ramming its enemies."
  },
  {
   "num": 28,
@@ -482,7 +495,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/028.png",
-  "mask": "cards/028_Mask.png"
+  "mask": "cards/028_Mask.png",
+  "flavor": "''A two-headed dragon with a pair of jaws that can tear an enemy to shreds.''"
  },
  {
   "num": 29,
@@ -528,7 +542,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/031.png",
-  "mask": "cards/031_Mask.png"
+  "mask": "cards/031_Mask.png",
+  "flavor": "A flying dragon with four wings housing some very dangerous blades."
  },
  {
   "num": 32,
@@ -542,7 +557,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/032.png",
-  "mask": "cards/032_Mask.png"
+  "mask": "cards/032_Mask.png",
+  "flavor": "A minor dragon incapable of breathing fire."
  },
  {
   "num": 33,
@@ -556,7 +572,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/033.png",
-  "mask": "cards/033_Mask.png"
+  "mask": "cards/033_Mask.png",
+  "flavor": "This beautiful Dragon spirit harbors hidden strength."
  },
  {
   "num": 34,
@@ -679,7 +696,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/039.png",
-  "mask": "cards/039_Mask.png"
+  "mask": "cards/039_Mask.png",
+  "flavor": "''A sorcerer that draws its powers from the lunar landscape.''"
  },
  {
   "num": 40,
@@ -779,7 +797,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/044.png",
-  "mask": "cards/044_Mask.png"
+  "mask": "cards/044_Mask.png",
+  "flavor": "This elf is rumored to have lived for thousands of years. He leads an army of spirits against his enemies."
  },
  {
   "num": 45,
@@ -830,7 +849,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/047.png",
-  "mask": "cards/047_Mask.png"
+  "mask": "cards/047_Mask.png",
+  "flavor": "''The cane of this monster is the source of many powerful spells.''"
  },
  {
   "num": 48,
@@ -844,7 +864,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/048.png",
-  "mask": "cards/048_Mask.png"
+  "mask": "cards/048_Mask.png",
+  "flavor": "Soothes the souls of others by chanting a mysterious spell."
  },
  {
   "num": 49,
@@ -858,7 +879,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/049.png",
-  "mask": "cards/049_Mask.png"
+  "mask": "cards/049_Mask.png",
+  "flavor": "''This monster blasts enemies with unexpected bursts of wind.''"
  },
  {
   "num": 50,
@@ -872,7 +894,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/050.png",
-  "mask": "cards/050_Mask.png"
+  "mask": "cards/050_Mask.png",
+  "flavor": "A sorcerer blessed by lunar light with powers far beyond mortal comprehension."
  },
  {
   "num": 51,
@@ -907,7 +930,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/052.png",
-  "mask": "cards/052_Mask.png"
+  "mask": "cards/052_Mask.png",
+  "flavor": "A dimensional drifter who not only practices sorcery, but is also a sword and martial arts master."
  },
  {
   "num": 53,
@@ -1043,7 +1067,8 @@
   "def": 2100,
   "implemented": true,
   "image": "cards/060.png",
-  "mask": "cards/060_Mask.png"
+  "mask": "cards/060_Mask.png",
+  "flavor": "''The ultimate wizard in terms of attack and defense.''"
  },
  {
   "num": 61,
@@ -1141,7 +1166,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/065.png",
-  "mask": "cards/065_Mask.png"
+  "mask": "cards/065_Mask.png",
+  "flavor": "The one-eyed Necrolancer launches his onslaught from a dimensional ring that can appear out of thin air."
  },
  {
   "num": 66,
@@ -1197,7 +1223,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/068.png",
-  "mask": "cards/068_Mask.png"
+  "mask": "cards/068_Mask.png",
+  "flavor": "''A sorcerer who utters spells that render monsters unconscious.''"
  },
  {
   "num": 69,
@@ -1225,7 +1252,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/070.png",
-  "mask": "cards/070_Mask.png"
+  "mask": "cards/070_Mask.png",
+  "flavor": "Though destined to be a fairy, this creature chose the way of the witch instead."
  },
  {
   "num": 71,
@@ -1239,7 +1267,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/071.png",
-  "mask": "cards/071_Mask.png"
+  "mask": "cards/071_Mask.png",
+  "flavor": "''Armed with an array of magic wands, this creature is capable of multiple attacks.''"
  },
  {
   "num": 72,
@@ -1462,7 +1491,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/082.png",
-  "mask": "cards/082_Mask.png"
+  "mask": "cards/082_Mask.png",
+  "flavor": "A slave of the dark arts, this sorcerer is a master of life-extinguishing spells."
  },
  {
   "num": 83,
@@ -1545,7 +1575,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/086.png",
-  "mask": "cards/086_Mask.png"
+  "mask": "cards/086_Mask.png",
+  "flavor": "Wearing odd fashions, this gentleman is very fickle. He sometimes saves people and at other times commits crimes."
  },
  {
   "num": 87,
@@ -1585,7 +1616,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/088.png",
-  "mask": "cards/088_Mask.png"
+  "mask": "cards/088_Mask.png",
+  "flavor": "This Spellcaster attacks enemies with fire-related spells such as \"Sea of Flames\" and \"Wall of Fire\"."
  },
  {
   "num": 89,
@@ -1646,7 +1678,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/091.png",
-  "mask": "cards/091_Mask.png"
+  "mask": "cards/091_Mask.png",
+  "flavor": "''An elderly magician that raises mountains with his flute.''"
  },
  {
   "num": 92,
@@ -1660,7 +1693,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/092.png",
-  "mask": "cards/092_Mask.png"
+  "mask": "cards/092_Mask.png",
+  "flavor": "Elf twins that alternate their attacks."
  },
  {
   "num": 93,
@@ -1674,7 +1708,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/093.png",
-  "mask": "cards/093_Mask.png"
+  "mask": "cards/093_Mask.png",
+  "flavor": "''A wizard with a black mantle who is actually a talking lion in disguise.''"
  },
  {
   "num": 94,
@@ -1688,7 +1723,8 @@
   "def": 1900,
   "implemented": true,
   "image": "cards/094.png",
-  "mask": "cards/094_Mask.png"
+  "mask": "cards/094_Mask.png",
+  "flavor": "''A fairy of boulders that looks like an earthenware statue. It is quite strong in terms of both attack and defense.''"
  },
  {
   "num": 95,
@@ -1724,7 +1760,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/096.png",
-  "mask": "cards/096_Mask.png"
+  "mask": "cards/096_Mask.png",
+  "flavor": "''A spirit of the wind that calls up a storm when it's in a bad mood.''"
  },
  {
   "num": 97,
@@ -1738,7 +1775,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/097.png",
-  "mask": "cards/097_Mask.png"
+  "mask": "cards/097_Mask.png",
+  "flavor": "''This creature generates gale-force winds and tornadoes to blow its enemies away.''"
  },
  {
   "num": 98,
@@ -1797,7 +1835,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/100.png",
-  "mask": "cards/100_Mask.png"
+  "mask": "cards/100_Mask.png",
+  "flavor": "A wizard of the waters that conjures a liquid wall to crush any enemies that oppose him."
  },
  {
   "num": 101,
@@ -1898,7 +1937,8 @@
   "def": 0,
   "implemented": true,
   "image": "cards/105.png",
-  "mask": "cards/105_Mask.png"
+  "mask": "cards/105_Mask.png",
+  "flavor": "This warrior blindly swings a deadly blade with devastating force."
  },
  {
   "num": 106,
@@ -1912,7 +1952,8 @@
   "def": 0,
   "implemented": true,
   "image": "cards/106.png",
-  "mask": "cards/106_Mask.png"
+  "mask": "cards/106_Mask.png",
+  "flavor": "A dragon revived by sorcery. Its breath is highly corrosive."
  },
  {
   "num": 107,
@@ -1926,7 +1967,8 @@
   "def": 0,
   "implemented": true,
   "image": "cards/107.png",
-  "mask": "cards/107_Mask.png"
+  "mask": "cards/107_Mask.png",
+  "flavor": "A clown revived by the powers of darkness. Its deadly dance has sent many monsters to their graves."
  },
  {
   "num": 108,
@@ -1988,7 +2030,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/110.png",
-  "mask": "cards/110_Mask.png"
+  "mask": "cards/110_Mask.png",
+  "flavor": "A zombie that suddenly appeared from plot #13 - an empty grave."
  },
  {
   "num": 111,
@@ -2131,7 +2174,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/117.png",
-  "mask": "cards/117_Mask.png"
+  "mask": "cards/117_Mask.png",
+  "flavor": "''A vengeful spirit made up of many restless souls.''"
  },
  {
   "num": 118,
@@ -2193,7 +2237,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/120.png",
-  "mask": "cards/120_Mask.png"
+  "mask": "cards/120_Mask.png",
+  "flavor": "Armed with the Psycho Sword, this sinister assassin rules the bad land."
  },
  {
   "num": 121,
@@ -2207,7 +2252,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/121.png",
-  "mask": "cards/121_Mask.png"
+  "mask": "cards/121_Mask.png",
+  "flavor": "A treasure box containing a monster that attacks any unwary bandit."
  },
  {
   "num": 122,
@@ -2221,7 +2267,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/122.png",
-  "mask": "cards/122_Mask.png"
+  "mask": "cards/122_Mask.png",
+  "flavor": "A pair of friendly skeletons, lean and fat, that travel with extreme difficulty."
  },
  {
   "num": 123,
@@ -2256,7 +2303,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/124.png",
-  "mask": "cards/124_Mask.png"
+  "mask": "cards/124_Mask.png",
+  "flavor": "This creature casts a spell of terror and confusion just before attacking its enemies."
  },
  {
   "num": 125,
@@ -2270,7 +2318,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/125.png",
-  "mask": "cards/125_Mask.png"
+  "mask": "cards/125_Mask.png",
+  "flavor": "A zombie shark that can deliver its lethal curse with a spell."
  },
  {
   "num": 126,
@@ -2341,7 +2390,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/129.png",
-  "mask": "cards/129_Mask.png"
+  "mask": "cards/129_Mask.png",
+  "flavor": "''A monster that wanders the edges of the netherworld.''"
  },
  {
   "num": 130,
@@ -2370,7 +2420,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/131.png",
-  "mask": "cards/131_Mask.png"
+  "mask": "cards/131_Mask.png",
+  "flavor": "''A monster with a heavy appetite that has never been satisfied.''"
  },
  {
   "num": 132,
@@ -2398,7 +2449,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/133.png",
-  "mask": "cards/133_Mask.png"
+  "mask": "cards/133_Mask.png",
+  "flavor": "Many have fallen victim to this lunar warrior's crescent pike."
  },
  {
   "num": 134,
@@ -2498,7 +2550,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/138.png",
-  "mask": "cards/138_Mask.png"
+  "mask": "cards/138_Mask.png",
+  "flavor": "''This warrior's fatal dance is performed with a lethal sickle.''"
  },
  {
   "num": 139,
@@ -2512,7 +2565,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/139.png",
-  "mask": "cards/139_Mask.png"
+  "mask": "cards/139_Mask.png",
+  "flavor": "''Whoever resists the curse of this blade will gain untold power.''"
  },
  {
   "num": 140,
@@ -2573,7 +2627,8 @@
   "def": 500,
   "implemented": true,
   "image": "cards/142.png",
-  "mask": "cards/142_Mask.png"
+  "mask": "cards/142_Mask.png",
+  "flavor": "The speed of this warrior creates an intense vacuum that can slice through a monster's hide."
  },
  {
   "num": 143,
@@ -2737,7 +2792,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/150.png",
-  "mask": "cards/150_Mask.png"
+  "mask": "cards/150_Mask.png",
+  "flavor": "A warrior wizard adept in casting bone-chilling spells."
  },
  {
   "num": 151,
@@ -2826,7 +2882,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/154.png",
-  "mask": "cards/154_Mask.png"
+  "mask": "cards/154_Mask.png",
+  "flavor": "This club-wielding warrior battles to the end and will never surrender."
  },
  {
   "num": 155,
@@ -2840,7 +2897,8 @@
   "def": 2100,
   "implemented": true,
   "image": "cards/155.png",
-  "mask": "cards/155_Mask.png"
+  "mask": "cards/155_Mask.png",
+  "flavor": "''A knight whose horse travels faster than the wind. His battle-charge is a force to be reckoned with.''"
  },
  {
   "num": 156,
@@ -2890,7 +2948,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/158.png",
-  "mask": "cards/158_Mask.png"
+  "mask": "cards/158_Mask.png",
+  "flavor": "A man-hunter with powerful arms that can crush boulders."
  },
  {
   "num": 159,
@@ -2904,7 +2963,8 @@
   "def": 1150,
   "implemented": true,
   "image": "cards/159.png",
-  "mask": "cards/159_Mask.png"
+  "mask": "cards/159_Mask.png",
+  "flavor": "An axe-wielding monster of tremendous strength and agility."
  },
  {
   "num": 160,
@@ -2918,7 +2978,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/160.png",
-  "mask": "cards/160_Mask.png"
+  "mask": "cards/160_Mask.png",
+  "flavor": "''His swiftly drawn blade delivers quick and fatal damage.''"
  },
  {
   "num": 161,
@@ -2956,7 +3017,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/162.png",
-  "mask": "cards/162_Mask.png"
+  "mask": "cards/162_Mask.png",
+  "flavor": "Feel da strength ah dis sword-swingin' samurai from da Far East."
  },
  {
   "num": 163,
@@ -3017,7 +3079,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/165.png",
-  "mask": "cards/165_Mask.png"
+  "mask": "cards/165_Mask.png",
+  "flavor": "A silent and deadly warrior specializing in assassinations."
  },
  {
   "num": 166,
@@ -3031,7 +3094,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/166.png",
-  "mask": "cards/166_Mask.png"
+  "mask": "cards/166_Mask.png",
+  "flavor": "''A stone warrior with the heart of a dragon.''"
  },
  {
   "num": 167,
@@ -3071,7 +3135,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/168.png",
-  "mask": "cards/168_Mask.png"
+  "mask": "cards/168_Mask.png",
+  "flavor": "Armed with the Sword of Crimson Flames, this warrior can bind a monster with fiery restraints."
  },
  {
   "num": 169,
@@ -3085,7 +3150,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/169.png",
-  "mask": "cards/169_Mask.png"
+  "mask": "cards/169_Mask.png",
+  "flavor": "A living suit of armor that attacks enemies with a bone-jarring tackle."
  },
  {
   "num": 170,
@@ -3149,7 +3215,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/172.png",
-  "mask": "cards/172_Mask.png"
+  "mask": "cards/172_Mask.png",
+  "flavor": "An all-powerful hand that delivers ruthless attacks."
  },
  {
   "num": 173,
@@ -3177,7 +3244,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/174.png",
-  "mask": "cards/174_Mask.png"
+  "mask": "cards/174_Mask.png",
+  "flavor": "A strange warrior who manipulates three deadly blades with both hands and his tail."
  },
  {
   "num": 175,
@@ -3234,7 +3302,8 @@
   "def": 400,
   "implemented": true,
   "image": "cards/177.png",
-  "mask": "cards/177_Mask.png"
+  "mask": "cards/177_Mask.png",
+  "flavor": "Serving as a double for the Ruler of the Blue Flame, he's a master swordsman that wields a fine blade."
  },
  {
   "num": 178,
@@ -3268,7 +3337,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/179.png",
-  "mask": "cards/179_Mask.png"
+  "mask": "cards/179_Mask.png",
+  "flavor": "''A creature with a wicked smile and a lethal sickle.''"
  },
  {
   "num": 180,
@@ -3282,7 +3352,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/180.png",
-  "mask": "cards/180_Mask.png"
+  "mask": "cards/180_Mask.png",
+  "flavor": "A vicious creature that has decapitated numerous enemy monsters."
  },
  {
   "num": 181,
@@ -3321,7 +3392,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/182.png",
-  "mask": "cards/182_Mask.png"
+  "mask": "cards/182_Mask.png",
+  "flavor": "A monster that guards the entrance to the Netherworld."
  },
  {
   "num": 183,
@@ -3355,7 +3427,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/184.png",
-  "mask": "cards/184_Mask.png"
+  "mask": "cards/184_Mask.png",
+  "flavor": "While the king is away, this queen protects his throne with a mighty defense."
  },
  {
   "num": 185,
@@ -3369,7 +3442,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/185.png",
-  "mask": "cards/185_Mask.png"
+  "mask": "cards/185_Mask.png",
+  "flavor": "Legendary swordmaster Masaki is a veteran of over 100 battles."
  },
  {
   "num": 186,
@@ -3408,7 +3482,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/187.png",
-  "mask": "cards/187_Mask.png"
+  "mask": "cards/187_Mask.png",
+  "flavor": "A lady warrior armed with sword and shield, she floats lightly and stings sharply."
  },
  {
   "num": 188,
@@ -3555,7 +3630,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/194.png",
-  "mask": "cards/194_Mask.png"
+  "mask": "cards/194_Mask.png",
+  "flavor": "Gifted with the power of dragons, this warrior wields a sword created from a dragon's fang."
  },
  {
   "num": 195,
@@ -3632,7 +3708,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/198.png",
-  "mask": "cards/198_Mask.png"
+  "mask": "cards/198_Mask.png",
+  "flavor": "A strange warrior from another dimension."
  },
  {
   "num": 199,
@@ -3805,7 +3882,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/208.png",
-  "mask": "cards/208_Mask.png"
+  "mask": "cards/208_Mask.png",
+  "flavor": "An axe-swinging beast-warrior with the head of a dragon."
  },
  {
   "num": 209,
@@ -3819,7 +3897,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/209.png",
-  "mask": "cards/209_Mask.png"
+  "mask": "cards/209_Mask.png",
+  "flavor": "A one-eyed behemoth with thick, powerful arms made for delivering punishing blows."
  },
  {
   "num": 210,
@@ -3833,7 +3912,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/210.png",
-  "mask": "cards/210_Mask.png"
+  "mask": "cards/210_Mask.png",
+  "flavor": "A bull monster often found in the woods, it charges enemy monsters with a pair of deadly horns."
  },
  {
   "num": 211,
@@ -3847,7 +3927,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/211.png",
-  "mask": "cards/211_Mask.png"
+  "mask": "cards/211_Mask.png",
+  "flavor": "A monster with tremendous power, it destroys enemies with a swing of its axe."
  },
  {
   "num": 212,
@@ -3861,7 +3942,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/212.png",
-  "mask": "cards/212_Mask.png"
+  "mask": "cards/212_Mask.png",
+  "flavor": "What this creature lacks in size it makes up for in defense when battling in the prairie."
  },
  {
   "num": 213,
@@ -3898,7 +3980,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/214.png",
-  "mask": "cards/214_Mask.png"
+  "mask": "cards/214_Mask.png",
+  "flavor": "A fast and powerful axe-wielding beast-warrior."
  },
  {
   "num": 215,
@@ -3969,7 +4052,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/218.png",
-  "mask": "cards/218_Mask.png"
+  "mask": "cards/218_Mask.png",
+  "flavor": "An ogre possessed by the powers of the dark. Few can withstand its rapid charge."
  },
  {
   "num": 219,
@@ -3983,7 +4067,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/219.png",
-  "mask": "cards/219_Mask.png"
+  "mask": "cards/219_Mask.png",
+  "flavor": "With an axe in each hand, this monster delivers heavy damage."
  },
  {
   "num": 220,
@@ -4021,7 +4106,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/221.png",
-  "mask": "cards/221_Mask.png"
+  "mask": "cards/221_Mask.png",
+  "flavor": "A fast and lethal creature with very dangerous claws."
  },
  {
   "num": 222,
@@ -4049,7 +4135,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/223.png",
-  "mask": "cards/223_Mask.png"
+  "mask": "cards/223_Mask.png",
+  "flavor": "Once it has started battle, this monster attacks fiercely and cannot stop."
  },
  {
   "num": 224,
@@ -4102,7 +4189,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/226.png",
-  "mask": "cards/226_Mask.png"
+  "mask": "cards/226_Mask.png",
+  "flavor": "A heavenly stallion soaring through the skies on crimson wings."
  },
  {
   "num": 227,
@@ -4151,7 +4239,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/229.png",
-  "mask": "cards/229_Mask.png"
+  "mask": "cards/229_Mask.png",
+  "flavor": "This monster's tough hide deflects almost any attack."
  },
  {
   "num": 230,
@@ -4165,7 +4254,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/230.png",
-  "mask": "cards/230_Mask.png"
+  "mask": "cards/230_Mask.png",
+  "flavor": "''Although a poor defender, this monster's sharp horn gives it an edge when attacking.''"
  },
  {
   "num": 231,
@@ -4179,7 +4269,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/231.png",
-  "mask": "cards/231_Mask.png"
+  "mask": "cards/231_Mask.png",
+  "flavor": "Dis alpha wolf yoozes his sense a smell ta find da enemy. 'ey, quit sniffin at my socks!"
  },
  {
   "num": 232,
@@ -4193,7 +4284,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/232.png",
-  "mask": "cards/232_Mask.png"
+  "mask": "cards/232_Mask.png",
+  "flavor": "A snow wolf that's beautiful to the eye, but absolutely vicious in battle."
  },
  {
   "num": 233,
@@ -4207,7 +4299,8 @@
   "def": 1550,
   "implemented": true,
   "image": "cards/233.png",
-  "mask": "cards/233_Mask.png"
+  "mask": "cards/233_Mask.png",
+  "flavor": "Half man and half horse, this monster is known for its extreme speed."
  },
  {
   "num": 234,
@@ -4221,7 +4314,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/234.png",
-  "mask": "cards/234_Mask.png"
+  "mask": "cards/234_Mask.png",
+  "flavor": "Entirely gray, this beast has rarely been seen by mortal eyes."
  },
  {
   "num": 235,
@@ -4235,7 +4329,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/235.png",
-  "mask": "cards/235_Mask.png"
+  "mask": "cards/235_Mask.png",
+  "flavor": "A ferocious animal that sleeps all day. Sometimes it's better to let Sleeping Lions lie."
  },
  {
   "num": 236,
@@ -4274,7 +4369,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/237.png",
-  "mask": "cards/237_Mask.png"
+  "mask": "cards/237_Mask.png",
+  "flavor": "This beast coils like a snake, and strikes quickly with its snapping beak."
  },
  {
   "num": 238,
@@ -4288,7 +4384,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/238.png",
-  "mask": "cards/238_Mask.png"
+  "mask": "cards/238_Mask.png",
+  "flavor": "''A creature with sapphire eyes that mesmerizes and confuses enemies.''"
  },
  {
   "num": 239,
@@ -4302,7 +4399,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/239.png",
-  "mask": "cards/239_Mask.png"
+  "mask": "cards/239_Mask.png",
+  "flavor": "''This two-headed creature spits laser blasts at its enemies.''"
  },
  {
   "num": 240,
@@ -4331,7 +4429,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/241.png",
-  "mask": "cards/241_Mask.png"
+  "mask": "cards/241_Mask.png",
+  "flavor": "A savage beast that carries a big bamboo stick for beating down its enemies."
  },
  {
   "num": 242,
@@ -4365,7 +4464,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/243.png",
-  "mask": "cards/243_Mask.png"
+  "mask": "cards/243_Mask.png",
+  "flavor": "Dis big ol' guy wit' a big ol' eye shoots a nasty ray beam right atcha!"
  },
  {
   "num": 244,
@@ -4379,7 +4479,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/244.png",
-  "mask": "cards/244_Mask.png"
+  "mask": "cards/244_Mask.png",
+  "flavor": "A deadly duo consisting of a beast master and its loyal servant."
  },
  {
   "num": 245,
@@ -4393,7 +4494,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/245.png",
-  "mask": "cards/245_Mask.png"
+  "mask": "cards/245_Mask.png",
+  "flavor": "A pussycat-fairy. Contrary to her lovely beauty, she claws on her enemies."
  },
  {
   "num": 246,
@@ -4407,7 +4509,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/246.png",
-  "mask": "cards/246_Mask.png"
+  "mask": "cards/246_Mask.png",
+  "flavor": "This creature is shielded with a tough hide of hair and is excellent at defending itself."
  },
  {
   "num": 247,
@@ -4463,7 +4566,8 @@
   "def": 1550,
   "implemented": true,
   "image": "cards/249.png",
-  "mask": "cards/249_Mask.png"
+  "mask": "cards/249_Mask.png",
+  "flavor": "Huge monster with a lion's mane similar to the King of Beasts."
  },
  {
   "num": 250,
@@ -4477,7 +4581,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/250.png",
-  "mask": "cards/250_Mask.png"
+  "mask": "cards/250_Mask.png",
+  "flavor": "''A bizarre monster with the torso of a horse and a fish's tail. It gallops through the sea as if it were the wind.''"
  },
  {
   "num": 251,
@@ -4491,7 +4596,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/251.png",
-  "mask": "cards/251_Mask.png"
+  "mask": "cards/251_Mask.png",
+  "flavor": "A sly rat. He will come at you with his huge left claw."
  },
  {
   "num": 252,
@@ -4505,7 +4611,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/252.png",
-  "mask": "cards/252_Mask.png"
+  "mask": "cards/252_Mask.png",
+  "flavor": "''A wicked beast that resembles a winged lion.''"
  },
  {
   "num": 253,
@@ -4534,7 +4641,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/254.png",
-  "mask": "cards/254_Mask.png"
+  "mask": "cards/254_Mask.png",
+  "flavor": "A rabid rabbit that shears through opposition with its sharp skewers."
  },
  {
   "num": 255,
@@ -4572,7 +4680,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/256.png",
-  "mask": "cards/256_Mask.png"
+  "mask": "cards/256_Mask.png",
+  "flavor": "''An agile monster that rolls up to ram its opponents.''"
  },
  {
   "num": 257,
@@ -4607,7 +4716,8 @@
   "def": 1900,
   "implemented": true,
   "image": "cards/258.png",
-  "mask": "cards/258_Mask.png"
+  "mask": "cards/258_Mask.png",
+  "flavor": "This creature adopts the form of a white goat living in the forest, but is actually a Forest Elder."
  },
  {
   "num": 259,
@@ -4621,7 +4731,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/259.png",
-  "mask": "cards/259_Mask.png"
+  "mask": "cards/259_Mask.png",
+  "flavor": "''A further step in the evolutionary chain, it is much more powerful than \"Larvas\".''"
  },
  {
   "num": 260,
@@ -4635,7 +4746,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/260.png",
-  "mask": "cards/260_Mask.png"
+  "mask": "cards/260_Mask.png",
+  "flavor": "With skin tinged a bluish-white, this strange creature is a fearsome sight to behold."
  },
  {
   "num": 261,
@@ -4649,7 +4761,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/261.png",
-  "mask": "cards/261_Mask.png"
+  "mask": "cards/261_Mask.png",
+  "flavor": "An ill-mannered field varmint that will sink its teeth into anything."
  },
  {
   "num": 262,
@@ -4663,7 +4776,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/262.png",
-  "mask": "cards/262_Mask.png"
+  "mask": "cards/262_Mask.png",
+  "flavor": "Nothing escapes from this beast's massive mouth."
  },
  {
   "num": 263,
@@ -4677,7 +4791,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/263.png",
-  "mask": "cards/263_Mask.png"
+  "mask": "cards/263_Mask.png",
+  "flavor": "''The fur on this monster rat is tough enough to repel swords.''"
  },
  {
   "num": 264,
@@ -4705,7 +4820,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/265.png",
-  "mask": "cards/265_Mask.png"
+  "mask": "cards/265_Mask.png",
+  "flavor": "This monster moves so fast that it looks like an illusion to mortal eyes. (This card is always treated as a \"Phantom Beast\" card.)"
  },
  {
   "num": 266,
@@ -4808,7 +4924,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/271.png",
-  "mask": "cards/271_Mask.png"
+  "mask": "cards/271_Mask.png",
+  "flavor": "Capable of firing cannonballs from its mouth for long-range attacks, this creature is particularly effective in mountain battles."
  },
  {
   "num": 272,
@@ -4895,7 +5012,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/275.png",
-  "mask": "cards/275_Mask.png"
+  "mask": "cards/275_Mask.png",
+  "flavor": "This long-tailed bird blinds its enemies with mystical light."
  },
  {
   "num": 276,
@@ -4949,7 +5067,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/278.png",
-  "mask": "cards/278_Mask.png"
+  "mask": "cards/278_Mask.png",
+  "flavor": "A vicious bird that attacks from the skies with its whip-like tail."
  },
  {
   "num": 279,
@@ -4963,7 +5082,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/279.png",
-  "mask": "cards/279_Mask.png"
+  "mask": "cards/279_Mask.png",
+  "flavor": "''This flying creature never misses its intended target.''"
  },
  {
   "num": 280,
@@ -4992,7 +5112,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/281.png",
-  "mask": "cards/281_Mask.png"
+  "mask": "cards/281_Mask.png",
+  "flavor": "This monster swoops down and attacks with a rain of knives stored in its wings."
  },
  {
   "num": 282,
@@ -5006,7 +5127,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/282.png",
-  "mask": "cards/282_Mask.png"
+  "mask": "cards/282_Mask.png",
+  "flavor": "This monster attacks enemies using its huge beak."
  },
  {
   "num": 283,
@@ -5020,7 +5142,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/283.png",
-  "mask": "cards/283_Mask.png"
+  "mask": "cards/283_Mask.png",
+  "flavor": "A large peacock that launches its feathers in a lethal attack."
  },
  {
   "num": 284,
@@ -5049,7 +5172,8 @@
   "def": 1900,
   "implemented": true,
   "image": "cards/285.png",
-  "mask": "cards/285_Mask.png"
+  "mask": "cards/285_Mask.png",
+  "flavor": "''Few have set eyes on this dive-bombing bird and lived to tell the tale.''"
  },
  {
   "num": 286,
@@ -5063,7 +5187,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/286.png",
-  "mask": "cards/286_Mask.png"
+  "mask": "cards/286_Mask.png",
+  "flavor": "This monster's wings are capable of generating tornadoes."
  },
  {
   "num": 287,
@@ -5077,7 +5202,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/287.png",
-  "mask": "cards/287_Mask.png"
+  "mask": "cards/287_Mask.png",
+  "flavor": "''A clever long-nosed goblin, he is a force to be reckoned with.''"
  },
  {
   "num": 288,
@@ -5091,7 +5217,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/288.png",
-  "mask": "cards/288_Mask.png"
+  "mask": "cards/288_Mask.png",
+  "flavor": "This bird is known far and wide as a harbinger of doom."
  },
  {
   "num": 289,
@@ -5105,7 +5232,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/289.png",
-  "mask": "cards/289_Mask.png"
+  "mask": "cards/289_Mask.png",
+  "flavor": "This monster can draw its enemies into a mirror world that renders them helpless."
  },
  {
   "num": 290,
@@ -5119,7 +5247,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/290.png",
-  "mask": "cards/290_Mask.png"
+  "mask": "cards/290_Mask.png",
+  "flavor": "With hair shaped like a crown and a body encased in bluish white flames, this bird is a formidable sight."
  },
  {
   "num": 291,
@@ -5159,7 +5288,8 @@
   "def": 500,
   "implemented": true,
   "image": "cards/292.png",
-  "mask": "cards/292_Mask.png"
+  "mask": "cards/292_Mask.png",
+  "flavor": "A very elusive creature that looks like a harmless statue until it attacks."
  },
  {
   "num": 293,
@@ -5173,7 +5303,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/293.png",
-  "mask": "cards/293_Mask.png"
+  "mask": "cards/293_Mask.png",
+  "flavor": "A playful little fiend that lurks in the dark, waiting to attack an unwary enemy."
  },
  {
   "num": 294,
@@ -5187,7 +5318,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/294.png",
-  "mask": "cards/294_Mask.png"
+  "mask": "cards/294_Mask.png",
+  "flavor": "A fiend with dark powers for confusing the enemy. Among the Fiend-Type monsters, this monster boasts considerable force. (This card is always treated as an \"Archfiend\" card.)"
  },
  {
   "num": 295,
@@ -5304,7 +5436,8 @@
   "def": 1530,
   "implemented": true,
   "image": "cards/300.png",
-  "mask": "cards/300_Mask.png"
+  "mask": "cards/300_Mask.png",
+  "flavor": "Wields the power of darkness to destroy its enemies."
  },
  {
   "num": 301,
@@ -5333,7 +5466,8 @@
   "def": 1460,
   "implemented": true,
   "image": "cards/302.png",
-  "mask": "cards/302_Mask.png"
+  "mask": "cards/302_Mask.png",
+  "flavor": "''A fire-breathing monster that dwells in the netherworld.''"
  },
  {
   "num": 303,
@@ -5347,7 +5481,8 @@
   "def": 2150,
   "implemented": true,
   "image": "cards/303.png",
-  "mask": "cards/303_Mask.png"
+  "mask": "cards/303_Mask.png",
+  "flavor": "A fiend guarding the treasures of the netherworld, it's most at home in the dark."
  },
  {
   "num": 304,
@@ -5396,7 +5531,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/306.png",
-  "mask": "cards/306_Mask.png"
+  "mask": "cards/306_Mask.png",
+  "flavor": "''A wicked mirror that blocks off the damaging effects of an attack.''"
  },
  {
   "num": 307,
@@ -5410,7 +5546,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/307.png",
-  "mask": "cards/307_Mask.png"
+  "mask": "cards/307_Mask.png",
+  "flavor": "A monster that feeds on the energy of other creatures."
  },
  {
   "num": 308,
@@ -5424,7 +5561,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/308.png",
-  "mask": "cards/308_Mask.png"
+  "mask": "cards/308_Mask.png",
+  "flavor": "This fiend passes judgment on enemies that are locked in coffins."
  },
  {
   "num": 309,
@@ -5438,7 +5576,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/309.png",
-  "mask": "cards/309_Mask.png"
+  "mask": "cards/309_Mask.png",
+  "flavor": "Dressed in a night-black tuxedo, this creature presides over the darkness."
  },
  {
   "num": 310,
@@ -5498,7 +5637,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/312.png",
-  "mask": "cards/312_Mask.png"
+  "mask": "cards/312_Mask.png",
+  "flavor": "This spirit emerges from the mystic lamp and obeys the wishes of its summoner."
  },
  {
   "num": 313,
@@ -5533,7 +5673,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/314.png",
-  "mask": "cards/314_Mask.png"
+  "mask": "cards/314_Mask.png",
+  "flavor": "''A wicked entity that manipulates enemies towards a path of destruction.''"
  },
  {
   "num": 315,
@@ -5547,7 +5688,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/315.png",
-  "mask": "cards/315_Mask.png"
+  "mask": "cards/315_Mask.png",
+  "flavor": "It's said that this King of the Netherworld once had the power to rule over the dark."
  },
  {
   "num": 316,
@@ -5603,7 +5745,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/318.png",
-  "mask": "cards/318_Mask.png"
+  "mask": "cards/318_Mask.png",
+  "flavor": "A fallen fairy that is powerful in the dark."
  },
  {
   "num": 319,
@@ -5617,7 +5760,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/319.png",
-  "mask": "cards/319_Mask.png"
+  "mask": "cards/319_Mask.png",
+  "flavor": "Stretching arms and razor-sharp claws make this monster a formidable opponent."
  },
  {
   "num": 320,
@@ -5631,7 +5775,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/320.png",
-  "mask": "cards/320_Mask.png"
+  "mask": "cards/320_Mask.png",
+  "flavor": "Known as a swamp dweller, this creature is a minion of the dark forces."
  },
  {
   "num": 321,
@@ -5645,7 +5790,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/321.png",
-  "mask": "cards/321_Mask.png"
+  "mask": "cards/321_Mask.png",
+  "flavor": "''This cannon-like creature fires eyeballs so fast they can't be seen.''"
  },
  {
   "num": 322,
@@ -5681,7 +5827,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/323.png",
-  "mask": "cards/323_Mask.png"
+  "mask": "cards/323_Mask.png",
+  "flavor": "''A living weapon that spits projectiles.''"
  },
  {
   "num": 324,
@@ -5695,7 +5842,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/324.png",
-  "mask": "cards/324_Mask.png"
+  "mask": "cards/324_Mask.png",
+  "flavor": "A fiend said to dwell in the world of dreams, it attacks enemies in their sleep."
  },
  {
   "num": 325,
@@ -5754,7 +5902,8 @@
   "def": 400,
   "implemented": true,
   "image": "cards/327.png",
-  "mask": "cards/327_Mask.png"
+  "mask": "cards/327_Mask.png",
+  "flavor": "An eyeball fiend created by a servant of the wicked, it uses \"Dark Blasts\" to blow away its enemies."
  },
  {
   "num": 328,
@@ -5819,7 +5968,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/331.png",
-  "mask": "cards/331_Mask.png"
+  "mask": "cards/331_Mask.png",
+  "flavor": "''The fatal beams from the eyes of this monster result in grim destruction.''"
  },
  {
   "num": 332,
@@ -5859,7 +6009,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/333.png",
-  "mask": "cards/333_Mask.png"
+  "mask": "cards/333_Mask.png",
+  "flavor": "A fiend that dwells in a blinding curtain of smoke."
  },
  {
   "num": 334,
@@ -5873,7 +6024,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/334.png",
-  "mask": "cards/334_Mask.png"
+  "mask": "cards/334_Mask.png",
+  "flavor": "Nothing can stop the mad attack of this powerful creature."
  },
  {
   "num": 335,
@@ -5901,7 +6053,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/336.png",
-  "mask": "cards/336_Mask.png"
+  "mask": "cards/336_Mask.png",
+  "flavor": "''A monster created from a major accident in an underground lab.''"
  },
  {
   "num": 337,
@@ -5950,7 +6103,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/339.png",
-  "mask": "cards/339_Mask.png"
+  "mask": "cards/339_Mask.png",
+  "flavor": "A gargoyle enhanced by the powers of darkness. Very sharp talons make it a worthy opponent."
  },
  {
   "num": 340,
@@ -5964,7 +6118,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/340.png",
-  "mask": "cards/340_Mask.png"
+  "mask": "cards/340_Mask.png",
+  "flavor": "A genie of the lamp that is at the beck and call of its master."
  },
  {
   "num": 341,
@@ -6012,7 +6167,8 @@
   "def": 1950,
   "implemented": true,
   "image": "cards/343.png",
-  "mask": "cards/343_Mask.png"
+  "mask": "cards/343_Mask.png",
+  "flavor": "A bull fiend restored by the dark arts, this monster appears out of a jar."
  },
  {
   "num": 344,
@@ -6084,7 +6240,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/347.png",
-  "mask": "cards/347_Mask.png"
+  "mask": "cards/347_Mask.png",
+  "flavor": "A strange fiend with long arms and razor-sharp talons."
  },
  {
   "num": 348,
@@ -6158,7 +6315,8 @@
   "def": 1900,
   "implemented": true,
   "image": "cards/351.png",
-  "mask": "cards/351_Mask.png"
+  "mask": "cards/351_Mask.png",
+  "flavor": "A fiend that wields a mean sickle and fires devastating beams from its eyes."
  },
  {
   "num": 352,
@@ -6218,7 +6376,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/354.png",
-  "mask": "cards/354_Mask.png"
+  "mask": "cards/354_Mask.png",
+  "flavor": "An extraterrestrial monster that came from a distant galaxy."
  },
  {
   "num": 355,
@@ -6232,7 +6391,8 @@
   "def": 400,
   "implemented": true,
   "image": "cards/355.png",
-  "mask": "cards/355_Mask.png"
+  "mask": "cards/355_Mask.png",
+  "flavor": "A harmless monster found lurking in just about any attic."
  },
  {
   "num": 356,
@@ -6246,7 +6406,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/356.png",
-  "mask": "cards/356_Mask.png"
+  "mask": "cards/356_Mask.png",
+  "flavor": "This fiend brings out the worst in everyone."
  },
  {
   "num": 357,
@@ -6281,7 +6442,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/358.png",
-  "mask": "cards/358_Mask.png"
+  "mask": "cards/358_Mask.png",
+  "flavor": "Attacks from the skies with a whip-like tail."
  },
  {
   "num": 359,
@@ -6295,7 +6457,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/359.png",
-  "mask": "cards/359_Mask.png"
+  "mask": "cards/359_Mask.png",
+  "flavor": "A monster disguised as a treasure chest that is known to attack the unwary adventurer."
  },
  {
   "num": 360,
@@ -6309,7 +6472,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/360.png",
-  "mask": "cards/360_Mask.png"
+  "mask": "cards/360_Mask.png",
+  "flavor": "An aristocrat who wields a sword possessed by a malicious spirit that preys on the weak."
  },
  {
   "num": 361,
@@ -6362,7 +6526,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/363.png",
-  "mask": "cards/363_Mask.png"
+  "mask": "cards/363_Mask.png",
+  "flavor": "A three-headed nocturnal monster that is absolutely ruthless when fighting."
  },
  {
   "num": 364,
@@ -6419,7 +6584,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/366.png",
-  "mask": "cards/366_Mask.png"
+  "mask": "cards/366_Mask.png",
+  "flavor": "''A crystal monster that unleashes a brilliant light to blind enemies.''"
  },
  {
   "num": 367,
@@ -6433,7 +6599,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/367.png",
-  "mask": "cards/367_Mask.png"
+  "mask": "cards/367_Mask.png",
+  "flavor": "''A monster that feeds on oxygen, suffocating any who stand near.''"
  },
  {
   "num": 368,
@@ -6485,7 +6652,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/370.png",
-  "mask": "cards/370_Mask.png"
+  "mask": "cards/370_Mask.png",
+  "flavor": "''None have lived to tell tales of this powerful battle fairy.''"
  },
  {
   "num": 371,
@@ -6547,7 +6715,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/373.png",
-  "mask": "cards/373_Mask.png"
+  "mask": "cards/373_Mask.png",
+  "flavor": "A spirit that soothes the soul with the music of its heavenly harp."
  },
  {
   "num": 374,
@@ -6648,7 +6817,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/378.png",
-  "mask": "cards/378_Mask.png"
+  "mask": "cards/378_Mask.png",
+  "flavor": "''A lovely creature guarded by the moon. Her lunar curtain can block just about any attack.''"
  },
  {
   "num": 379,
@@ -6703,7 +6873,8 @@
   "def": 1650,
   "implemented": true,
   "image": "cards/381.png",
-  "mask": "cards/381_Mask.png"
+  "mask": "cards/381_Mask.png",
+  "flavor": "Frightening in appearance, this creature uses its large eyes and ears to keep track of any movement."
  },
  {
   "num": 382,
@@ -6785,7 +6956,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/385.png",
-  "mask": "cards/385_Mask.png"
+  "mask": "cards/385_Mask.png",
+  "flavor": "A popular creature in mythology that delivers fatal attacks with a sharp spear."
  },
  {
   "num": 386,
@@ -6909,7 +7081,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/391.png",
-  "mask": "cards/391_Mask.png"
+  "mask": "cards/391_Mask.png",
+  "flavor": "''It is said to signal that life is growing in a woman's womb.''"
  },
  {
   "num": 392,
@@ -6937,7 +7110,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/393.png",
-  "mask": "cards/393_Mask.png"
+  "mask": "cards/393_Mask.png",
+  "flavor": "This fairy rules over the end of existence."
  },
  {
   "num": 394,
@@ -6951,7 +7125,8 @@
   "def": 200,
   "implemented": true,
   "image": "cards/394.png",
-  "mask": "cards/394_Mask.png"
+  "mask": "cards/394_Mask.png",
+  "flavor": "An elf that dances across the sky with wings of razor-sharp blades."
  },
  {
   "num": 395,
@@ -6985,7 +7160,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/396.png",
-  "mask": "cards/396_Mask.png"
+  "mask": "cards/396_Mask.png",
+  "flavor": "A giant ant that dwells in the jungle, it is powerful whether attacking or defending."
  },
  {
   "num": 397,
@@ -6999,7 +7175,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/397.png",
-  "mask": "cards/397_Mask.png"
+  "mask": "cards/397_Mask.png",
+  "flavor": "Usually found traveling in swarms, this creature's ideal environment is the forest."
  },
  {
   "num": 398,
@@ -7013,7 +7190,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/398.png",
-  "mask": "cards/398_Mask.png"
+  "mask": "cards/398_Mask.png",
+  "flavor": "A massive beetle with a tough carapace and a dangerous horn."
  },
  {
   "num": 399,
@@ -7027,7 +7205,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/399.png",
-  "mask": "cards/399_Mask.png"
+  "mask": "cards/399_Mask.png",
+  "flavor": "A large, spherical roach that attacks its enemies by rolling over them."
  },
  {
   "num": 400,
@@ -7041,7 +7220,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/400.png",
-  "mask": "cards/400_Mask.png"
+  "mask": "cards/400_Mask.png",
+  "flavor": "A massive flea that feeds on the blood of its enemies."
  },
  {
   "num": 401,
@@ -7138,7 +7318,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/405.png",
-  "mask": "cards/405_Mask.png"
+  "mask": "cards/405_Mask.png",
+  "flavor": "Few can withstand the scythe-like arms of this dangerous creature."
  },
  {
   "num": 406,
@@ -7152,7 +7333,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/406.png",
-  "mask": "cards/406_Mask.png"
+  "mask": "cards/406_Mask.png",
+  "flavor": "A massive, intelligent spider that traps enemies with webbing."
  },
  {
   "num": 407,
@@ -7268,7 +7450,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/412.png",
-  "mask": "cards/412_Mask.png"
+  "mask": "cards/412_Mask.png",
+  "flavor": "A stag beetle with a saw-like head and arms."
  },
  {
   "num": 413,
@@ -7296,7 +7479,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/414.png",
-  "mask": "cards/414_Mask.png"
+  "mask": "cards/414_Mask.png",
+  "flavor": "A very vicious stag beetle that goes for the head."
  },
  {
   "num": 415,
@@ -7420,7 +7604,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/421.png",
-  "mask": "cards/421_Mask.png"
+  "mask": "cards/421_Mask.png",
+  "flavor": "''A man-shaped mantis with two razor-sharp scythes.''"
  },
  {
   "num": 422,
@@ -7473,7 +7658,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/424.png",
-  "mask": "cards/424_Mask.png"
+  "mask": "cards/424_Mask.png",
+  "flavor": "''An extraordinary blue scorpion found in the tundra, not in the desert.''"
  },
  {
   "num": 425,
@@ -7487,7 +7673,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/425.png",
-  "mask": "cards/425_Mask.png"
+  "mask": "cards/425_Mask.png",
+  "flavor": "This monster feeds on whatever it catches in its web."
  },
  {
   "num": 426,
@@ -7609,7 +7796,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/430.png",
-  "mask": "cards/430_Mask.png"
+  "mask": "cards/430_Mask.png",
+  "flavor": "A huge bee with exceptional strength that's particularly dangerous in a swarm."
  },
  {
   "num": 431,
@@ -7662,7 +7850,8 @@
   "def": 2030,
   "implemented": true,
   "image": "cards/433.png",
-  "mask": "cards/433_Mask.png"
+  "mask": "cards/433_Mask.png",
+  "flavor": "This Jurassic juggernaut has a spine covered in sword-like plates, and a tail to split open skulls."
  },
  {
   "num": 434,
@@ -7676,7 +7865,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/434.png",
-  "mask": "cards/434_Mask.png"
+  "mask": "cards/434_Mask.png",
+  "flavor": "A powerful monster whose two heads attack as one."
  },
  {
   "num": 435,
@@ -7690,7 +7880,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/435.png",
-  "mask": "cards/435_Mask.png"
+  "mask": "cards/435_Mask.png",
+  "flavor": "A mammoth that protects the graves of its pack and is absolutely merciless when facing grave-robbers."
  },
  {
   "num": 436,
@@ -7704,7 +7895,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/436.png",
-  "mask": "cards/436_Mask.png"
+  "mask": "cards/436_Mask.png",
+  "flavor": "Nothing stands in the way of this spike-covered dinosaur!"
  },
  {
   "num": 437,
@@ -7718,7 +7910,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/437.png",
-  "mask": "cards/437_Mask.png"
+  "mask": "cards/437_Mask.png",
+  "flavor": "Fast on its feet, this dinosaur rips enemies to shreds with its sharp claws."
  },
  {
   "num": 438,
@@ -7732,7 +7925,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/438.png",
-  "mask": "cards/438_Mask.png"
+  "mask": "cards/438_Mask.png",
+  "flavor": "A powerful dragon with teeth that can grind almost anything to dust."
  },
  {
   "num": 439,
@@ -7746,7 +7940,8 @@
   "def": 400,
   "implemented": true,
   "image": "cards/439.png",
-  "mask": "cards/439_Mask.png"
+  "mask": "cards/439_Mask.png",
+  "flavor": "Small but vicious, this monster even attacks its own kind."
  },
  {
   "num": 440,
@@ -7760,7 +7955,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/440.png",
-  "mask": "cards/440_Mask.png"
+  "mask": "cards/440_Mask.png",
+  "flavor": "A dinosaur with two deadly jaws, it stores electricity in its horn and releases high voltage bolts from the mouth on its back."
  },
  {
   "num": 441,
@@ -7789,7 +7985,8 @@
   "def": 850,
   "implemented": true,
   "image": "cards/442.png",
-  "mask": "cards/442_Mask.png"
+  "mask": "cards/442_Mask.png",
+  "flavor": "Dis man-like dinosawz gotta high I.Q., even tho he's lackin' in da strength depawtment. (Kinda like yooz, if ya had a high I.Q.! Nyaah!)"
  },
  {
   "num": 443,
@@ -7803,7 +8000,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/443.png",
-  "mask": "cards/443_Mask.png"
+  "mask": "cards/443_Mask.png",
+  "flavor": "A tiger-striped dragon that is often seen racing across the wasteland at tremendous speeds."
  },
  {
   "num": 444,
@@ -7817,7 +8015,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/444.png",
-  "mask": "cards/444_Mask.png"
+  "mask": "cards/444_Mask.png",
+  "flavor": "Yo, this tyrannosaurus tot's got a terrible temper."
  },
  {
   "num": 445,
@@ -7846,7 +8045,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/446.png",
-  "mask": "cards/446_Mask.png"
+  "mask": "cards/446_Mask.png",
+  "flavor": "A lizard with a very tough hide and a vicious bite."
  },
  {
   "num": 447,
@@ -7881,7 +8081,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/448.png",
-  "mask": "cards/448_Mask.png"
+  "mask": "cards/448_Mask.png",
+  "flavor": "''An extremely long snake that dwells in the world of myth.''"
  },
  {
   "num": 449,
@@ -7895,7 +8096,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/449.png",
-  "mask": "cards/449_Mask.png"
+  "mask": "cards/449_Mask.png",
+  "flavor": "A blood-sucking snake in human form that attacks any living being that passes nearby."
  },
  {
   "num": 450,
@@ -7909,7 +8111,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/450.png",
-  "mask": "cards/450_Mask.png"
+  "mask": "cards/450_Mask.png",
+  "flavor": "''This monster wraps itself around an opponent and pecks away with its huge beak.''"
  },
  {
   "num": 451,
@@ -7923,7 +8126,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/451.png",
-  "mask": "cards/451_Mask.png"
+  "mask": "cards/451_Mask.png",
+  "flavor": "Before the dawn of man, this lizard warrior ruled supreme."
  },
  {
   "num": 452,
@@ -7937,7 +8141,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/452.png",
-  "mask": "cards/452_Mask.png"
+  "mask": "cards/452_Mask.png",
+  "flavor": "''A vicious crocodile with great intelligence.''"
  },
  {
   "num": 453,
@@ -7951,7 +8156,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/453.png",
-  "mask": "cards/453_Mask.png"
+  "mask": "cards/453_Mask.png",
+  "flavor": "A devious snake with a thick body that wraps around an enemy monster and squeezes the life out of it."
  },
  {
   "num": 454,
@@ -7983,7 +8189,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/455.png",
-  "mask": "cards/455_Mask.png"
+  "mask": "cards/455_Mask.png",
+  "flavor": "''A reptilian monster that sprays fire in every direction.''"
  },
  {
   "num": 456,
@@ -8069,7 +8276,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/459.png",
-  "mask": "cards/459_Mask.png"
+  "mask": "cards/459_Mask.png",
+  "flavor": "A giant white shark with razor-sharp teeth."
  },
  {
   "num": 460,
@@ -8122,7 +8330,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/462.png",
-  "mask": "cards/462_Mask.png"
+  "mask": "cards/462_Mask.png",
+  "flavor": "A beautiful mermaid that lures voyagers to a watery grave."
  },
  {
   "num": 463,
@@ -8136,7 +8345,8 @@
   "def": 400,
   "implemented": true,
   "image": "cards/463.png",
-  "mask": "cards/463_Mask.png"
+  "mask": "cards/463_Mask.png",
+  "flavor": "''A white dolphin with a horn that summons huge tidal waves.''"
  },
  {
   "num": 464,
@@ -8165,7 +8375,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/465.png",
-  "mask": "cards/465_Mask.png"
+  "mask": "cards/465_Mask.png",
+  "flavor": "This is one sea creature whose wrath is something monsters fear to face."
  },
  {
   "num": 466,
@@ -8179,7 +8390,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/466.png",
-  "mask": "cards/466_Mask.png"
+  "mask": "cards/466_Mask.png",
+  "flavor": "A rare rainbow fish that has never been caught by mortal man."
  },
  {
   "num": 467,
@@ -8193,7 +8405,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/467.png",
-  "mask": "cards/467_Mask.png"
+  "mask": "cards/467_Mask.png",
+  "flavor": "''A reticent mermaid who appears only on very rare occasions. She emerges only when a large rainbow arches across the sky.''"
  },
  {
   "num": 468,
@@ -8207,7 +8420,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/468.png",
-  "mask": "cards/468_Mask.png"
+  "mask": "cards/468_Mask.png",
+  "flavor": "A flying fish that attacks with its pointed head."
  },
  {
   "num": 469,
@@ -8267,7 +8481,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/471.png",
-  "mask": "cards/471_Mask.png"
+  "mask": "cards/471_Mask.png",
+  "flavor": "A fish with arms, legs, and some very sharp teeth."
  },
  {
   "num": 472,
@@ -8334,7 +8549,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/475.png",
-  "mask": "cards/475_Mask.png"
+  "mask": "cards/475_Mask.png",
+  "flavor": "A mermaid who serves as a herald to the Ocean Lord. She protects the sacred domain of Atlantis."
  },
  {
   "num": 476,
@@ -8372,7 +8588,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/477.png",
-  "mask": "cards/477_Mask.png"
+  "mask": "cards/477_Mask.png",
+  "flavor": "A member of a race of sea serpents that freely travels through the sea."
  },
  {
   "num": 478,
@@ -8410,7 +8627,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/479.png",
-  "mask": "cards/479_Mask.png"
+  "mask": "cards/479_Mask.png",
+  "flavor": "''Protected by a tough shell, this master of the sea attacks its enemies with toxic bubbles.''"
  },
  {
   "num": 480,
@@ -8449,7 +8667,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/481.png",
-  "mask": "cards/481_Mask.png"
+  "mask": "cards/481_Mask.png",
+  "flavor": "A robot guard built to protect throne rooms, it is armed with homing missiles."
  },
  {
   "num": 482,
@@ -8463,7 +8682,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/482.png",
-  "mask": "cards/482_Mask.png"
+  "mask": "cards/482_Mask.png",
+  "flavor": "A destructive machine discovered in the Ruins of the Ancients."
  },
  {
   "num": 483,
@@ -8477,7 +8697,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/483.png",
-  "mask": "cards/483_Mask.png"
+  "mask": "cards/483_Mask.png",
+  "flavor": "An indestructible mechanoid created for the sole purpose of guarding the gateways."
  },
  {
   "num": 484,
@@ -8491,7 +8712,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/484.png",
-  "mask": "cards/484_Mask.png"
+  "mask": "cards/484_Mask.png",
+  "flavor": "A mechanical soldier that won't stop attacking until all life readings have been extinguished from its sensors."
  },
  {
   "num": 485,
@@ -8505,7 +8727,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/485.png",
-  "mask": "cards/485_Mask.png"
+  "mask": "cards/485_Mask.png",
+  "flavor": "Made of mysterious metal, this monster is a doomsday machine from the edge of the universe."
  },
  {
   "num": 486,
@@ -8540,7 +8763,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/487.png",
-  "mask": "cards/487_Mask.png"
+  "mask": "cards/487_Mask.png",
+  "flavor": "A horrible torture machine with a large pendulum blade."
  },
  {
   "num": 488,
@@ -8604,7 +8828,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/491.png",
-  "mask": "cards/491_Mask.png"
+  "mask": "cards/491_Mask.png",
+  "flavor": "''Guardian of the Machine King, it crushes opposition by rolling over them.''"
  },
  {
   "num": 492,
@@ -8618,7 +8843,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/492.png",
-  "mask": "cards/492_Mask.png"
+  "mask": "cards/492_Mask.png",
+  "flavor": "A hunter that relentlessly pursues its target by order of the Machine King."
  },
  {
   "num": 493,
@@ -8747,7 +8973,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/499.png",
-  "mask": "cards/499_Mask.png"
+  "mask": "cards/499_Mask.png",
+  "flavor": "Armed with a mass of scissors, this monster can clip an enemy into any desired shape and size."
  },
  {
   "num": 500,
@@ -8816,7 +9043,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/503.png",
-  "mask": "cards/503_Mask.png"
+  "mask": "cards/503_Mask.png",
+  "flavor": "A cyborg snail that still travels at a slow pace."
  },
  {
   "num": 504,
@@ -8830,7 +9058,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/504.png",
-  "mask": "cards/504_Mask.png"
+  "mask": "cards/504_Mask.png",
+  "flavor": "This monster hides in a saucer and only appears when executing an attack."
  },
  {
   "num": 505,
@@ -8844,7 +9073,8 @@
   "def": 2300,
   "implemented": true,
   "image": "cards/505.png",
-  "mask": "cards/505_Mask.png"
+  "mask": "cards/505_Mask.png",
+  "flavor": "The machine's ability is said to vary according to its slot results."
  },
  {
   "num": 506,
@@ -8890,7 +9120,8 @@
   "def": 2500,
   "implemented": true,
   "image": "cards/508.png",
-  "mask": "cards/508_Mask.png"
+  "mask": "cards/508_Mask.png",
+  "flavor": "A mechanical spider with rocket launchers capable of random fire."
  },
  {
   "num": 509,
@@ -8951,7 +9182,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/511.png",
-  "mask": "cards/511_Mask.png"
+  "mask": "cards/511_Mask.png",
+  "flavor": "A surface battle robot that was once used for sea warfare."
  },
  {
   "num": 512,
@@ -8965,7 +9197,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/512.png",
-  "mask": "cards/512_Mask.png"
+  "mask": "cards/512_Mask.png",
+  "flavor": "''This machine generates illusions that leave an enemy wide open to attacks.''"
  },
  {
   "num": 513,
@@ -9012,7 +9245,8 @@
   "def": 1900,
   "implemented": true,
   "image": "cards/515.png",
-  "mask": "cards/515_Mask.png"
+  "mask": "cards/515_Mask.png",
+  "flavor": "This monster swings an earth-shaking axe that cannot be blocked by a common sword."
  },
  {
   "num": 516,
@@ -9040,7 +9274,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/517.png",
-  "mask": "cards/517_Mask.png"
+  "mask": "cards/517_Mask.png",
+  "flavor": "An iron wolf with razor-sharp fangs that can penetrate any armor."
  },
  {
   "num": 518,
@@ -9054,7 +9289,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/518.png",
-  "mask": "cards/518_Mask.png"
+  "mask": "cards/518_Mask.png",
+  "flavor": "Armed with a pair of shovels, this monster will destroy anything that stands in its way."
  },
  {
   "num": 519,
@@ -9089,7 +9325,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/520.png",
-  "mask": "cards/520_Mask.png"
+  "mask": "cards/520_Mask.png",
+  "flavor": "''An armadillo monster that rolls up to form a dice-like shape.''"
  },
  {
   "num": 521,
@@ -9118,7 +9355,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/522.png",
-  "mask": "cards/522_Mask.png"
+  "mask": "cards/522_Mask.png",
+  "flavor": "A steel idol worshipped in the Land of Machines."
  },
  {
   "num": 523,
@@ -9157,7 +9395,8 @@
   "def": 2200,
   "implemented": true,
   "image": "cards/524.png",
-  "mask": "cards/524_Mask.png"
+  "mask": "cards/524_Mask.png",
+  "flavor": "''A mechanized soldier created to protect royalty.''"
  },
  {
   "num": 525,
@@ -9171,7 +9410,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/525.png",
-  "mask": "cards/525_Mask.png"
+  "mask": "cards/525_Mask.png",
+  "flavor": "''This machine, created to lead charges into enemy territory, mows down enemies by rushing.''"
  },
  {
   "num": 526,
@@ -9185,7 +9425,8 @@
   "def": 2200,
   "implemented": true,
   "image": "cards/526.png",
-  "mask": "cards/526_Mask.png"
+  "mask": "cards/526_Mask.png",
+  "flavor": "A mechanized iron doll with tremendous strength."
  },
  {
   "num": 527,
@@ -9274,7 +9515,8 @@
   "def": 1900,
   "implemented": true,
   "image": "cards/531.png",
-  "mask": "cards/531_Mask.png"
+  "mask": "cards/531_Mask.png",
+  "flavor": "A metal fish with a razor-sharp caudal fin."
  },
  {
   "num": 532,
@@ -9288,7 +9530,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/532.png",
-  "mask": "cards/532_Mask.png"
+  "mask": "cards/532_Mask.png",
+  "flavor": "''This monster carries a devastating plasma cannon on its powerful back.''"
  },
  {
   "num": 533,
@@ -9510,7 +9753,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/540.png",
-  "mask": "cards/540_Mask.png"
+  "mask": "cards/540_Mask.png",
+  "flavor": "This creature attacks with electromagnetic waves."
  },
  {
   "num": 541,
@@ -9624,7 +9868,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/546.png",
-  "mask": "cards/546_Mask.png"
+  "mask": "cards/546_Mask.png",
+  "flavor": "''After rendering an opponent immobile by spitting a sticky goo, this monster closes in for the attack.''"
  },
  {
   "num": 547,
@@ -9638,7 +9883,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/547.png",
-  "mask": "cards/547_Mask.png"
+  "mask": "cards/547_Mask.png",
+  "flavor": "With each arm forming an electric whip, this monster paralyzes its enemies with electric shocks."
  },
  {
   "num": 548,
@@ -9652,7 +9898,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/548.png",
-  "mask": "cards/548_Mask.png"
+  "mask": "cards/548_Mask.png",
+  "flavor": "A squid that thrives on fire and heat."
  },
  {
   "num": 549,
@@ -9666,7 +9913,8 @@
   "def": 2200,
   "implemented": true,
   "image": "cards/549.png",
-  "mask": "cards/549_Mask.png"
+  "mask": "cards/549_Mask.png",
+  "flavor": "''A stone turtle that is nearly indestructible.''"
  },
  {
   "num": 550,
@@ -9680,7 +9928,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/550.png",
-  "mask": "cards/550_Mask.png"
+  "mask": "cards/550_Mask.png",
+  "flavor": "A giant squid that drags its enemies to a watery grave."
  },
  {
   "num": 551,
@@ -9739,7 +9988,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/553.png",
-  "mask": "cards/553_Mask.png"
+  "mask": "cards/553_Mask.png",
+  "flavor": "With the head of a fish and the legs of an octopus, this strange creature attacks enemies by flinging spears."
  },
  {
   "num": 554,
@@ -9775,7 +10025,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/555.png",
-  "mask": "cards/555_Mask.png"
+  "mask": "cards/555_Mask.png",
+  "flavor": "''This strange creature hides in the deep, dark corners of the seven seas.''"
  },
  {
   "num": 556,
@@ -9789,7 +10040,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/556.png",
-  "mask": "cards/556_Mask.png"
+  "mask": "cards/556_Mask.png",
+  "flavor": "''This monster melts away to materialize under its enemies, taking them by surprise.''"
  },
  {
   "num": 557,
@@ -9803,7 +10055,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/557.png",
-  "mask": "cards/557_Mask.png"
+  "mask": "cards/557_Mask.png",
+  "flavor": "''Protected by a spiked shell, this turtle has a very nasty disposition.''"
  },
  {
   "num": 558,
@@ -9817,7 +10070,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/558.png",
-  "mask": "cards/558_Mask.png"
+  "mask": "cards/558_Mask.png",
+  "flavor": "A tiger encased in a protective shell that attacks with razor-sharp fangs."
  },
  {
   "num": 559,
@@ -9831,7 +10085,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/559.png",
-  "mask": "cards/559_Mask.png"
+  "mask": "cards/559_Mask.png",
+  "flavor": "''An ammonite warrior that has protected the seas throughout history.''"
  },
  {
   "num": 560,
@@ -9892,7 +10147,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/562.png",
-  "mask": "cards/562_Mask.png"
+  "mask": "cards/562_Mask.png",
+  "flavor": "With whip-like arms, this creature can attack enemies from a distance."
  },
  {
   "num": 563,
@@ -9986,7 +10242,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/566.png",
-  "mask": "cards/566_Mask.png"
+  "mask": "cards/566_Mask.png",
+  "flavor": "Transforms the water overflowing from a jar into attacking dragons."
  },
  {
   "num": 567,
@@ -10045,7 +10302,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/569.png",
-  "mask": "cards/569_Mask.png"
+  "mask": "cards/569_Mask.png",
+  "flavor": "A spirit that controls rain and is capable of summoning hurricanes to blow the enemy away."
  },
  {
   "num": 570,
@@ -10100,7 +10358,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/572.png",
-  "mask": "cards/572_Mask.png"
+  "mask": "cards/572_Mask.png",
+  "flavor": "A very rare penguin that takes to the air with ears shaped like wings."
  },
  {
   "num": 573,
@@ -10179,7 +10438,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/576.png",
-  "mask": "cards/576_Mask.png"
+  "mask": "cards/576_Mask.png",
+  "flavor": "This monster swamps an opponent with an almost endless supply of water."
  },
  {
   "num": 577,
@@ -10193,7 +10453,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/577.png",
-  "mask": "cards/577_Mask.png"
+  "mask": "cards/577_Mask.png",
+  "flavor": "''A very aggressive mermaid that attacks enemies with the spikes growing from its body.''"
  },
  {
   "num": 578,
@@ -10207,7 +10468,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/578.png",
-  "mask": "cards/578_Mask.png"
+  "mask": "cards/578_Mask.png",
+  "flavor": "''A water fairy that is said to be able to summon a giant sea serpent.''"
  },
  {
   "num": 579,
@@ -10221,7 +10483,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/579.png",
-  "mask": "cards/579_Mask.png"
+  "mask": "cards/579_Mask.png",
+  "flavor": "''A lovely lady who can launch water projectiles that turn into lethal ice spikes before they reach an opponent.''"
  },
  {
   "num": 580,
@@ -10295,7 +10558,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/583.png",
-  "mask": "cards/583_Mask.png"
+  "mask": "cards/583_Mask.png",
+  "flavor": "A sea-dwelling snake that attacks passing enemies with its sharp teeth."
  },
  {
   "num": 584,
@@ -10309,7 +10573,8 @@
   "def": 2100,
   "implemented": true,
   "image": "cards/584.png",
-  "mask": "cards/584_Mask.png"
+  "mask": "cards/584_Mask.png",
+  "flavor": "''A huge turtle that has existed for over 30,000 years.''"
  },
  {
   "num": 585,
@@ -10323,7 +10588,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/585.png",
-  "mask": "cards/585_Mask.png"
+  "mask": "cards/585_Mask.png",
+  "flavor": "''An amphibian that sold his soul for unlimited power to avenge his late friend.''"
  },
  {
   "num": 586,
@@ -10337,7 +10603,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/586.png",
-  "mask": "cards/586_Mask.png"
+  "mask": "cards/586_Mask.png",
+  "flavor": "''A monster crab with huge claws for clipping enemies to little pieces.''"
  },
  {
   "num": 587,
@@ -10351,7 +10618,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/587.png",
-  "mask": "cards/587_Mask.png"
+  "mask": "cards/587_Mask.png",
+  "flavor": "''A lethal crawfish with extremely dangerous claws.''"
  },
  {
   "num": 588,
@@ -10365,7 +10633,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/588.png",
-  "mask": "cards/588_Mask.png"
+  "mask": "cards/588_Mask.png",
+  "flavor": "A merciless monster that tears opponents to shreds with razor-like claws."
  },
  {
   "num": 589,
@@ -10439,7 +10708,8 @@
   "def": 1700,
   "implemented": true,
   "image": "cards/592.png",
-  "mask": "cards/592_Mask.png"
+  "mask": "cards/592_Mask.png",
+  "flavor": "An unusual turtle that not only swims at tremendous speeds, but can also sail across the skies."
  },
  {
   "num": 593,
@@ -10500,7 +10770,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/595.png",
-  "mask": "cards/595_Mask.png"
+  "mask": "cards/595_Mask.png",
+  "flavor": "With an enormous maw and massive teeth, this monstrosity is one dangerous and strange serpent from the deep."
  },
  {
   "num": 596,
@@ -10542,7 +10813,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/598.png",
-  "mask": "cards/598_Mask.png"
+  "mask": "cards/598_Mask.png",
+  "flavor": "A crimson-shelled tortoise that feeds on flames."
  },
  {
   "num": 599,
@@ -10605,7 +10877,8 @@
   "def": 800,
   "implemented": true,
   "image": "cards/601.png",
-  "mask": "cards/601_Mask.png"
+  "mask": "cards/601_Mask.png",
+  "flavor": "A liquid life form that thrives on water."
  },
  {
   "num": 602,
@@ -10619,7 +10892,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/602.png",
-  "mask": "cards/602_Mask.png"
+  "mask": "cards/602_Mask.png",
+  "flavor": "An amphibious creature with two whip-like tails."
  },
  {
   "num": 603,
@@ -10633,7 +10907,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/603.png",
-  "mask": "cards/603_Mask.png"
+  "mask": "cards/603_Mask.png",
+  "flavor": "A bluish starfish with a solid hide capable of fending off attacks."
  },
  {
   "num": 604,
@@ -10647,7 +10922,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/604.png",
-  "mask": "cards/604_Mask.png"
+  "mask": "cards/604_Mask.png",
+  "flavor": "A very agile half-fish warrior known for its relentless attacks."
  },
  {
   "num": 605,
@@ -10661,7 +10937,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/605.png",
-  "mask": "cards/605_Mask.png"
+  "mask": "cards/605_Mask.png",
+  "flavor": "''This fairy protects a fountain from any who seek to muddy its waters.''"
  },
  {
   "num": 606,
@@ -10675,7 +10952,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/606.png",
-  "mask": "cards/606_Mask.png"
+  "mask": "cards/606_Mask.png",
+  "flavor": "''A lizard warrior protected by a hide of very tough emerald scales.''"
  },
  {
   "num": 607,
@@ -10704,7 +10982,8 @@
   "def": 700,
   "implemented": true,
   "image": "cards/608.png",
-  "mask": "cards/608_Mask.png"
+  "mask": "cards/608_Mask.png",
+  "flavor": "A slime boss that is definitely tougher than it looks."
  },
  {
   "num": 609,
@@ -10718,7 +10997,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/609.png",
-  "mask": "cards/609_Mask.png"
+  "mask": "cards/609_Mask.png",
+  "flavor": "This amphibian is strong on the attack, but leaves much to be desired when defending."
  },
  {
   "num": 610,
@@ -10732,7 +11012,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/610.png",
-  "mask": "cards/610_Mask.png"
+  "mask": "cards/610_Mask.png",
+  "flavor": "A mermaid archer that hides in a protective shell, waiting for the right moment to strike."
  },
  {
   "num": 611,
@@ -10811,7 +11092,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/614.png",
-  "mask": "cards/614_Mask.png"
+  "mask": "cards/614_Mask.png",
+  "flavor": "Crimson wings of fire make this a very lethal creature."
  },
  {
   "num": 615,
@@ -10885,7 +11167,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/618.png",
-  "mask": "cards/618_Mask.png"
+  "mask": "cards/618_Mask.png",
+  "flavor": "A malevolent creature wrapped in flames that attacks enemies with intense fire."
  },
  {
   "num": 619,
@@ -10914,7 +11197,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/620.png",
-  "mask": "cards/620_Mask.png"
+  "mask": "cards/620_Mask.png",
+  "flavor": "Known to many as the \"Burning Executioner\", this monster is capable of burning enemies to cinders."
  },
  {
   "num": 621,
@@ -11015,7 +11299,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/625.png",
-  "mask": "cards/625_Mask.png"
+  "mask": "cards/625_Mask.png",
+  "flavor": "Protected by a solid body of rock, this monster throws a bone-shattering punch."
  },
  {
   "num": 626,
@@ -11029,7 +11314,8 @@
   "def": 2000,
   "implemented": true,
   "image": "cards/626.png",
-  "mask": "cards/626_Mask.png"
+  "mask": "cards/626_Mask.png",
+  "flavor": "A giant warrior made of stone. A punch from this creature has earth-shaking results."
  },
  {
   "num": 627,
@@ -11064,7 +11350,8 @@
   "def": 500,
   "implemented": true,
   "image": "cards/628.png",
-  "mask": "cards/628_Mask.png"
+  "mask": "cards/628_Mask.png",
+  "flavor": "An earthen figure that protects the tomb of an ancient ruler."
  },
  {
   "num": 629,
@@ -11100,7 +11387,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/630.png",
-  "mask": "cards/630_Mask.png"
+  "mask": "cards/630_Mask.png",
+  "flavor": "Dis stone crittah's got rock-hahd fur. Dat gives him some really good dee-fense!"
  },
  {
   "num": 631,
@@ -11114,7 +11402,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/631.png",
-  "mask": "cards/631_Mask.png"
+  "mask": "cards/631_Mask.png",
+  "flavor": "A golem formed by boulders, this monster turns its enemies to stone and crushes them to dust."
  },
  {
   "num": 632,
@@ -11142,7 +11431,8 @@
   "def": 2200,
   "implemented": true,
   "image": "cards/633.png",
-  "mask": "cards/633_Mask.png"
+  "mask": "cards/633_Mask.png",
+  "flavor": "For nearly a millennium, this golem has served as guardian of an ancient treasure trove."
  },
  {
   "num": 634,
@@ -11156,7 +11446,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/634.png",
-  "mask": "cards/634_Mask.png"
+  "mask": "cards/634_Mask.png",
+  "flavor": "A golem with a massive right hand for crushing its victims."
  },
  {
   "num": 635,
@@ -11190,7 +11481,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/636.png",
-  "mask": "cards/636_Mask.png"
+  "mask": "cards/636_Mask.png",
+  "flavor": "''A rock warrior that wields a heavy blade carved from stone.''"
  },
  {
   "num": 637,
@@ -11204,7 +11496,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/637.png",
-  "mask": "cards/637_Mask.png"
+  "mask": "cards/637_Mask.png",
+  "flavor": "''With a head that erupts when angered, this monster launches a dangerous shower of boulders.''"
  },
  {
   "num": 638,
@@ -11218,7 +11511,8 @@
   "def": 1400,
   "implemented": true,
   "image": "cards/638.png",
-  "mask": "cards/638_Mask.png"
+  "mask": "cards/638_Mask.png",
+  "flavor": "A stone monument from Easter Island that launches laser blasts from its rock-hewn lips."
  },
  {
   "num": 639,
@@ -11255,7 +11549,8 @@
   "def": 1600,
   "implemented": true,
   "image": "cards/640.png",
-  "mask": "cards/640_Mask.png"
+  "mask": "cards/640_Mask.png",
+  "flavor": "Appears from underground and attacks with long, snake-like tentacles."
  },
  {
   "num": 641,
@@ -11320,7 +11615,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/644.png",
-  "mask": "cards/644_Mask.png"
+  "mask": "cards/644_Mask.png",
+  "flavor": "''This monster melts its way underground to attack enemies from below.''"
  },
  {
   "num": 645,
@@ -11334,7 +11630,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/645.png",
-  "mask": "cards/645_Mask.png"
+  "mask": "cards/645_Mask.png",
+  "flavor": "A behemoth shaped by giant boulders."
  },
  {
   "num": 646,
@@ -11426,7 +11723,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/650.png",
-  "mask": "cards/650_Mask.png"
+  "mask": "cards/650_Mask.png",
+  "flavor": "''A meat-eating plant that is attractive to the eye but dangerous when approached.''"
  },
  {
   "num": 651,
@@ -11440,7 +11738,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/651.png",
-  "mask": "cards/651_Mask.png"
+  "mask": "cards/651_Mask.png",
+  "flavor": "A fire-breathing plant found growing near volcanoes."
  },
  {
   "num": 652,
@@ -11476,7 +11775,8 @@
   "def": 1000,
   "implemented": true,
   "image": "cards/653.png",
-  "mask": "cards/653_Mask.png"
+  "mask": "cards/653_Mask.png",
+  "flavor": "''A lady monster dwelling in a flower, she sprinkles the air with poisonous pollen.''"
  },
  {
   "num": 654,
@@ -11572,7 +11872,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/658.png",
-  "mask": "cards/658_Mask.png"
+  "mask": "cards/658_Mask.png",
+  "flavor": "''This wicked flower attacks enemies with pollen projectiles.''"
  },
  {
   "num": 659,
@@ -11607,7 +11908,8 @@
   "def": 1300,
   "implemented": true,
   "image": "cards/660.png",
-  "mask": "cards/660_Mask.png"
+  "mask": "cards/660_Mask.png",
+  "flavor": "A plant-warrior that attacks with seeds and sword."
  },
  {
   "num": 661,
@@ -11635,7 +11937,8 @@
   "def": 900,
   "implemented": true,
   "image": "cards/662.png",
-  "mask": "cards/662_Mask.png"
+  "mask": "cards/662_Mask.png",
+  "flavor": "A thorny plant found in the darklands that wraps itself around any unwary traveler."
  },
  {
   "num": 663,
@@ -11649,7 +11952,8 @@
   "def": 400,
   "implemented": true,
   "image": "cards/663.png",
-  "mask": "cards/663_Mask.png"
+  "mask": "cards/663_Mask.png",
+  "flavor": "''A rarely seen flower that blossoms quietly on the edge of darkness.''"
  },
  {
   "num": 664,
@@ -11663,7 +11967,8 @@
   "def": 1100,
   "implemented": true,
   "image": "cards/664.png",
-  "mask": "cards/664_Mask.png"
+  "mask": "cards/664_Mask.png",
+  "flavor": "''A living vase that bites enemies and blinds them with a blast of pollen from its flower.''"
  },
  {
   "num": 665,
@@ -11677,7 +11982,8 @@
   "def": 1200,
   "implemented": true,
   "image": "cards/665.png",
-  "mask": "cards/665_Mask.png"
+  "mask": "cards/665_Mask.png",
+  "flavor": "This monster is formed by several serpents that break off to individually attack nearby enemies."
  },
  {
   "num": 666,
@@ -11691,7 +11997,8 @@
   "def": 1800,
   "implemented": true,
   "image": "cards/666.png",
-  "mask": "cards/666_Mask.png"
+  "mask": "cards/666_Mask.png",
+  "flavor": "A guardian of the woods, this massive tree is believed to be immortal."
  },
  {
   "num": 667,
@@ -11705,7 +12012,8 @@
   "def": 1500,
   "implemented": true,
   "image": "cards/667.png",
-  "mask": "cards/667_Mask.png"
+  "mask": "cards/667_Mask.png",
+  "flavor": "Queen of the Emerald Forest and wife of the Spirit King, she lives surrounded by vivid red leaves."
  },
  {
   "num": 668,
@@ -11743,7 +12051,8 @@
   "def": 600,
   "implemented": true,
   "image": "cards/669.png",
-  "mask": "cards/669_Mask.png"
+  "mask": "cards/669_Mask.png",
+  "flavor": "''A carnivorous plant that has an outgrowth of tentacles. It attacks someone nearby by extending its tentacles.''"
  },
  {
   "num": 670,

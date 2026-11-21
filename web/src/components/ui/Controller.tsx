@@ -11,7 +11,7 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import CardFace from "./CardFace";
 import { VoiceButton } from "./Voice";
 import { Countdown } from "./Hud";
-import { StrengthChip } from "./GameOverlays";
+import { FuseBadge, StrengthChip } from "./GameOverlays";
 import { buttonColor, hintsFor, terrainOf, trackBarHeight, type Hint } from "@/game/hints";
 
 /**
@@ -172,7 +172,7 @@ function HandStrip({ view }: { view: GameView; }) {
           return (
             <button key={card.id} onClick={() => tap(index)} className={`relative min-w-0 max-w-24 flex-1 basis-0 transition-transform ${current ? "-translate-y-2" : open ? "opacity-80" : ""}`}>
               <CardFace num={card.num} className={`w-full ${current ? "ring-4 ring-yellow-400" : ""} ${picked ? "ring-4 ring-emerald-400" : ""} ${tooCostly ? "grayscale" : ""}`} />
-              {picked && open && <span className="absolute -top-2 right-0 bg-emerald-500 px-1 text-[10px] font-bold text-black">FUSE {mode.picked.indexOf(card.id) + 1}</span>}
+              {picked && open && <FuseBadge order={mode.picked.indexOf(card.id) + 1} />}
             </button>
           );
         })}

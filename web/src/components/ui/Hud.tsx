@@ -14,8 +14,16 @@ export function Countdown({ deadline }: { deadline: number; }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!deadline) return;
-    const timer = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(timer);
+    // Ticks as the shown second changes (just past each boundary), not four times a second.
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const t = Date.now();
+      setNow(t);
+      const left = deadline - t;
+      if (left > 0) timer = setTimeout(tick, (left % 1000 || 1000) + 15);
+    };
+    tick();
+    return () => clearTimeout(timer);
   }, [deadline]);
   if (!deadline) return null;
   const seconds = Math.max(0, Math.ceil((deadline - now) / 1000));

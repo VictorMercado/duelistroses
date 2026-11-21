@@ -111,6 +111,7 @@ func (g *Game) creditDestroy(c *Card, by int) {
 		st.CardsDestroyed++
 		if c.Def.IsMonster() {
 			st.MonstersDestroyed++
+			g.earn(MonsterKillPoints, by, c.Owner)
 			if s := g.seat(by); s != nil {
 				g.rankUp(s)
 			}

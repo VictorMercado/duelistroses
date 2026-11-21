@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { takeFrames } from "@/game/frameStats";
+import { totalFrames } from "@/game/frameStats";
 
 interface FPSCounterProps {
   style?: "default" | "minimal";
@@ -11,10 +11,12 @@ export default function FPSCounter({ style }: FPSCounterProps) {
 
   useEffect(() => {
     let last = performance.now();
-    takeFrames();
+    let seen = totalFrames();
     const timer = setInterval(() => {
       const now = performance.now();
-      setFps(Math.round((takeFrames() * 1000) / (now - last)));
+      const total = totalFrames();
+      setFps(Math.round(((total - seen) * 1000) / (now - last)));
+      seen = total;
       last = now;
     }, 1000);
     return () => clearInterval(timer);

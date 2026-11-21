@@ -8,6 +8,8 @@ import { listMaps, type MapSummary } from "@/net/api";
 import CardFace from "@/components/ui/CardFace";
 import { ThoughtList } from "@/components/ui/GameOverlays";
 import { ANIMATIONS, canPreview, playAll, playPreview, stopPreview, usePreviewStore } from "@/game/animationPreview";
+import { RARITIES, UNLOCKED_RARITIES } from "@/const";
+import type { Rarity } from "@/types";
 
 const button = " border border-white/20 px-2 py-1 hover:border-fuchsia-300 disabled:opacity-40 pointer-coarse:py-2";
 const KINDS = ["all", "monster", "spell", "trap", "ritual"] as const;
@@ -235,6 +237,16 @@ function SeatControls() {
       >
         🗑 Remove ({cursor.x}, {cursor.y})
       </button>
+      {/* Every copy of that card number its owner has, for this duel only: to see each rarity's foil on the board. */}
+      <select
+        className="border border-white/20 bg-black/60 px-1 py-1 disabled:opacity-40"
+        disabled={!target || !!target.hidden}
+        title="The rarity of the card under the board cursor, for this duel"
+        value={target?.rarity ?? "common"}
+        onChange={(e) => target && session.adminTool({ op: "rarity", num: target.id, text: e.target.value as Rarity })}
+      >
+        {[...RARITIES, ...UNLOCKED_RARITIES].map((r) => <option key={r.id} value={r.id}>✦ {r.name}</option>)}
+      </select>
     </div>
   );
 }

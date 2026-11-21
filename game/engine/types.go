@@ -136,17 +136,20 @@ type Effect struct {
 
 // CardDef is a card as printed: identity and base stats, no game state.
 type CardDef struct {
-	Num       int     `json:"num"`
-	Name      string  `json:"name"`
-	Kind      string  `json:"kind"`
-	Type      string  `json:"type,omitempty"`      // monster type: "dragon", "winged-beast"...
-	Attribute string  `json:"attribute,omitempty"` // "light", "dark"...
-	Level     int     `json:"level,omitempty"`
-	Atk       int     `json:"atk,omitempty"`
-	Def       int     `json:"def,omitempty"`
-	DeckCost  int     `json:"deckCost,omitempty"`
-	Text      string  `json:"text,omitempty"`
-	Effect    *Effect `json:"effect,omitempty"`
+	Num       int    `json:"num"`
+	Name      string `json:"name"`
+	Kind      string `json:"kind"`
+	Type      string `json:"type,omitempty"`      // monster type: "dragon", "winged-beast"...
+	Attribute string `json:"attribute,omitempty"` // "light", "dark"...
+	Level     int    `json:"level,omitempty"`
+	Atk       int    `json:"atk,omitempty"`
+	Def       int    `json:"def,omitempty"`
+	DeckCost  int    `json:"deckCost,omitempty"`
+	Text      string `json:"text,omitempty"`
+	// Flavor is a normal monster's description: shown, never played. Kept
+	// apart from Text, since a monster with text is an effect monster.
+	Flavor string  `json:"flavor,omitempty"`
+	Effect *Effect `json:"effect,omitempty"`
 	// Abilities are what a monster does by itself (see abilities.go).
 	Abilities []*Effect `json:"abilities,omitempty"`
 	// Favors lists terrains this card is strong on beyond what its type gives.
@@ -264,6 +267,14 @@ type Seat struct {
 	Destinies int
 	// Stats is what this seat has done so far (see stats.go).
 	Stats Stats
+	// RarityBase is the rarity points the player had before this duel, by
+	// card number; nil for a seat that keeps none (a bot, a guest). CardPoints
+	// is what its cards earned this duel. See rarity.go.
+	RarityBase map[int]int
+	CardPoints map[int]int
+	// Unlocked is the rarities the player unlocked by card number outside the
+	// points (RarityCosmic): it overrides what the points give.
+	Unlocked map[int]string
 
 	// LastPlayed is the card the seat last played from its hand.
 	LastPlayed int
@@ -342,6 +353,9 @@ type Game struct {
 	Cat   Catalog
 	Tiles map[Pos]string
 	Seats []*Seat
+	// credited is the card a blow being dealt now is credited to, for rarity
+	// points (see crediting); nil when no card is.
+	credited *Card
 
 	Board map[Pos]*Card
 	Cards map[int]*Card

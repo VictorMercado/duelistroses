@@ -6,8 +6,10 @@ import YugiohCard from "@/components/game/YugiohCard";
 import { cardArt, catalogCard, previewRenderCard } from "@/game/catalog";
 import { useInteraction } from "@/game/interaction";
 import { useUIStore } from "@/stores/uiStore";
-import { CardText } from "./GameOverlays";
+import { CardEffect, CardHeading } from "./GameOverlays";
 import { terrainTone } from "@/game/terrain";
+import { rarityInfo, rarityProgress } from "@/const";
+import type { Rarity } from "@/types";
 
 const MAX_TILT_X = 1.1; // radians; past this the card turns edge-on
 const DRAG_SPEED = 0.01; // radians per pixel dragged
@@ -43,6 +45,29 @@ interface InspectorProps {
   children?: React.ReactNode;
   /** A deck leader: its art alone, without the card frame, stars or ATK/DEF it is based on. */
   portrait?: boolean;
+  /** The card's rarity, drawn and named; common when unset. */
+  rarity?: Rarity;
+  /** The rarity points this player's copy has: shows how far it is from the next rarity. */
+  points?: number;
+}
+
+/** "Secret Rare", in its colour, and how many points the next rarity needs. */
+function RarityLine({ rarity, points }: { rarity: Rarity; points?: number; }) {
+  const info = rarityInfo(rarity);
+  const next = points !== undefined ? rarityProgress(points).next : undefined;
+  if (rarity === "common" && points === undefined) return null;
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: info.color }}>{info.name}</p>
+      {points !== undefined && (
+        <p className="text-[11px] text-white/50">
+          {next
+            ? <>{points}/{next.points} points to <span style={{ color: next.color }}>{next.name}</span> · 1 per monster destroyed, 10 for the final blow to a deck leader</>
+            : <>{points} points: the rarest it can be</>}
+        </p>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -50,13 +75,13 @@ interface InspectorProps {
  * finger) to turn it and watch the foil catch the light; the backdrop or ✕
  * closes it.
  */
-export function CardInspector({ num, atk, def: defValue, terrain, onClose: close, children, portrait = false }: InspectorProps) {
+export function CardInspector({ num, atk, def: defValue, terrain, onClose: close, children, portrait = false, rarity = "common", points }: InspectorProps) {
   const lowPower = useUIStore((s) => s.lowPower);
   const tilt = useRef<Tilt>({ x: 0, y: 0 });
   const drag = useRef<{ id: number; x: number; y: number; } | null>(null);
   const invalidate = useRef<() => void>(() => { });
 
-  const card = useMemo(() => previewRenderCard(num, atk, defValue, terrain), [num, atk, defValue, terrain]);
+  const card = useMemo(() => previewRenderCard(num, atk, defValue, terrain, rarity), [num, atk, defValue, terrain, rarity]);
 
   useEffect(() => { tilt.current = { x: 0, y: 0 }; invalidate.current(); }, [num]);
 
@@ -119,19 +144,32 @@ export function CardInspector({ num, atk, def: defValue, terrain, onClose: close
         </div>
         )}
 
-        <div className="max-h-[40%] overflow-y-auto p-4 font-mono text-sm md:max-h-none md:basis-2/5 md:pt-14 landscape:max-h-none landscape:basis-2/5">
-          <CardText num={num} stars={!portrait} />
-          {def?.kind === "monster" && !portrait && (
-            <div className="mt-3 flex gap-2">
-              <span className="border border-red-500/30 bg-red-900/30 px-3 py-1.5">ATK <b className={terrainTone(terrain)}>{atk ?? def.atk}</b></span>
-              <span className="border border-blue-500/30 bg-blue-900/30 px-3 py-1.5">DEF <b className={terrainTone(terrain)}>{defValue ?? def.def}</b></span>
+        <div className="flex max-h-[40%] flex-col overflow-y-auto p-5 font-mono text-sm md:max-h-none md:basis-2/5 md:pt-14 landscape:max-h-none landscape:basis-2/5">
+          <div className="pr-10 md:pr-0">
+            {def ? <CardHeading num={num} stars={!portrait} large /> : <p className="text-white/60">Face-down card. Attack it to find out what it is.</p>}
+          </div>
+
+          {/* The effect and the stats sit in the middle of the column. */}
+          <div className="my-auto space-y-3 py-5">
+            <CardEffect num={num} />
+            {def?.kind === "monster" && !portrait && (
+              <div className="flex gap-2">
+                <span className="border border-red-500/30 bg-red-900/30 px-3 py-1.5">ATK <b className={terrainTone(terrain)}>{atk ?? def.atk}</b></span>
+                <span className="border border-blue-500/30 bg-blue-900/30 px-3 py-1.5">DEF <b className={terrainTone(terrain)}>{defValue ?? def.def}</b></span>
+              </div>
+            )}
+            {def?.kind === "monster" && !portrait && !!terrain && (
+              <p className={`text-xs ${terrainTone(terrain)}`}>{terrain > 0 ? `+${terrain}` : terrain} ATK/DEF from the terrain it stands on</p>
+            )}
+          </div>
+
+          {/* Footer: pinned to the bottom of the column. */}
+          {((!portrait && (card.rarity !== "common" || points !== undefined)) || children) && (
+            <div className="border-t border-white/10 pt-3">
+              {!portrait && <RarityLine rarity={card.rarity} points={points} />}
+              {children}
             </div>
           )}
-          {def?.kind === "monster" && !portrait && !!terrain && (
-            <p className={`mt-2 text-xs ${terrainTone(terrain)}`}>{terrain > 0 ? `+${terrain}` : terrain} ATK/DEF from the terrain it stands on</p>
-          )}
-          {card.rarity !== "common" && !portrait && <p className="mt-3 text-xs uppercase tracking-wider text-yellow-300">Holographic foil</p>}
-          {children}
         </div>
       </div>
     </div>
@@ -145,7 +183,7 @@ export default function CardPreview() {
   const preview = useInteraction((s) => s.preview);
   if (!preview) return null;
   return (
-    <CardInspector num={preview.num} atk={preview.atk} def={preview.def} terrain={preview.terrain} onClose={closePreview} portrait={preview.leader}>
+    <CardInspector num={preview.num} atk={preview.atk} def={preview.def} terrain={preview.terrain} rarity={preview.rarity} onClose={closePreview} portrait={preview.leader}>
       {preview.note && <p className="mt-3 text-xs uppercase tracking-wider text-white/60">On the board: {preview.note}</p>}
     </CardInspector>
   );

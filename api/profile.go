@@ -33,6 +33,9 @@ type profileView struct {
 	Rivals     []profile.Named `json:"rivals"`
 	Maps       []profile.Named `json:"maps"`
 	Collection collection      `json:"collection"`
+	// CardPoints is the rarity points their cards have earned, by card
+	// number (see engine.RarityFor); cards with none are left out.
+	CardPoints map[int]int `json:"cardPoints"`
 	// OwnDecks are the decks they built, shown to themselves and to
 	// administrators (who may edit them); nil for anyone else.
 	OwnDecks []content.Deck `json:"ownDecks,omitempty"`
@@ -45,6 +48,23 @@ type profileView struct {
 // in duelist may look at any account's profile, as they may look at the
 // games being played.
 func (s *Server) registerProfiles(mux *http.ServeMux) {
+	// The caller's card rarity points, by card number (see engine.RarityFor):
+	// {"points": {"12": 31}}. A guest's cards earn none.
+	mux.HandleFunc("GET /api/rarity", func(w http.ResponseWriter, r *http.Request) {
+		viewer, _, err := s.Auth.FromRequest(r)
+		if err != nil {
+			fail(w, http.StatusUnauthorized, "sign in first")
+			return
+		}
+		points := map[int]int{}
+		if !viewer.Guest {
+			if points, err = s.Profiles.CardPoints(viewer.ID); err != nil {
+				fail(w, http.StatusInternalServerError, "could not read card rarity")
+				return
+			}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"points": points})
+	})
 	handle := func(w http.ResponseWriter, r *http.Request, name string) {
 		viewer, _, err := s.Auth.FromRequest(r)
 		if err != nil {
@@ -57,6 +77,7 @@ func (s *Server) registerProfiles(mux *http.ServeMux) {
 				User: profileUser{ID: viewer.ID, Name: viewer.Name, Guest: true}, Me: true,
 				Record: profile.Record{Recent: []profile.Summary{}},
 				Decks:  []profile.Named{}, Rivals: []profile.Named{}, Maps: []profile.Named{},
+				CardPoints: map[int]int{},
 			})
 			return
 		}
@@ -73,6 +94,10 @@ func (s *Server) registerProfiles(mux *http.ServeMux) {
 			User:   profileUser{ID: account.ID, Name: account.Name, Admin: account.Admin, Joined: account.Created},
 			Me:     me,
 			Record: s.Profiles.Get(account.ID),
+		}
+		if view.CardPoints, err = s.Profiles.CardPoints(account.ID); err != nil {
+			fail(w, http.StatusInternalServerError, "could not read card rarity")
+			return
 		}
 		view.Friend = !me && s.Auth.Friends.AreFriends(viewer.ID, account.ID)
 		view.Decks, view.Rivals, view.Maps = s.Profiles.Top(account.ID, 50)

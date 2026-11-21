@@ -109,34 +109,37 @@ export const CARD_TYPES = [
   'trap'
 ];
 
-export const SECRET_COLOR = "#8f6d42";
-export const SUPER_COLOR = "#8f6d42";
-export const GHOST_COLOR = "#9c9c9c";
-export const ULTRA_COLOR = "#9c9c9c";
-export const GOLD_COLOR = "#9c9c9c";
-export const ULTIMATE_COLOR = "#ffbb00";
-export const STARLIGHT_COLOR = "#ffbb00";
+/**
+ * The rarities, commonest first: what each is called, the points it takes
+ * (a monster earns 1 per enemy monster it destroys and 10 for the final blow
+ * to an enemy deck leader; the server's game/engine/rarity.go decides), and
+ * the colour it is named in.
+ */
+export const RARITIES: { id: Rarity; name: string; points: number; color: string; }[] = [
+  { id: 'common', name: 'Common', points: 0, color: '#d1d5db' },
+  { id: 'rare', name: 'Rare', points: 10, color: '#7dd3fc' },
+  { id: 'secret', name: 'Secret Rare', points: 30, color: '#f0abfc' },
+  { id: 'ultra', name: 'Ultra Rare', points: 50, color: '#fcd34d' },
+  { id: 'ultimate', name: 'Ultimate Rare', points: 100, color: '#fb923c' },
+];
 
-export const getGlowColor = (rarity: Omit<Rarity, 'common' | 'ghost' | 'secret' | 'ultra' | 'gold'>) => {
-  switch (rarity) {
-    case 'ultimate': return '#ffffff'; // Orange Red
-    case 'starlight': return '#ffd700'; // Orange Red
-    default: return '#ffd700'; // Default Gold
-  }
-};
-export const getRarityTextColor = (rarity: Rarity) => {
-  switch (rarity) {
-    case 'common': return 'inherit';
-    case 'secret': return SECRET_COLOR;
-    case 'ghost': return GHOST_COLOR;
-    case 'super': return SUPER_COLOR;
-    case 'ultra': return ULTRA_COLOR;
-    case 'gold': return GOLD_COLOR;
-    case 'ultimate': return ULTIMATE_COLOR;
-    case 'starlight': return STARLIGHT_COLOR;
-    default: return '#ffffff';
-  }
-};
+/** Rarities never earned with points: a player unlocks them some other way. */
+export const UNLOCKED_RARITIES: { id: Rarity; name: string; color: string; }[] = [
+  { id: 'cosmic', name: 'Cosmic Rare', color: '#a5b4fc' },
+];
+
+export const rarityInfo = (rarity: Rarity) =>
+  RARITIES.find((r) => r.id === rarity) ?? UNLOCKED_RARITIES.find((r) => r.id === rarity) ?? RARITIES[0];
+
+/** The rarity a card has with this many points, and the next one up (undefined at the top). */
+export function rarityProgress(points: number) {
+  const reached = [...RARITIES].reverse().find((r) => points >= r.points) ?? RARITIES[0];
+  const next = RARITIES[RARITIES.indexOf(reached) + 1];
+  return { rarity: reached, next };
+}
+
+/** The colour of the aura round an ultimate rare on the field. */
+export const ULTIMATE_AURA = '#ffd27a';
 
 export const LIGHT: Attribute = {
   type: "light",

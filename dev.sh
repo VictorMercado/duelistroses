@@ -7,7 +7,7 @@
 #   ./dev.sh status    show what is running
 #   ./dev.sh logs      tail both logs (Ctrl-C to quit)
 #
-# It also starts Prometheus (localhost:9090) and Grafana (localhost:3000) in
+# It also starts Prometheus (localhost:9090) and Grafana (localhost:3000/grafana/) in
 # Docker, scraping the local Go server's :9091 (see docker-compose.dev.yml).
 # Set NO_MONITORING=1 to skip them; `./dev.sh stop` stops them too.
 #
@@ -83,8 +83,8 @@ start_monitoring() {
   ensure_docker || return 0
   # --no-deps: the game server runs on the host, never the app container.
   "${COMPOSE[@]}" up -d --quiet-pull --no-deps prometheus grafana
-  wait_http grafana "http://localhost:3000/api/health" 90 &&
-    echo "  sign in as ${GRAFANA_ADMIN_USER:-admin} / GRAFANA_ADMIN_PASSWORD from .env" || true
+  wait_http grafana "http://localhost:3000/grafana/api/health" 90 &&
+    echo "  also in the admin portal's Monitoring tab; here, sign in as ${GRAFANA_ADMIN_USER:-admin} / GRAFANA_ADMIN_PASSWORD from .env" || true
 }
 
 stop_monitoring() {
@@ -106,9 +106,46 @@ wait_http() {
   return 1
 }
 
+# Working directory of a pid (empty if it is gone or not ours to inspect).
+proc_cwd() {
+  lsof -a -p "$1" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1
+}
+
+# Catch this app's servers on any port: `go run`, its compiled binary, and
+# pnpm/vite/esbuild, but only processes whose cwd is inside this checkout, so
+# other projects' dev servers are left alone.
+stop_strays() {
+  local module pids=() pid exe args cwd
+  module="$(awk '/^module /{print $2; exit}' "$ROOT/go.mod" 2>/dev/null || true)"
+  module="${module##*/}"
+  while read -r pid exe args; do
+    [[ "$pid" == "$$" ]] && continue
+    # Match on the executable, not any substring, so shells whose command
+    # text merely mentions "go run" or "vite" are never touched.
+    case "${exe##*/}:$args" in
+      go:run* | node:*pnpm\ dev* | node:*vite/bin/vite.js* | esbuild:--service*) ;;
+      "$module":*) [[ "$exe" == */go-build*/exe/* ]] || continue ;;
+      *) continue ;;
+    esac
+    cwd="$(proc_cwd "$pid")"
+    [[ "$cwd" == "$ROOT" || "$cwd" == "$ROOT"/* ]] && pids+=("$pid")
+  done < <(ps -axo pid=,command=)
+  ((${#pids[@]})) || return 0
+  kill -TERM "${pids[@]}" 2>/dev/null || true
+  for _ in {1..20}; do
+    local alive=()
+    for pid in "${pids[@]}"; do kill -0 "$pid" 2>/dev/null && alive+=("$pid"); done
+    ((${#alive[@]})) || { echo "stopped ${#pids[@]} stray dev process(es)"; return 0; }
+    sleep 0.25
+  done
+  kill -KILL "${alive[@]}" 2>/dev/null || true
+  echo "stopped ${#pids[@]} stray dev process(es) (forced)"
+}
+
 stop_all() {
   stop_one go "$GO_PORT"
   stop_one web "$WEB_PORT"
+  stop_strays
 }
 
 # Start a command in its own process group, detached from this shell.

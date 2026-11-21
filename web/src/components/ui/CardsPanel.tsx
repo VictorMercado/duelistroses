@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   getCardRevisions, getEffectReference, getStoredCard, saveCard,
   type CardRevision, type EffectReference, type StoredCard,
 } from "@/net/api";
 import { allCards, ensureCatalog, reloadCatalog } from "@/game/catalog";
-import CardFace from "./CardFace";
+import AdminCardPreview from "./AdminCardPreview";
 
 const small = " border border-white/25 px-2 py-1 text-xs hover:border-white disabled:opacity-40 pointer-coarse:min-h-10";
 const input = "min-w-0  border border-white/20 bg-black/60 px-2 py-1 text-sm outline-none focus:border-fuchsia-300";
@@ -40,6 +40,7 @@ export default function CardsPanel({ token, onNotice, initial, onAsk }: {
   const [ready, setReady] = useState(false);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("");
+  const [namesOnly, setNamesOnly] = useState(false);
   const [num, setNum] = useState<number | null>(initial ? (initial.card.num ?? null) : null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<StoredCard>(initial?.card ?? {});
@@ -72,14 +73,33 @@ export default function CardsPanel({ token, onNotice, initial, onAsk }: {
     return () => { live = false; };
   }, [token, num, isNew, version]);
 
-  const list = useMemo(() => {
-    if (!ready) return [];
-    const q = query.trim().toLowerCase();
-    return allCards()
-      .filter((c) => (!kind || c.kind === kind) && (!q || c.name.toLowerCase().includes(q) || String(c.num) === q || (c.text ?? "").toLowerCase().includes(q)))
-      .slice(0, 150);
+  // Cards whose name matches come first, best match first; cards that only
+  // mention every word in their text follow, apart. A number finds that card.
+  const { named, inText } = useMemo(() => {
+    if (!ready) return { named: [], inText: [] };
+    const q = query.trim().toLowerCase().replace(/^#/, "");
+    const cards = allCards().filter((c) => !kind || c.kind === kind);
+    if (!q) return { named: cards, inText: [] };
+    if (/^\d+$/.test(q)) return { named: cards.filter((c) => String(c.num) === q), inText: [] };
+    const words = q.split(/\s+/);
+    const rank = (name: string) => {
+      if (name === q) return 0;
+      if (name.startsWith(q)) return 1;
+      if (new RegExp(`\\b${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(name)) return 2;
+      if (name.includes(q)) return 3;
+      return words.every((w) => name.includes(w)) ? 4 : -1;
+    };
+    const named: (typeof cards[number] & { rank: number; })[] = [];
+    const inText: typeof cards = [];
+    for (const c of cards) {
+      const r = rank(c.name.toLowerCase());
+      if (r >= 0) named.push({ ...c, rank: r });
+      else if (!namesOnly && words.every((w) => (c.text ?? "").toLowerCase().includes(w))) inText.push(c);
+    }
+    named.sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+    return { named, inText };
     // version: the list is rebuilt after a save reloads the catalog.
-  }, [ready, query, kind, version]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ready, query, kind, namesOnly, version]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { types, attributes } = useMemo(() => {
     const t = new Set<string>(), a = new Set<string>();
@@ -169,9 +189,19 @@ export default function CardsPanel({ token, onNotice, initial, onAsk }: {
         <button className={`${small} border-fuchsia-300/60 text-fuchsia-100`} disabled={!ready} onClick={() => load({ kind: "monster" }, nextFreeNum(), true)}>
           ＋ New card
         </button>
+        <div className="flex items-center gap-2 text-[11px] text-white/40">
+          {ready && <span>{named.length} by name{inText.length > 0 && ` · ${inText.length} in text`}</span>}
+          <label className="ml-auto flex items-center gap-1">
+            <input type="checkbox" checked={namesOnly} onChange={(e) => setNamesOnly(e.target.checked)} /> names only
+          </label>
+        </div>
         <ul className="flex max-h-[24rem] flex-col overflow-y-auto border border-white/15 bg-black/75 md:max-h-[70vh]">
-          {list.map((c) => (
-            <li key={c.num}>
+          {[...named, ...inText].map((c, i) => (
+            <Fragment key={c.num}>
+              {i === named.length && (
+                <li className="sticky top-0 border-y border-white/10 bg-gray-900 px-2 py-1 text-[10px] uppercase tracking-wider text-white/50">Mentioned in card text</li>
+              )}
+              <li>
               <button
                 className={`flex w-full gap-2 px-2 py-1 text-left text-xs hover:bg-white/10 pointer-coarse:min-h-10 ${c.num === num && !isNew ? "bg-fuchsia-900/50" : ""}`}
                 onClick={() => open(c.num)}
@@ -181,7 +211,9 @@ export default function CardsPanel({ token, onNotice, initial, onAsk }: {
                 <span className="text-white/40">{c.kind}</span>
               </button>
             </li>
+            </Fragment>
           ))}
+          {ready && query.trim() && named.length + inText.length === 0 && <li className="p-2 text-xs text-white/50">No cards match.</li>}
           {!ready && <li className="p-2 text-xs text-white/50">loading…</li>}
         </ul>
       </div>
@@ -203,7 +235,9 @@ export default function CardsPanel({ token, onNotice, initial, onAsk }: {
             </button>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_9rem]">
+          {!isNew && <AdminCardPreview key={`${num}-${version}`} num={num} />}
+
+          <div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {isNew && (
                 <label className={label}>
@@ -234,7 +268,6 @@ export default function CardsPanel({ token, onNotice, initial, onAsk }: {
                 <textarea className={`${input} min-h-16`} value={(form.text as string) ?? ""} onChange={(e) => set("text", e.target.value)} />
               </label>
             </div>
-            {!isNew && <CardFace key={`${num}-${version}`} num={num} className="w-full max-w-36 self-start" />}
           </div>
           <datalist id="card-types">{types.map((t) => <option key={t} value={t} />)}</datalist>
           <datalist id="card-attributes">{attributes.map((a) => <option key={a} value={a} />)}</datalist>

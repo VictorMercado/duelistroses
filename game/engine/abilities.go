@@ -94,17 +94,36 @@ var AbilityOps = map[string][]string{
 
 // abilities is everything a card can do by itself: the abilities printed on
 // it (a monster's Effect counts as one) and those a power-up gave it.
+//
+// It is called from nearly every rule check, so it only allocates when it
+// has to put more than one list together. Callers only read the result.
 func (c *Card) abilities() []*Effect {
-	var out []*Effect
-	if c.Def.IsMonster() && c.Def.Effect != nil {
+	printed := c.Def.IsMonster() && c.Def.Effect != nil
+	switch {
+	case !printed && len(c.Granted) == 0:
+		return c.Def.Abilities
+	case !printed && len(c.Def.Abilities) == 0:
+		return c.Granted
+	}
+	out := make([]*Effect, 0, 1+len(c.Def.Abilities)+len(c.Granted))
+	if printed {
 		out = append(out, c.Def.Effect)
 	}
 	out = append(out, c.Def.Abilities...)
 	return append(out, c.Granted...)
 }
 
+// has finds an ability by op, in the order abilities lists them, without building the list.
 func (c *Card) has(op string) *Effect {
-	for _, e := range c.abilities() {
+	if c.Def.IsMonster() && c.Def.Effect != nil && c.Def.Effect.Op == op {
+		return c.Def.Effect
+	}
+	for _, e := range c.Def.Abilities {
+		if e.Op == op {
+			return e
+		}
+	}
+	for _, e := range c.Granted {
 		if e.Op == op {
 			return e
 		}
@@ -177,6 +196,14 @@ func (g *Game) auraBonus(c *Card) (atk, def int) {
 }
 
 // atk / def are a monster's strength standing on a terrain, auras included.
+// strengthOn is atk and def together, scanning the auras once.
+func (g *Game) strengthOn(c *Card, terrain string) (atk, def int) {
+	auraAtk, auraDef := g.auraBonus(c)
+	baseAtk, baseDef := c.baseStats()
+	b := c.Def.bonus(terrain)
+	return floor0(baseAtk + c.AtkMod + auraAtk + b), floor0(baseDef + c.DefMod + auraDef + b)
+}
+
 func (g *Game) atk(c *Card, terrain string) int {
 	a, _ := g.auraBonus(c)
 	base, _ := c.baseStats()
@@ -446,6 +473,8 @@ func (g *Game) doAbility(c *Card, e *Effect, foe *Card) {
 	if owner == nil {
 		return
 	}
+	// What the ability destroys, or the LP it takes, is the monster's doing.
+	defer g.crediting(c)()
 	foeHere := foe != nil && foe.OnBoard
 	self := func(atk, def int) {
 		if atk != 0 || def != 0 {

@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { playSfx } from "@/game/sfx";
-import { ASSET_URL } from "@/const";
+import { ASSET_URL, rarityProgress } from "@/const";
 import { allCards, catalogCard, ensureCatalog } from "@/game/catalog";
 import {
-  decksMadeByMe, deleteDeck, deleteMap, friendsList, listMaps, myDecks, saveDeck, saveMap, starterDecks,
+  decksMadeByMe, deleteDeck, deleteMap, friendsList, listMaps, loadRarity, myDecks, saveDeck, saveMap, starterDecks,
   type CatalogCard, type DeckSummary, type MapSummary,
 } from "@/net/api";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useMenuStore, type MenuScreen } from "@/stores/menuStore";
 import CardFace from "./CardFace";
 import { CardInspector } from "./CardPreview";
+import DeckAssistant from "./DeckAssistant";
 
 const DECK_SIZE = 40;
 // The deck leader has its own slot on top of the 40: 41 in all.
@@ -29,6 +30,26 @@ const button = " bg-yellow-600 px-4 py-2 text-sm font-bold text-black hover:bg-y
 const ghost = " border border-white/25 px-3 py-2 text-sm hover:border-white active:border-yellow-400 disabled:opacity-40 pointer-coarse:min-h-11";
 const danger = " border border-rose-400/50 px-3 py-2 text-sm text-rose-300 hover:border-rose-300 disabled:opacity-40 pointer-coarse:min-h-11";
 const mini = " border border-white/25 px-2 text-xs hover:border-yellow-400 pointer-coarse:min-h-9 pointer-coarse:px-3";
+
+/** Deck-list row colours, after each card type's frame: light yellow normal monsters, darker
+ *  effect monsters, blue rituals, violet fusions, green spells and pink traps. */
+const ROW_TONES = {
+  normal: "bg-[#e6c97a]",
+  effect: "bg-[#c8763a]",
+  ritual: "bg-[#5b86d1]",
+  fusion: "bg-[#9a6cc8]",
+  spell: "bg-[#1f9e83]",
+  trap: "bg-[#c95a9c]",
+} as const;
+
+function rowTone(card: { kind: string; frame?: string; }): string {
+  if (card.kind === "spell") return ROW_TONES.spell;
+  if (card.kind === "trap") return ROW_TONES.trap;
+  if (card.kind === "ritual" || card.frame === "ritual") return ROW_TONES.ritual;
+  if (card.frame === "fusion") return ROW_TONES.fusion;
+  if (card.frame === "normal") return ROW_TONES.normal;
+  return ROW_TONES.effect;
+}
 const panel = "flex min-h-0 flex-col gap-3  border border-white/15 bg-black/80 p-3 sm:p-4 md:backdrop-blur";
 
 type Notice = { text: string; bad?: boolean; } | null;
@@ -82,6 +103,8 @@ function DeckBuilder({ token, notify }: { token: string; notify: Notify; }) {
   const [inspect, setInspect] = useState<{ num: number; list: number[]; } | null>(null);
   const [deckOpen, setDeckOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const closeAssistant = useCallback(() => setAssistantOpen(false), []);
   const [busy, setBusy] = useState(false);
 
   const [search, setSearch] = useState("");
@@ -94,6 +117,12 @@ function DeckBuilder({ token, notify }: { token: string; notify: Notify; }) {
     myDecks(token).then(setMine).catch((e: Error) => notify({ text: e.message, bad: true }));
     decksMadeByMe(token).then(setMade).catch(() => { });
   }, [token, notify]);
+  // Our cards' rarity points, shown in the card preview (a guest's cards earn none).
+  const [rarityPoints, setRarityPoints] = useState<Record<string, number> | null>(null);
+  useEffect(() => {
+    if (guest) return;
+    loadRarity(token).then(setRarityPoints).catch(() => { });
+  }, [token, guest]);
   useEffect(() => {
     if (guest) return;
     friendsList(token).then((list) => setFriends(list.friends.map(({ id, name }) => ({ id, name })))).catch(() => { });
@@ -117,17 +146,21 @@ function DeckBuilder({ token, notify }: { token: string; notify: Notify; }) {
   const [filters, setFilters] = useState("");
   const filterKey = `${search}|${kind}|${type}|${maxLevel}|${workingOnly}`;
   if (filters !== filterKey) { setFilters(filterKey); setLimit(PAGE); }
+  // Lowercased once per catalog, not once per card on every keystroke.
+  const searchText = useMemo(() => new Map(cards.map((card) => [card.num, `${card.name}\n${card.text ?? ""}`.toLowerCase()])), [cards]);
+  // Typing stays responsive: the grid catches up with the search box when React has time.
+  const deferredSearch = useDeferredValue(search);
   const matching = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = deferredSearch.trim().toLowerCase();
     return cards.filter((card) =>
-      (!term || card.name.toLowerCase().includes(term) || card.text?.toLowerCase().includes(term)) &&
+      (!term || searchText.get(card.num)!.includes(term)) &&
       (!kind || card.kind === kind) &&
       (!type || card.type === type) &&
       (card.kind !== "monster" || (card.level ?? 0) <= maxLevel) &&
       // Locked cards (the Gods) are always shown, so players see what they can earn.
       (!workingOnly || card.implemented !== false || card.locked)
     );
-  }, [cards, search, kind, type, maxLevel, workingOnly]);
+  }, [cards, searchText, deferredSearch, kind, type, maxLevel, workingOnly]);
   const shown = useMemo(() => matching.slice(0, limit), [matching, limit]);
 
   /** How many more copies of a card fit, or why none do. */
@@ -305,15 +338,15 @@ function DeckBuilder({ token, notify }: { token: string; notify: Notify; }) {
         <div className="min-h-20 flex-1 overflow-y-auto overscroll-contain">
           {entries.length === 0 && <p className="text-xs text-white/50">Empty. Add cards from the list, or start from a deck below.</p>}
           {entries.map(({ card, count }) => (
-            <div key={card.num} className="flex items-center gap-2 border-t border-white/10 py-1 text-xs" onMouseEnter={() => setFocus(card.num)}>
-              <span className="text-white/50">{count}×</span>
+            <div key={card.num} className={`mb-px flex items-center gap-2 border border-black/20 px-2 py-1 text-xs text-black ${rowTone(card)}`} onMouseEnter={() => setFocus(card.num)}>
+              <span className="text-black/70">{count}×</span>
               <button
-                className="flex-1 truncate text-left hover:text-yellow-200"
+                className="flex-1 truncate text-left font-semibold hover:underline"
                 title="Preview"
                 onClick={() => open(card.num, entries.map((e) => e.card.num))}
               >{card.name}</button>
-              <span className="text-white/50">{card.kind === "monster" ? `★${card.level}` : card.kind}</span>
-              <button className={mini} title="Remove one" onClick={() => remove(card.num)}>−</button>
+              <span className="text-black/70">{card.kind === "monster" ? `★${card.level}` : card.kind}</span>
+              <button className="border border-current/30 px-2 text-xs hover:border-current pointer-coarse:min-h-9 pointer-coarse:px-3" title="Remove one" onClick={() => remove(card.num)}>−</button>
             </div>
           ))}
         </div>
@@ -433,6 +466,27 @@ function DeckBuilder({ token, notify }: { token: string; notify: Notify; }) {
         {deckPanel}
       </aside>
 
+      {/* Claude builds decks on request: above the deck stack on phones, beside the deck panel on wide screens. */}
+      <button
+        onClick={() => setAssistantOpen(true)}
+        className={`${assistantOpen ? "hidden" : ""} fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+7rem)] right-[max(0.75rem,env(safe-area-inset-right))] z-50 border border-yellow-400/60 bg-black/85 px-3 py-2 text-xs font-bold text-yellow-200 shadow-lg hover:border-yellow-300 hover:bg-black pointer-coarse:min-h-11 lg:bottom-4 lg:right-[calc(22rem+1.75rem)]`}
+        aria-label="Ask Claude to build a deck"
+      >✨ Ask Claude</button>
+      <DeckAssistant
+        token={token}
+        guest={guest}
+        draft={draft}
+        open={assistantOpen}
+        onClose={closeAssistant}
+        onUse={(p, asNew) => {
+          setDraft((d) => asNew
+            ? { ...emptyDraft(), name: p.name.slice(0, 40), leaderNum: p.leaderNum, cards: [...p.cards], ownerId: d.ownerId, ownerName: d.ownerName }
+            : { ...d, name: d.id ? d.name : p.name.slice(0, 40), leaderNum: p.leaderNum, cards: [...p.cards] });
+          setAssistantOpen(false);
+          notify({ text: `Loaded "${p.name}". Save it to keep it.` });
+        }}
+      />
+
       {/* Phones and tablets: the deck is a stack of card backs at the right; tap it for the deck. */}
       <button
         onClick={() => setDeckOpen(true)}
@@ -482,7 +536,15 @@ function DeckBuilder({ token, notify }: { token: string; notify: Notify; }) {
       )}
 
       {inspected && (
-        <CardInspector num={inspected.num} onClose={() => setInspect(null)}>
+        <CardInspector
+          num={inspected.num}
+          onClose={() => setInspect(null)}
+          // Only monsters earn rarity, by destroying monsters and finishing off deck leaders.
+          {...(rarityPoints && inspected.kind === "monster" ? {
+            points: rarityPoints[inspected.num] ?? 0,
+            rarity: rarityProgress(rarityPoints[inspected.num] ?? 0).rarity.id,
+          } : {})}
+        >
           <DeckActions
             card={inspected}
             count={counts.get(inspected.num) ?? 0}

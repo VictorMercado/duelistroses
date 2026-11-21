@@ -136,6 +136,7 @@ export default function ControlPanel({
         track={music.track}
         choice={music.choice}
         chooseTrack={music.chooseTrack}
+        skipTrack={music.skipTrack}
         style="full"
       />
 

@@ -1,4 +1,4 @@
-import { DataTexture, RGBAFormat, Texture, TextureLoader, type WebGLRenderer } from 'three';
+import { DataTexture, RGBAFormat, SRGBColorSpace, Texture, TextureLoader, type WebGLRenderer } from 'three';
 import { ASSET_URL } from '@/const';
 
 export const BLANK_MASK = ASSET_URL + '/textures/blank_mask.png';
@@ -108,4 +108,46 @@ export function useCardTexture(url: string, fallback?: string): Texture {
   if (texture !== FAILED) return texture;
   const second = fallback && fallback !== url ? read(fallback) : FAILED;
   return second !== FAILED ? second : EMPTY;
+}
+
+/**
+ * useCardTexture for a colour image drawn by a custom shader that converts its
+ * output to the screen's colour space (the foil). react-three-fiber marks a
+ * texture as sRGB only when it is set as a material's `map`; read unmarked,
+ * its colours would be converted twice and come out washed out, pale.
+ */
+export function useColorTexture(url: string, fallback?: string): Texture {
+  return markColor(useCardTexture(url, fallback));
+}
+
+function markColor(texture: Texture): Texture {
+  if (texture.colorSpace !== SRGBColorSpace) {
+    texture.colorSpace = SRGBColorSpace;
+    texture.needsUpdate = true;
+  }
+  return texture;
+}
+
+const premultiplied = new WeakMap<Texture, Texture>();
+
+/**
+ * useCardTexture for small cut-out icons (level stars, attributes), uploaded
+ * with premultiplied alpha. Draw it with a `transparent premultipliedAlpha`
+ * material. Otherwise the black of the fully transparent texels bleeds into
+ * the edge when the icon is filtered and mipmapped down, and leaves a dark ring.
+ * A copy that shares the image, so the plain texture is left as it is.
+ */
+export function useIconTexture(url: string, fallback?: string): Texture {
+  const base = useCardTexture(url, fallback);
+  let icon = premultiplied.get(base);
+  if (!icon) {
+    icon = base.clone();
+    icon.premultiplyAlpha = true;
+    // A colour image, whatever material draws it (see useColorTexture).
+    icon.colorSpace = SRGBColorSpace;
+    icon.needsUpdate = true;
+    premultiplied.set(base, icon);
+    upload(icon);
+  }
+  return icon;
 }

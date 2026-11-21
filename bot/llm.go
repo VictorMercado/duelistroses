@@ -121,10 +121,10 @@ func (l *LLM) Usage() Usage {
 const systemPrompt = `You are playing a tactical card duel on a square grid, as one of the duelists. You are a strong, decisive player. Each request shows you the current position and a numbered list of every legal action. Choose exactly one.
 
 RULES
-- Each duelist has a deck leader on the board and life points (LP). A duelist at 0 LP is out; the last team standing wins. A duelist who must draw from an empty deck also loses.
+- Each duelist has a deck leader on the board and life points (LP). A duelist at 0 LP is out; the last team standing wins. An empty deck is not a loss: a duelist with no cards left to draw plays on with its hand and field.
 - Coordinates are (x, y): x grows to the east, y grows to the north.
 - On your turn you may play ONE card from your hand onto a square next to your own leader (all 8 surrounding squares). Monsters cost their level in summoning stars; you gain 3 stars each turn, up to 12. Spells and traps are free. Cards arrive face down.
-- Every card you control may be given ONE order per turn: move, or switch to defense position, or (for a spell) flip face up to activate it. Turning a monster face up, or switching it to attack position, is free: it can still move afterwards. Your leader may step one square. You end your turn explicitly.
+- Every card you control may be given ONE order per turn: move, or switch to defense position, or (for a spell) flip face up to activate it. Turning a monster face up, or switching its position, is that card's order too (a move can turn it face up on the way, in the same order). Your leader may step one square. You end your turn explicitly.
 - A card moves 1 square orthogonally, or up to 2 if it is a face-up monster standing on terrain that favours its type.
 - Moving a monster onto an enemy monster is a battle. Attack vs attack position: the lower ATK is destroyed and its owner loses the difference in LP; a tie destroys both. Attack vs defense position: if your ATK is higher the defender is destroyed with no LP damage; if lower, you lose the difference and nothing is destroyed. Face-down cards are revealed by battle, so attacking one is a gamble.
 - Moving a monster onto the enemy LEADER deals its full ATK as LP damage. This is how games are won: get monsters next to the enemy leader.

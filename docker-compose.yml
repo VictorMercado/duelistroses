@@ -25,6 +25,10 @@ services:
       ASSET_DIR: /srv/content/assets
       STATIC_DIR: /srv/web/dist
       METRICS_ADDR: ":9091"
+      # The admin portal's Monitoring page: the server proxies Grafana at
+      # /grafana/ to administrators (api/grafana.go), signed in with
+      # GRAFANA_ADMIN_PASSWORD from .env.
+      GRAFANA_URL: http://grafana:3000
     volumes:
       # The signing key, accounts, decks and maps. Without a named volume they
       # live in the container, and a rebuild creates a new key: every saved
@@ -63,6 +67,14 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/duelist.json
+      # Served under /grafana/, so the game server can show it inside the admin
+      # portal (api/grafana.go); on the local network it is :3000/grafana/.
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      # Live updates need a websocket from the browser's own origin: the
+      # dashboards refresh on a timer instead.
+      GF_LIVE_MAX_CONNECTIONS: "0"
       # Infinity reads the game server's client error reports (with IPs) from app:9091.
       GF_PLUGINS_PREINSTALL_SYNC: yesoreyeram-infinity-datasource
     volumes:
